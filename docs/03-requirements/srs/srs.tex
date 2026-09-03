@@ -1,0 +1,98 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+\title{Software Requirements Specification\\[0.4em]\large Open Clinical Record}
+\author{Open Clinical Record Internship Project}
+\date{Draft --- Requirements Discovery Phase}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Document Status}
+
+This document is intentionally a draft. Requirements will be baselined only after EMR research and clinical stakeholder validation are complete.
+
+\begin{longtable}{p{0.25\textwidth}p{0.65\textwidth}}
+\toprule
+Version & 0.1 --- discovery draft \\
+Status & Work in progress \\
+Product & Open Clinical Record \\
+Primary scope & Patient chart, medical records/reports, appointments \\
+\bottomrule
+\end{longtable}
+
+\section{Introduction}
+
+Open Clinical Record is an extensible Electronic Medical Record (EMR) platform. The internship MVP focuses on three connected workflows: managing the patient chart, documenting medical records and reports, and managing appointments through the basic visit/consultation flow.
+
+The system is being designed as a foundation for future clinical modules rather than as a complete hospital information system.
+
+\section{Product Vision}
+
+The product should make the common clinical workflow understandable and reliable:
+
+\begin{center}
+Patient \(\rightarrow\) Appointment \(\rightarrow\) Visit/Encounter \(\rightarrow\) Clinical Documentation \(\rightarrow\) Longitudinal Patient Record
+\end{center}
+
+The first release should stay deliberately small while avoiding decisions that make later expansion unnecessarily difficult.
+
+\section{Scope}
+
+\subsection{In Scope}
+\begin{itemize}[leftmargin=*]
+    \item Patient registration, search, profile, and clinical summary.
+    \item Relevant patient history, allergies, alerts, and status.
+    \item Deceased status and associated lifecycle handling where required by validated clinical requirements.
+    \item Appointment creation and management.
+    \item Basic check-in and visit/encounter linkage.
+    \item Clinical notes, diagnoses, and agreed treatment information.
+    \item Medical report generation and finalized clinical documentation.
+    \item Authentication, authorization, validation, audit logging, and error handling.
+\end{itemize}
+
+\subsection{Deferred / Future}
+Laboratory, pharmacy, billing, radiology, insurance, patient portal, messaging integrations, and production-grade external interoperability are candidates for later phases unless discovery changes the scope.
+
+\section{Requirements Principles}
+
+Requirements must be supported by research, clinical workflow understanding, or explicit stakeholder decisions. A feature observed in another EMR is not automatically a requirement for this product.
+
+\section{Functional Requirements --- Placeholder}
+
+Detailed functional requirements will be added after the research and clinician interview. They will receive stable identifiers such as FR-PAT-001, FR-REC-001, and FR-APT-001 so that implementation and testing can be traced back to them.
+
+\section{Non-Functional Requirements --- Placeholder}
+
+The final specification will define measurable requirements for security, privacy, availability, performance, usability, maintainability, auditability, data integrity, and extensibility.
+
+\section{Open Questions}
+
+\begin{itemize}[leftmargin=*]
+    \item Which patient fields are mandatory in the target clinical setting?
+    \item Which clinical documentation must be structured versus free text?
+    \item What is the exact signing/finalization workflow for medical reports?
+    \item Who may mark a patient as deceased, and what information must be captured?
+    \item What should happen to future appointments after deceased status is recorded?
+    \item Which terminology and interoperability concepts should be represented in the MVP?
+\end{itemize}
+
+\section{Traceability}
+
+The final SRS will link requirements to design decisions, implementation issues, tests, and release evidence. This is intended to make it possible to answer: \emph{why does this feature exist, where is it implemented, and how was it verified?}
+
+\section{References}
+
+References will be added as the research phase is completed. The research set includes established EMR platforms, WHO digital-health guidance, HL7 FHIR, and relevant terminology/interoperability standards.
+
+\end{document}
