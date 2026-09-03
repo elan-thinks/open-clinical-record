@@ -1,0 +1,51 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\title{Software Architecture Overview\\[0.4em]Open Clinical Record}
+\author{Open Clinical Record Internship Project}
+\date{Draft --- Discovery Phase}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Status}
+This document records architectural direction during discovery. The final architecture will be based on validated requirements rather than being locked prematurely.
+
+\section{Architectural Intent}
+The system should be modular, maintainable, secure, and ready for API-based integration. The MVP should not require every future module to exist, but it should establish clean boundaries around the core clinical workflows.
+
+\section{Initial Logical View}
+\begin{verbatim}
+                         Open Clinical Record
+                                  |
+                    +-------------+-------------+
+                    |                           |
+                 Frontend                    Backend
+                    |                           |
+          +---------+---------+       +---------+---------+
+          |         |         |       |         |         |
+       Patient  Appointments Records Patient  Visits    Records
+                                      Services Services Services
+                                                |
+                                      +---------+---------+
+                                      |                   |
+                                 Data Access        Integration API
+                                      |                   |
+                                   Database              FHIR
+\end{verbatim}
+
+\section{Cross-Cutting Concerns}
+Authentication, authorization, validation, audit logging, error handling, configuration, and notification mechanisms should be treated as platform concerns rather than duplicated inside individual clinical features.
+
+\section{Expansion Strategy}
+Future modules such as laboratory, pharmacy, referrals, billing, and patient-facing applications should connect through explicit application/service boundaries. External interoperability will be investigated through standards such as HL7 FHIR where appropriate.
+
+\section{Architecture Decisions}
+Important decisions will be recorded separately as Architecture Decision Records (ADRs). Each ADR should explain the problem, the decision, alternatives considered, consequences, and the evidence behind the decision.
+
+\section{What Is Not Decided Yet}
+The final frontend/backend technology stack, deployment topology, database implementation details, service granularity, and exact FHIR integration scope remain open until requirements and research provide enough evidence.
+
+\end{document}
