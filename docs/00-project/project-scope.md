@@ -1,21 +1,101 @@
 # Project Scope
 
-## In Scope
+> Keep the first version small enough to finish, but don't paint the system into a corner.
 
-The initial MVP focuses on three connected EMR workflows:
+## What we're building
 
-1. Patient / Medical Chart
-2. Medical Records / Clinical Reports
-3. Appointments / Visits / Consultation
+Open Clinical Record is an EMR foundation for a clinic. The first version is centered on three things that are easy to understand from a real clinical workflow:
 
-Cross-cutting capabilities include authentication, authorization, validation, audit logging, data integrity, notifications where justified, and maintainable system structure.
+- the patient's chart
+- the patient's medical records and reports
+- appointments and the visit/consultation flow
 
-## Future Expansion
+Authentication, roles, audit history, validation, and notifications sit around those workflows because a clinical system needs them to be trustworthy.
 
-The architecture should leave room for laboratory, pharmacy, referrals, billing, immunization, radiology, insurance, patient portal, messaging/notifications, and interoperability.
+## MVP
 
-## Out of Scope for the Initial MVP
+### Patient / Medical Chart
 
-A complete hospital information system, advanced billing, full laboratory information management, full pharmacy management, and production-grade external interoperability are not assumed to be part of the initial implementation.
+- Register and search patients
+- View a patient profile and clinical summary
+- Demographics and contact information
+- Allergies and important alerts
+- Medical history / current problems
+- Basic patient status
+- Deceased status and date of death where clinically required
+- Patient timeline
 
-Scope will be refined after EMR research and clinical stakeholder validation.
+### Medical Records / Reports
+
+- Create a clinical record for a visit
+- Record structured clinical information where useful
+- Add clinical notes
+- Record diagnoses
+- Record treatment/medication information within the agreed scope
+- Produce a readable medical report
+- Distinguish editable/in-progress documentation from finalized documentation
+- Preserve historical records instead of silently overwriting them
+
+### Appointments
+
+- Create and manage appointments
+- Assign patient and clinician
+- Appointment status
+- Reschedule and cancel
+- Handle the basic check-in → visit/encounter flow
+- Link an appointment/visit to the resulting clinical record
+
+### Cross-cutting
+
+- Authentication
+- Role-based authorization
+- Audit logging for important actions
+- Input validation
+- Error handling
+- Basic notifications/alerts where useful
+
+## Not in the MVP
+
+These are intentionally left out unless discovery shows that they are necessary:
+
+- Full laboratory information system
+- Pharmacy management
+- Billing and insurance claims
+- Radiology/PACS
+- Advanced reporting and analytics
+- Patient mobile application/portal
+- SMS gateway integration
+- External hospital-to-hospital exchange
+- Full FHIR implementation
+
+They are not forgotten. They belong in the expansion plan so that we can design sensible boundaries now without trying to build a hospital information system during an internship.
+
+## Future direction
+
+The long-term idea is that a patient should have one longitudinal record while separate modules can grow around it:
+
+```text
+                         Open Clinical Record
+                                  |
+             +--------------------+--------------------+
+             |                    |                    |
+          Patient             Encounters          Appointments
+             |                    |                    |
+             |          +---------+---------+          |
+             |          |         |         |          |
+          History    Notes    Diagnosis  Treatment    |
+             |                                             |
+             +--------------------+------------------------+
+                                  |
+                           Integration API
+                                  |
+                  +---------------+---------------+
+                  |               |               |
+                Lab           Pharmacy        Referrals
+```
+
+The API/integration boundary is a design concern from the beginning, even if external integrations are not implemented in the internship MVP.
+
+## Scope rule
+
+When a feature sounds impressive but does not improve the core patient → appointment → visit → record workflow, it goes into **Future** until there is a clear reason to bring it back.
