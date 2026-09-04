@@ -1,6 +1,6 @@
 ---
 name: Feature
-a bout: Propose or implement a product capability
+about: Propose or implement a product capability
 title: "feat: "
 labels: "type:feature"
 assignees: ""
@@ -12,7 +12,7 @@ Describe the capability and the user problem it solves.
 
 ## Clinical / Product Context
 
-Why does this matter in the Open Clinical Record workflow?
+Why does this matter to the Open Clinical Record workflow?
 
 ## Scope
 
