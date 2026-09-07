@@ -12,12 +12,15 @@ The workflow is intended to be validated against real clinical practice before f
 
 ## 2. Actors
 
+The MVP uses exactly three approved user roles:
+
 | Actor | Primary responsibilities in MVP |
 |---|---|
-| Receptionist / Front Desk | Register/search patients, manage basic demographics, schedule/reschedule/cancel appointments, check-in patients |
-| Nurse / Clinical Staff | Support patient flow, record vital signs and permitted observations, support encounters |
-| Doctor / Clinician | Review chart, conduct encounter, record clinical findings, diagnosis, treatment, and clinical documentation |
-| System Administrator | Manage users, roles, permissions, configuration, and audit information |
+| Receptionist / Front Desk | Register/search patients, manage basic demographics, schedule/reschedule/cancel appointments, and check-in patients |
+| Nurse / Clinical Staff | Support patient flow, record vital signs and permitted observations, and support encounters within assigned permissions |
+| Doctor / Clinician | Review the patient chart, conduct encounters, record clinical findings, diagnosis, treatment, and permitted clinical documentation |
+
+Administrative/user-management capabilities are treated as a future or deployment-level concern and are **not** an MVP user role.
 
 ## 3. Approved End-to-End Workflow
 
@@ -169,7 +172,7 @@ The system should clearly display deceased status while preserving the patient's
 - Reception/front-desk users should not have unrestricted access to clinical documentation or diagnosis editing.
 - Clinical staff should have access to the clinical information required for their work.
 - Clinicians should be able to create and finalize permitted clinical documentation.
-- Administrative access should not automatically imply unrestricted clinical authority.
+- No MVP role should automatically receive unrestricted clinical authority merely because of a broader administrative responsibility.
 - Important actions should be auditable.
 
 ## 11. Key Business Rules to Validate
@@ -191,7 +194,7 @@ The system should clearly display deceased status while preserving the patient's
 
 The following questions should be confirmed with healthcare staff before requirements are finalized:
 
-- Are the proposed receptionist, nurse, clinician, and administrator roles accurate?
+- Are the proposed three MVP roles accurate: receptionist/front desk, nurse/clinical staff, and doctor/clinician?
 - Which role performs each patient-registration action?
 - Who schedules, reschedules, and cancels appointments?
 - How are walk-ins handled in practice?
@@ -219,11 +222,12 @@ The following are intentionally outside the initial workflow scope and may be co
 - External EMR exchange
 - Full FHIR implementation
 - Complex enterprise scheduling/resource optimization
+- AI-assisted clinical features
 
 The architecture and requirements should leave room for these capabilities without implementing them during the internship MVP.
 
 ## 14. Validation Status
 
-**Current status:** Proposed workflow approved by mentor; clinical validation pending.
+**Current status:** Proposed workflow approved by mentor; preliminary clinical validation received from one clinician survey response; broader clinical validation remains pending.
 
-Survey responses and stakeholder feedback will be used to confirm, modify, or reject assumptions before the functional requirements are finalized.
+The initial clinician response supports preserving appointment history, separating clinical responsibilities, protecting finalized documentation through amendments, surfacing important chart alerts, and handling deceased-patient status. It also identified network reliability as a practical concern and suggested AI/mobile capabilities as future possibilities. These findings do not constitute statistically representative evidence and should be revisited as additional responses are collected.
