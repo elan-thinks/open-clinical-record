@@ -24,7 +24,7 @@ This document is a working draft. Requirements will be baselined after the curre
 
 \begin{longtable}{p{0.25\textwidth}p{0.65\textwidth}}
 \toprule
-Version & 0.2 --- functional requirements draft \\
+Version & 0.3 --- non-functional requirements draft \\
 Status & Work in progress \\
 Product & Open Clinical Record \\
 Primary scope & Patient chart, medical records/reports, appointments \\
@@ -89,7 +89,6 @@ Doctor/Clinician & Clinical assessment, notes, diagnosis, treatment, prescriptio
 The following requirements define the current MVP behavior. ``Shall'' indicates a required system behavior. Requirements may be revised during validation and will be baselined in a later version.
 
 \subsection{Patient Management}
-
 \begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
 \toprule
 ID & Requirement & Description \\
@@ -109,7 +108,6 @@ FR-PAT-011 & Handle deceased patient & Once a patient is recorded as deceased, t
 \end{longtable}
 
 \subsection{Appointment Management}
-
 \begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
 \toprule
 ID & Requirement & Description \\
@@ -127,7 +125,6 @@ FR-APT-009 & Prevent deceased-patient booking & The system shall prevent creatio
 \end{longtable}
 
 \subsection{Encounter and Clinical Documentation}
-
 \begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
 \toprule
 ID & Requirement & Description \\
@@ -146,7 +143,6 @@ FR-ENC-010 & Maintain encounter linkage & The system shall associate clinical do
 \end{longtable}
 
 \subsection{Medical Reports and Document Integrity}
-
 \begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
 \toprule
 ID & Requirement & Description \\
@@ -162,7 +158,6 @@ FR-REC-007 & View document status & The system shall clearly indicate whether a 
 \end{longtable}
 
 \subsection{Authentication, Authorization, and Auditability}
-
 \begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
 \toprule
 ID & Requirement & Description \\
@@ -176,7 +171,6 @@ FR-SEC-005 & Protect unauthorized access & The system shall deny access to prote
 \end{longtable}
 
 \subsection{Validation and Error Handling}
-
 \begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
 \toprule
 ID & Requirement & Description \\
@@ -189,7 +183,6 @@ FR-VAL-004 & Preserve data on failure & The system shall avoid partial or silent
 \end{longtable}
 
 \section{Business Rules}
-
 \begin{longtable}{p{0.18\textwidth}p{0.72\textwidth}}
 \toprule
 ID & Rule \\
@@ -206,17 +199,123 @@ BR-008 & Clinical information shall remain linked to the correct patient and enc
 \end{longtable}
 
 \section{Clinical Validation Note}
-
 A preliminary survey response was received from a Doctor/Clinician. The response supports the importance of patient demographics, conditions, previous diagnoses, vitals, allergies, medications, visit history, role separation for clinical actions, preservation of cancelled/rescheduled appointments, amendment rather than silent replacement of finalized reports, clinical alerts, and deceased-patient handling. The respondent also identified network reliability as a practical concern and suggested AI-assisted capabilities and mobile access as future opportunities.
 
 This is preliminary evidence rather than statistical validation. The AI and mobile suggestions are therefore recorded as future enhancements rather than MVP requirements.
 
-\section{Non-Functional Requirements --- Initial Draft}
+\section{Non-Functional Requirements}
 
-The final specification will define measurable requirements for security, privacy, availability, performance, usability, maintainability, auditability, data integrity, and extensibility. Based on early discovery, network reliability and data integrity are particularly important concerns for the target workflow.
+The following quality requirements apply to the MVP. They are written so that they can be objectively checked where practical. Exact targets may be adjusted after deployment constraints and mentor review are confirmed.
+
+\subsection{Security and Privacy}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-SEC-001 & Authentication & All protected clinical functions shall require successful user authentication. \\
+NFR-SEC-002 & Authorization & Every protected clinical operation shall be checked against the authenticated user's role/permissions before execution. \\
+NFR-SEC-003 & Least privilege & Users shall receive only the permissions required for their assigned responsibilities; clinical permissions shall not be granted by default to non-clinical roles. \\
+NFR-SEC-004 & Session protection & The system shall terminate or invalidate inactive authenticated sessions according to a configured timeout policy. \\
+NFR-SEC-005 & Password protection & User passwords shall never be stored in plaintext and shall be stored using an accepted one-way password-hashing mechanism. \\
+NFR-SEC-006 & Privacy & Patient information shall only be exposed through authorized application functions and shall not be included in unnecessary error messages or logs. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Data Integrity and Clinical Record Safety}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-DAT-001 & Record integrity & Each clinical record shall remain associated with exactly the intended patient and, where applicable, encounter. \\
+NFR-DAT-002 & Transaction safety & A failed create/update operation shall not leave a partially committed clinical record. \\
+NFR-DAT-003 & Finalized record integrity & Finalized clinical documents shall remain unchanged unless an authorized amendment process is used. \\
+NFR-DAT-004 & Audit consistency & Audit events for sensitive clinical changes shall identify the acting user and date/time and shall correspond to the affected operation. \\
+NFR-DAT-005 & Required-data validation & The system shall validate mandatory fields and business constraints before committing affected records. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Performance}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-PERF-001 & Common interaction response & Under normal MVP deployment conditions, common read operations such as patient search, patient profile retrieval, and appointment-list retrieval should return within 2 seconds for at least 95\% of requests. \\
+NFR-PERF-002 & Record save response & Under normal MVP deployment conditions, standard patient, appointment, and encounter save operations should complete within 3 seconds for at least 95\% of requests, excluding external service outages. \\
+NFR-PERF-003 & Concurrent use & The MVP should support at least 10 concurrent authenticated users without violating the response targets above. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Reliability and Network Failure Handling}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-REL-001 & Failure feedback & When a network or server operation fails, the system shall clearly inform the user that the operation did not complete. \\
+NFR-REL-002 & No silent loss & A network interruption shall not be reported as a successful clinical-record save. \\
+NFR-REL-003 & Safe retry & Retry behavior shall not unintentionally create duplicate patients, appointments, encounters, or clinical documents. \\
+NFR-REL-004 & Availability target & For a connected MVP deployment, the application should achieve at least 99\% availability during its agreed operating period, excluding planned maintenance. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Auditability}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-AUD-001 & Sensitive-event logging & The system shall audit creation, modification, finalization, amendment, cancellation, status changes, and other configured sensitive clinical actions. \\
+NFR-AUD-002 & Audit identity & Each audit event shall record the responsible authenticated user and event date/time. \\
+NFR-AUD-003 & Audit protection & Audit records shall not be editable through ordinary clinical workflows. \\
+NFR-AUD-004 & Traceability & The system shall provide enough information to associate a sensitive audit event with the affected record or operation. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Usability and Accessibility}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-USE-001 & Consistent workflow & Patient, appointment, encounter, and document screens shall use consistent terminology, navigation, status labels, and actions. \\
+NFR-USE-002 & Clinical visibility & High-priority patient alerts and status information shall be visually distinguishable from ordinary demographic information. \\
+NFR-USE-003 & Error usability & Validation and error messages shall identify the affected action or field and explain what the user can do next where practical. \\
+NFR-USE-004 & Accessibility baseline & Core MVP workflows shall use readable text, keyboard-accessible controls where supported by the platform, clear labels, and status information that is not conveyed by color alone. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Maintainability and Extensibility}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-MNT-001 & Modular structure & The implementation shall separate major clinical concerns such as patient, appointment, encounter, documentation, authorization, and persistence so that one area can be changed without unnecessary changes to unrelated areas. \\
+NFR-MNT-002 & Testability & Critical business rules and authorization behavior shall be testable independently from the user interface where practical. \\
+NFR-MNT-003 & Documentation & Major modules, data relationships, configuration requirements, and externally visible APIs shall be documented sufficiently for another project contributor to understand and maintain them. \\
+NFR-MNT-004 & Configuration & Environment-specific settings such as database connection details, session policies, and deployment configuration shall not be hard-coded into clinical business logic. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Interoperability Readiness}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-INT-001 & Stable identifiers & Core patient, appointment, encounter, and clinical-document entities shall use stable internal identifiers suitable for future mapping to external standards. \\
+NFR-INT-002 & Separation of clinical data & Core clinical concepts shall be represented separately enough to support later mapping to interoperability standards without requiring a complete redesign of the MVP. \\
+NFR-INT-003 & FHIR readiness & The MVP shall not require full external FHIR exchange, but its architecture and data model should avoid unnecessary barriers to a future standards-based API. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Backup and Recovery}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\toprule
+ID & Requirement & Description \\
+\midrule
+NFR-REC-001 & Backup policy & The deployment shall define a documented backup procedure for the clinical database before production-like use. \\
+NFR-REC-002 & Recovery verification & At least one restoration procedure shall be tested before the MVP is considered operationally ready. \\
+NFR-REC-003 & Recovery documentation & Backup location, retention assumptions, restoration steps, and responsible operational role shall be documented for the target deployment. \\
+\bottomrule
+\end{longtable}
 
 \section{Open Questions}
-
 \begin{itemize}[leftmargin=*]
     \item Which patient fields are mandatory in the target clinical setting?
     \item Which clinical documentation must be structured versus free text?
@@ -226,14 +325,14 @@ The final specification will define measurable requirements for security, privac
     \item Which staff roles may create, modify, or cancel appointments in the target setting?
     \item Which terminology and interoperability concepts should be represented in the MVP?
     \item What network-failure behavior is required in the target deployment environment?
+    \item What operating hours and maintenance window should be used when measuring availability?
+    \item What database backup frequency and retention period are appropriate for the target deployment?
 \end{itemize}
 
 \section{Traceability}
-
 The final SRS will link requirements to design decisions, implementation issues, tests, and release evidence. This is intended to make it possible to answer: \emph{why does this feature exist, where is it implemented, and how was it verified?}
 
 \section{References}
-
 References will be added as the research phase is completed. The research set includes established EMR platforms, WHO digital-health guidance, HL7 FHIR, and relevant terminology/interoperability standards.
 
 \end{document}
