@@ -4,13 +4,13 @@
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{hyperref}
-\usepackage{graphicx}
 \usepackage{enumitem}
 \usepackage{titlesec}
+\usepackage{array}
 
 \title{Software Requirements Specification\\[0.4em]\large Open Clinical Record}
 \author{Open Clinical Record Internship Project}
-\date{Draft --- Requirements Discovery Phase}
+\date{Requirements Baseline Draft --- September 2026}
 
 \begin{document}
 
@@ -20,104 +20,180 @@
 
 \section{Document Status}
 
-This document is a working draft. Requirements will be baselined after the current discovery and clinical validation activities are completed.
+This document defines the first complete Software Requirements Specification (SRS) draft for the Open Clinical Record internship project. It consolidates the current project scope, clinical workflow discovery, research findings, preliminary clinical validation, functional requirements, non-functional requirements, business rules, constraints, and verification expectations.
 
-\begin{longtable}{p{0.25\textwidth}p{0.65\textwidth}}
+The document is intended to provide a traceable foundation for architecture and data-model decisions. Requirements may still be refined after mentor and stakeholder review; such changes should be recorded rather than silently changing the baseline.
+
+\begin{longtable}{p{0.28\textwidth}p{0.62\textwidth}}
 \toprule
-Version & 0.3 --- non-functional requirements draft \\
-Status & Work in progress \\
+Item & Value \\
+\midrule
+Version & 1.0 --- first complete SRS draft \\
+Status & Draft for review and baseline \\
 Product & Open Clinical Record \\
-Primary scope & Patient chart, medical records/reports, appointments \\
-Validation note & One preliminary clinician response received; additional validation remains desirable \\
+Product type & Extensible Electronic Medical Record (EMR) platform \\
+Primary scope & Patient chart, medical records/reports, appointments and basic encounter workflow \\
+Validation evidence & One preliminary Doctor/Clinician survey response; further validation remains desirable \\
+Next lifecycle stage & Architecture and data-model design after requirements review \\
 \bottomrule
 \end{longtable}
 
 \section{Introduction}
 
-Open Clinical Record is an extensible Electronic Medical Record (EMR) platform. The internship MVP focuses on three connected workflows: managing the patient chart, documenting medical records and reports, and managing appointments through the basic visit/consultation flow.
+Open Clinical Record is an extensible Electronic Medical Record (EMR) platform intended to provide a clear and maintainable foundation for common clinical workflows. The internship MVP deliberately focuses on three connected areas: the patient chart, medical records and reports, and appointment/visit management.
 
-The system is being designed as a foundation for future clinical modules rather than as a complete hospital information system.
+The system is not intended to be a complete hospital information system in the first release. The requirements therefore prioritize a coherent clinical workflow, reliable record handling, role-based access, and a design that can be expanded later without unnecessarily coupling future modules to the MVP.
+
+\subsection{Purpose}
+
+The purpose of this SRS is to define what the MVP shall do, the quality constraints it shall satisfy, and the rules that govern important clinical behavior. The SRS also provides a traceability basis between discovery findings, requirements, architecture, data design, and verification.
+
+\subsection{Definitions}
+
+\begin{longtable}{p{0.22\textwidth}p{0.68\textwidth}}
+\toprule
+Term & Definition \\
+\midrule
+EMR & Electronic Medical Record; a digital record of a patient's clinical information and care history. \\
+Patient chart & The longitudinal clinical context for a patient, including demographics, status, relevant history, visits, and clinical information. \\
+Appointment & A scheduled interaction between a patient and a provider/service at a specified time. \\
+Encounter & The clinical interaction in which assessment, examination, diagnosis, treatment, and related documentation are recorded. \\
+Clinical document & A medical report, clinical note, or other record intended to document care. \\
+Finalized document & A clinical document whose content has been completed and protected from ordinary editing. \\
+Amendment & An authorized correction or addition to a finalized clinical document that preserves the original content and records the change. \\
+Walk-in & A patient interaction that begins without a previously scheduled appointment. \\
+RBAC & Role-Based Access Control, in which access is governed by assigned roles and permissions. \\
+\bottomrule
+\end{longtable}
 
 \section{Product Vision}
 
-The product should make the common clinical workflow understandable and reliable:
+The product should make the common clinical workflow understandable, connected, and reliable:
 
 \begin{center}
 Patient $\rightarrow$ Appointment $\rightarrow$ Visit/Encounter $\rightarrow$ Clinical Documentation $\rightarrow$ Longitudinal Patient Record
 \end{center}
 
-The first release should stay deliberately small while avoiding decisions that make later expansion unnecessarily difficult.
+The patient chart is the main clinical context. Appointments and encounters should connect to the patient, and clinical documentation should remain linked to the appropriate encounter and patient throughout its lifecycle.
+
+The first release should remain deliberately small while avoiding architectural choices that make later clinical expansion unnecessarily difficult.
 
 \section{Scope}
 
 \subsection{In Scope}
 \begin{itemize}[leftmargin=*]
-    \item Patient registration, search, profile, and clinical summary.
-    \item Relevant patient history, allergies, alerts, medications, and status.
-    \item Deceased status and associated lifecycle handling.
-    \item Appointment creation and management, including cancellation and rescheduling history.
-    \item Basic check-in and visit/encounter linkage.
-    \item Clinical notes, diagnoses, examination findings, treatment, and prescriptions where applicable to the MVP.
-    \item Medical report generation and finalized clinical documentation.
+    \item Patient registration, unique identification, search, profile, and clinical summary.
+    \item Relevant patient history, allergies, medications, vitals, alerts, and current status.
+    \item Deceased-patient status and associated lifecycle handling.
+    \item Appointment creation, viewing, cancellation, rescheduling, history preservation, and check-in.
+    \item Flexible walk-in handling.
+    \item Basic appointment-to-encounter linkage.
+    \item Encounter documentation including complaint, vitals, history, examination, diagnosis, treatment, prescription, and clinical notes.
+    \item Medical report generation and clinical-document finalization.
     \item Controlled amendment of finalized clinical documentation without silently overwriting the original.
-    \item Authentication, authorization, validation, audit logging, and error handling.
+    \item Authentication, role-based authorization, audit logging, validation, and understandable error handling.
 \end{itemize}
 
-\subsection{Deferred / Future}
-Laboratory, pharmacy, billing, radiology, insurance, patient portal, messaging integrations, AI-assisted features, mobile access, and production-grade external interoperability are candidates for later phases unless discovery changes the scope.
+\subsection{Deferred / Future Scope}
+The following are outside the MVP unless later discovery explicitly changes the scope:
+\begin{itemize}[leftmargin=*]
+    \item Laboratory information and laboratory-result workflows.
+    \item Pharmacy and medication-dispensing workflows.
+    \item Billing, insurance, and payment processing.
+    \item Radiology and imaging workflows.
+    \item Patient portal and patient-facing messaging.
+    \item AI-assisted diagnosis, summarization, or clinical decision support.
+    \item Dedicated mobile applications.
+    \item Production-grade external interoperability integrations.
+\end{itemize}
 
-\section{Requirements Principles}
-
-Requirements must be supported by research, clinical workflow understanding, or explicit stakeholder decisions. A feature observed in another EMR is not automatically a requirement for this product.
+AI-assisted capabilities and mobile access were suggested during preliminary clinical feedback and are therefore retained as future opportunities rather than MVP requirements.
 
 \section{Stakeholders and User Roles}
 
-The MVP is expected to support role-based access. Exact role names and permissions may be refined during stakeholder validation.
+The MVP uses exactly three primary application roles. Permissions should be implemented through role-based authorization so that the system can refine individual permissions without creating unnecessary new user roles.
 
 \begin{longtable}{p{0.22\textwidth}p{0.68\textwidth}}
 \toprule
 Role & Primary responsibilities \\
 \midrule
-Administrator & User/account administration, configuration, and authorized oversight \\
-Clinical staff & Patient registration support, appointment/check-in operations, and other non-clinical workflow tasks according to assigned permissions \\
-Doctor/Clinician & Clinical assessment, notes, diagnosis, treatment, prescriptions, patient status updates, and medical reports according to permissions \\
+Administrator & User/account administration, system configuration, access management, and authorized oversight/audit activities. \\
+Clinical Staff & Patient registration and search support, appointment operations, check-in, vitals, and other permitted non-provider clinical workflow tasks. \\
+Doctor/Clinician & Clinical assessment, history and examination documentation, diagnosis, treatment, prescriptions, clinical notes, medical reports, and authorized patient-status updates. \\
 \bottomrule
 \end{longtable}
 
+\subsection{Role Boundaries}
+
+Clinical actions shall not be granted merely because a user can access a patient record. In particular, diagnosis, treatment, clinical notes, medical reports, and clinical-status changes shall require appropriate clinical authorization. Appointment scheduling permissions may be assigned according to configured role permissions rather than being hard-coded to a separate receptionist role.
+
+\section{Clinical Workflow}
+
+The MVP follows an end-to-end workflow rather than treating patient, appointment, and medical-record features as unrelated CRUD modules.
+
+\begin{enumerate}[leftmargin=*]
+    \item An authorized user registers or searches for the patient.
+    \item The patient's chart provides the clinical context, including demographics, status, relevant history, allergies, medications, alerts, and previous visits.
+    \item An authorized user creates or views an appointment when the patient is scheduled.
+    \item The patient is checked in, or a supported walk-in workflow is initiated when no appointment exists.
+    \item A visit/encounter is created or accessed and linked to the patient and, when applicable, the appointment.
+    \item Clinical staff may record permitted preliminary clinical information such as vitals.
+    \item The Doctor/Clinician records the clinical assessment, examination, diagnosis, treatment, prescription, and clinical notes as applicable.
+    \item A medical report or other clinical document may be generated and finalized.
+    \item Once finalized, the document is protected from ordinary editing. An authorized correction is represented through an amendment that preserves the original.
+    \item The resulting encounter and documents remain part of the patient's longitudinal record.
+\end{enumerate}
+
+Walk-in handling shall remain flexible because the appropriate path may depend on patient condition and urgency. The system shall not impose one universal walk-in process that assumes every walk-in should first become a normal scheduled appointment.
+
+\section{Requirements Principles}
+
+The requirements follow these principles:
+\begin{itemize}[leftmargin=*]
+    \item Clinical workflow takes precedence over isolated CRUD operations.
+    \item Patient and encounter linkage is a core integrity requirement.
+    \item Historical clinical information should not be silently destroyed.
+    \item Finalized clinical documents require stronger integrity controls than ordinary editable data.
+    \item Access shall follow least privilege and role-based authorization.
+    \item Requirements shall be traceable to research, discovery, validation, or explicit project decisions.
+    \item Features observed in another EMR are not automatically requirements for Open Clinical Record.
+    \item Future interoperability should be considered in the data and API boundaries without expanding the MVP into a full interoperability implementation.
+\end{itemize}
+
 \section{Functional Requirements}
 
-The following requirements define the current MVP behavior. ``Shall'' indicates a required system behavior. Requirements may be revised during validation and will be baselined in a later version.
+The following requirements define the current MVP behavior. The word ``shall'' indicates a mandatory system behavior.
 
 \subsection{Patient Management}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.14\textwidth}p{0.24\textwidth}p{0.52\textwidth}}
 \toprule
 ID & Requirement & Description \\
 \midrule
-FR-PAT-001 & Register patient & The system shall allow an authorized user to create a patient record using the required demographic and administrative fields. \\
+FR-PAT-001 & Register patient & The system shall allow an authorized user to create a patient record using required demographic and administrative fields. \\
 FR-PAT-002 & Assign patient identifier & The system shall assign or record a unique patient identifier for each patient record. \\
 FR-PAT-003 & Search patient & The system shall allow authorized users to search for patients using supported identifying fields. \\
-FR-PAT-004 & View patient profile & The system shall display a patient's demographic information and current status to authorized users. \\
+FR-PAT-004 & View patient profile & The system shall display patient demographics and current status to authorized users. \\
 FR-PAT-005 & View clinical summary & The system shall provide an overview of relevant conditions, previous diagnoses, allergies, medications, vitals, and prior visits where data exists. \\
-FR-PAT-006 & Record allergies & The system shall allow authorized users with appropriate permission to record and update patient allergies. \\
-FR-PAT-007 & Record medications & The system shall allow authorized users with appropriate permission to record relevant medication information. \\
-FR-PAT-008 & Display alerts & The system shall surface clinically relevant alerts, including allergies, critical conditions, medications/adverse reactions, follow-up items, and precautions when such information has been recorded. \\
+FR-PAT-006 & Record allergies & The system shall allow users with appropriate permission to record and update patient allergies. \\
+FR-PAT-007 & Record medications & The system shall allow users with appropriate permission to record relevant medication information. \\
+FR-PAT-008 & Display alerts & The system shall surface clinically relevant alerts, including allergies, critical conditions, medications/adverse reactions, follow-up items, and precautions when recorded. \\
 FR-PAT-009 & Record patient status & The system shall maintain the patient's current status and restrict status changes according to role permissions. \\
-FR-PAT-010 & Mark deceased patient & The system shall allow an authorized clinical user to record a deceased status together with the date of death and required supporting information. \\
+FR-PAT-010 & Mark deceased patient & The system shall allow an authorized clinical user to record deceased status together with the date of death and required supporting information. \\
 FR-PAT-011 & Handle deceased patient & Once a patient is recorded as deceased, the system shall prevent inappropriate future appointment activity and flag or cancel affected future appointments according to configured policy. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Appointment Management}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.14\textwidth}p{0.24\textwidth}p{0.52\textwidth}}
 \toprule
 ID & Requirement & Description \\
 \midrule
-FR-APT-001 & Create appointment & The system shall allow an authorized user to create an appointment for an eligible patient with the required date, time, provider/service, and appointment details. \\
+FR-APT-001 & Create appointment & The system shall allow an authorized user to create an appointment for an eligible patient with required date, time, provider/service, and appointment details. \\
 FR-APT-002 & View appointments & The system shall allow authorized users to view scheduled appointments according to their permissions. \\
 FR-APT-003 & Reschedule appointment & The system shall allow an authorized user to reschedule an eligible appointment and shall preserve the fact that it was rescheduled. \\
 FR-APT-004 & Cancel appointment & The system shall allow an authorized user to cancel an eligible appointment without deleting its historical record. \\
 FR-APT-005 & Preserve appointment history & The system shall retain cancelled and rescheduled appointment records with an appropriate status and relevant history. \\
-FR-APT-006 & Check in patient & The system shall allow authorized staff to record patient check-in for an eligible appointment or supported walk-in workflow. \\
+FR-APT-006 & Check in patient & The system shall allow authorized clinical staff to record patient check-in for an eligible appointment or supported walk-in workflow. \\
 FR-APT-007 & Support walk-in workflow & The system shall support walk-in registration/check-in without assuming that every walk-in follows the same scheduling path. \\
 FR-APT-008 & Link appointment to encounter & The system shall associate a completed check-in/visit with the corresponding appointment when an appointment exists. \\
 FR-APT-009 & Prevent deceased-patient booking & The system shall prevent creation of inappropriate future appointments for patients recorded as deceased. \\
@@ -125,40 +201,40 @@ FR-APT-009 & Prevent deceased-patient booking & The system shall prevent creatio
 \end{longtable}
 
 \subsection{Encounter and Clinical Documentation}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.14\textwidth}p{0.24\textwidth}p{0.52\textwidth}}
 \toprule
 ID & Requirement & Description \\
 \midrule
 FR-ENC-001 & Start encounter & The system shall allow an authorized clinical user to start or access an encounter associated with a visit. \\
-FR-ENC-002 & Record chief complaint & The system shall allow the clinician to record the patient's presenting complaint/reason for visit. \\
-FR-ENC-003 & Record vitals & The system shall allow authorized clinical staff to record relevant vital signs for an encounter. \\
-FR-ENC-004 & Record history & The system shall allow the clinician to document relevant medical/history information for the encounter. \\
-FR-ENC-005 & Record examination & The system shall allow the clinician to document examination findings. \\
-FR-ENC-006 & Record diagnosis & The system shall allow an authorized clinician to record the encounter diagnosis or assessment. \\
-FR-ENC-007 & Record treatment & The system shall allow an authorized clinician to document the treatment or care plan. \\
-FR-ENC-008 & Record prescription & The system shall allow an authorized clinician to record prescription information when applicable to the encounter. \\
-FR-ENC-009 & Create clinical note & The system shall allow an authorized clinician to create and save clinical notes associated with the encounter. \\
+FR-ENC-002 & Record chief complaint & The system shall allow the Doctor/Clinician to record the patient's presenting complaint or reason for visit. \\
+FR-ENC-003 & Record vitals & The system shall allow authorized Clinical Staff to record relevant vital signs for an encounter. \\
+FR-ENC-004 & Record history & The system shall allow the Doctor/Clinician to document relevant medical/history information for the encounter. \\
+FR-ENC-005 & Record examination & The system shall allow the Doctor/Clinician to document examination findings. \\
+FR-ENC-006 & Record diagnosis & The system shall allow an authorized Doctor/Clinician to record the encounter diagnosis or assessment. \\
+FR-ENC-007 & Record treatment & The system shall allow an authorized Doctor/Clinician to document treatment or the care plan. \\
+FR-ENC-008 & Record prescription & The system shall allow an authorized Doctor/Clinician to record prescription information when applicable. \\
+FR-ENC-009 & Create clinical note & The system shall allow an authorized Doctor/Clinician to create and save clinical notes associated with the encounter. \\
 FR-ENC-010 & Maintain encounter linkage & The system shall associate clinical documentation with the correct patient and encounter. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Medical Reports and Document Integrity}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.14\textwidth}p{0.24\textwidth}p{0.52\textwidth}}
 \toprule
 ID & Requirement & Description \\
 \midrule
-FR-REC-001 & Generate medical report & The system shall allow an authorized clinician to generate a medical report from relevant patient and encounter information. \\
-FR-REC-002 & Finalize clinical document & The system shall allow an authorized clinician to finalize a medical report or other clinical document. \\
+FR-REC-001 & Generate medical report & The system shall allow an authorized Doctor/Clinician to generate a medical report from relevant patient and encounter information. \\
+FR-REC-002 & Finalize clinical document & The system shall allow an authorized Doctor/Clinician to finalize a medical report or other clinical document. \\
 FR-REC-003 & Restrict finalized editing & The system shall prevent ordinary editing of a finalized clinical document. \\
-FR-REC-004 & Amend finalized document & The system shall allow an authorized clinician to create a correction/amendment to a finalized document when permitted. \\
+FR-REC-004 & Amend finalized document & The system shall allow an authorized Doctor/Clinician to create a correction/amendment to a finalized document when permitted. \\
 FR-REC-005 & Preserve original document & The system shall retain the original finalized content when an amendment is made and shall not silently overwrite it. \\
-FR-REC-006 & Record amendment history & The system shall retain the amendment/correction history, including the responsible user and relevant date/time information. \\
-FR-REC-007 & View document status & The system shall clearly indicate whether a clinical document is draft, finalized, amended, or otherwise configured by the system. \\
+FR-REC-006 & Record amendment history & The system shall retain amendment/correction history, including the responsible user and relevant date/time information. \\
+FR-REC-007 & View document status & The system shall clearly indicate whether a clinical document is draft, finalized, amended, or another configured lifecycle state. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Authentication, Authorization, and Auditability}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.14\textwidth}p{0.24\textwidth}p{0.52\textwidth}}
 \toprule
 ID & Requirement & Description \\
 \midrule
@@ -171,19 +247,20 @@ FR-SEC-005 & Protect unauthorized access & The system shall deny access to prote
 \end{longtable}
 
 \subsection{Validation and Error Handling}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.14\textwidth}p{0.24\textwidth}p{0.52\textwidth}}
 \toprule
 ID & Requirement & Description \\
 \midrule
 FR-VAL-001 & Validate required data & The system shall validate required fields and applicable business rules before saving or finalizing records. \\
 FR-VAL-002 & Prevent invalid appointments & The system shall reject appointment data that violates configured scheduling or patient-status rules. \\
-FR-VAL-003 & Report failures clearly & The system shall present understandable error feedback when an operation fails. \\
+FR-VAL-003 & Report failures clearly & The system shall present understandable error feedback when an operation fails without exposing unnecessary sensitive information. \\
 FR-VAL-004 & Preserve data on failure & The system shall avoid partial or silent loss of clinical data when a save or network operation fails, to the extent supported by the architecture. \\
 \bottomrule
 \end{longtable}
 
 \section{Business Rules}
-\begin{longtable}{p{0.18\textwidth}p{0.72\textwidth}}
+
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
 ID & Rule \\
 \midrule
@@ -192,147 +269,262 @@ BR-002 & Rescheduled appointments shall retain sufficient history to distinguish
 BR-003 & A finalized medical report shall not be silently overwritten. Corrections shall be represented as amendments/corrections with traceable history. \\
 BR-004 & Diagnosis, treatment, clinical notes, medical reports, and patient clinical-status changes shall be protected by role-based authorization. \\
 BR-005 & Patient alerts shall remain visible where clinically relevant and shall include recorded allergies and other configured high-priority risks. \\
-BR-006 & A deceased patient shall not receive inappropriate new future appointments; affected future appointments shall be handled according to the configured policy. \\
+BR-006 & A deceased patient shall not receive inappropriate new future appointments; affected future appointments shall be handled according to configured policy. \\
 BR-007 & Walk-in handling shall remain flexible because the appropriate workflow may depend on patient condition and urgency. \\
 BR-008 & Clinical information shall remain linked to the correct patient and encounter throughout its lifecycle. \\
 \bottomrule
 \end{longtable}
 
-\section{Clinical Validation Note}
-A preliminary survey response was received from a Doctor/Clinician. The response supports the importance of patient demographics, conditions, previous diagnoses, vitals, allergies, medications, visit history, role separation for clinical actions, preservation of cancelled/rescheduled appointments, amendment rather than silent replacement of finalized reports, clinical alerts, and deceased-patient handling. The respondent also identified network reliability as a practical concern and suggested AI-assisted capabilities and mobile access as future opportunities.
-
-This is preliminary evidence rather than statistical validation. The AI and mobile suggestions are therefore recorded as future enhancements rather than MVP requirements.
-
 \section{Non-Functional Requirements}
 
-The following quality requirements apply to the MVP. They are written so that they can be objectively checked where practical. Exact targets may be adjusted after deployment constraints and mentor review are confirmed.
-
 \subsection{Security and Privacy}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-SEC-001 & Authentication & All protected clinical functions shall require successful user authentication. \\
-NFR-SEC-002 & Authorization & Every protected clinical operation shall be checked against the authenticated user's role/permissions before execution. \\
-NFR-SEC-003 & Least privilege & Users shall receive only the permissions required for their assigned responsibilities; clinical permissions shall not be granted by default to non-clinical roles. \\
-NFR-SEC-004 & Session protection & The system shall terminate or invalidate inactive authenticated sessions according to a configured timeout policy. \\
-NFR-SEC-005 & Password protection & User passwords shall never be stored in plaintext and shall be stored using an accepted one-way password-hashing mechanism. \\
-NFR-SEC-006 & Privacy & Patient information shall only be exposed through authorized application functions and shall not be included in unnecessary error messages or logs. \\
+NFR-SEC-001 & All protected clinical functions shall require successful user authentication. \\
+NFR-SEC-002 & Every protected clinical operation shall be checked against the authenticated user's role/permissions before execution. \\
+NFR-SEC-003 & Users shall receive only the permissions required for their assigned responsibilities; clinical permissions shall not be granted by default to non-clinical roles. \\
+NFR-SEC-004 & The system shall terminate or invalidate inactive authenticated sessions according to a configured timeout policy. \\
+NFR-SEC-005 & User passwords shall never be stored in plaintext and shall be stored using an accepted one-way password-hashing mechanism. \\
+NFR-SEC-006 & Patient information shall only be exposed through authorized application functions and shall not be included in unnecessary error messages or logs. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Data Integrity and Clinical Record Safety}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-DAT-001 & Record integrity & Each clinical record shall remain associated with exactly the intended patient and, where applicable, encounter. \\
-NFR-DAT-002 & Transaction safety & A failed create/update operation shall not leave a partially committed clinical record. \\
-NFR-DAT-003 & Finalized record integrity & Finalized clinical documents shall remain unchanged unless an authorized amendment process is used. \\
-NFR-DAT-004 & Audit consistency & Audit events for sensitive clinical changes shall identify the acting user and date/time and shall correspond to the affected operation. \\
-NFR-DAT-005 & Required-data validation & The system shall validate mandatory fields and business constraints before committing affected records. \\
+NFR-DAT-001 & Each clinical record shall remain associated with exactly the intended patient and, where applicable, encounter. \\
+NFR-DAT-002 & A failed create/update operation shall not leave a partially committed clinical record. \\
+NFR-DAT-003 & Finalized clinical documents shall remain unchanged unless an authorized amendment process is used. \\
+NFR-DAT-004 & Audit events for sensitive clinical changes shall identify the acting user and date/time and shall correspond to the affected operation. \\
+NFR-DAT-005 & The system shall validate mandatory fields and business constraints before committing affected records. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Performance}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-PERF-001 & Common interaction response & Under normal MVP deployment conditions, common read operations such as patient search, patient profile retrieval, and appointment-list retrieval should return within 2 seconds for at least 95\% of requests. \\
-NFR-PERF-002 & Record save response & Under normal MVP deployment conditions, standard patient, appointment, and encounter save operations should complete within 3 seconds for at least 95\% of requests, excluding external service outages. \\
-NFR-PERF-003 & Concurrent use & The MVP should support at least 10 concurrent authenticated users without violating the response targets above. \\
+NFR-PERF-001 & Under normal MVP deployment conditions, common read operations such as patient search, patient profile retrieval, and appointment-list retrieval shall return within 2 seconds for at least 95\% of requests. \\
+NFR-PERF-002 & Under normal MVP deployment conditions, standard patient, appointment, and encounter save operations shall complete within 3 seconds for at least 95\% of requests, excluding external service outages. \\
+NFR-PERF-003 & The MVP shall support at least 10 concurrent authenticated users without violating the response targets above. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Reliability and Network Failure Handling}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-REL-001 & Failure feedback & When a network or server operation fails, the system shall clearly inform the user that the operation did not complete. \\
-NFR-REL-002 & No silent loss & A network interruption shall not be reported as a successful clinical-record save. \\
-NFR-REL-003 & Safe retry & Retry behavior shall not unintentionally create duplicate patients, appointments, encounters, or clinical documents. \\
-NFR-REL-004 & Availability target & For a connected MVP deployment, the application should achieve at least 99\% availability during its agreed operating period, excluding planned maintenance. \\
+NFR-REL-001 & The system shall detect failed save or network operations and shall provide clear feedback rather than reporting a failed operation as successful. \\
+NFR-REL-002 & The system shall avoid duplicate creation when a retry is performed after an uncertain network result, where the architecture supports idempotent operation handling. \\
+NFR-REL-003 & The system shall preserve successfully committed clinical data when a subsequent network or application operation fails. \\
+NFR-REL-004 & Recovery procedures shall be documented for service or database interruption before production deployment. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Auditability}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-AUD-001 & Sensitive-event logging & The system shall audit creation, modification, finalization, amendment, cancellation, status changes, and other configured sensitive clinical actions. \\
-NFR-AUD-002 & Audit identity & Each audit event shall record the responsible authenticated user and event date/time. \\
-NFR-AUD-003 & Audit protection & Audit records shall not be editable through ordinary clinical workflows. \\
-NFR-AUD-004 & Traceability & The system shall provide enough information to associate a sensitive audit event with the affected record or operation. \\
+NFR-AUD-001 & Sensitive patient-record and clinical-document actions shall generate auditable events. \\
+NFR-AUD-002 & Audit records shall contain sufficient information to identify the acting user, affected record or operation, action, and date/time. \\
+NFR-AUD-003 & Audit information shall be protected against unauthorized modification or deletion through application permissions. \\
 \bottomrule
 \end{longtable}
 
-\subsection{Usability and Accessibility}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\subsection{Usability}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-USE-001 & Consistent workflow & Patient, appointment, encounter, and document screens shall use consistent terminology, navigation, status labels, and actions. \\
-NFR-USE-002 & Clinical visibility & High-priority patient alerts and status information shall be visually distinguishable from ordinary demographic information. \\
-NFR-USE-003 & Error usability & Validation and error messages shall identify the affected action or field and explain what the user can do next where practical. \\
-NFR-USE-004 & Accessibility baseline & Core MVP workflows shall use readable text, keyboard-accessible controls where supported by the platform, clear labels, and status information that is not conveyed by color alone. \\
+NFR-USE-001 & The system shall present patient identity and key clinical alerts clearly enough to reduce the risk of selecting or documenting against the wrong patient. \\
+NFR-USE-002 & Appointment status shall clearly distinguish scheduled, cancelled, rescheduled, checked-in, and other configured states. \\
+NFR-USE-003 & Finalized and amended clinical documents shall have visually distinguishable status indicators. \\
+NFR-USE-004 & Validation and error messages shall identify the affected action or field and provide actionable guidance where practical. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Maintainability and Extensibility}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-MNT-001 & Modular structure & The implementation shall separate major clinical concerns such as patient, appointment, encounter, documentation, authorization, and persistence so that one area can be changed without unnecessary changes to unrelated areas. \\
-NFR-MNT-002 & Testability & Critical business rules and authorization behavior shall be testable independently from the user interface where practical. \\
-NFR-MNT-003 & Documentation & Major modules, data relationships, configuration requirements, and externally visible APIs shall be documented sufficiently for another project contributor to understand and maintain them. \\
-NFR-MNT-004 & Configuration & Environment-specific settings such as database connection details, session policies, and deployment configuration shall not be hard-coded into clinical business logic. \\
+NFR-MNT-001 & The implementation shall keep clinical domain rules separate from presentation concerns so that future clients or interfaces can reuse core behavior. \\
+NFR-MNT-002 & The architecture shall provide clear boundaries between patient, appointment, encounter, clinical-document, authorization, and audit concerns. \\
+NFR-MNT-003 & Requirements and architecture decisions shall remain documented so that significant design changes can be traced back to project evidence. \\
+NFR-MNT-004 & The system shall be designed so that future clinical modules can be added without changing the fundamental identity and linkage of existing patient and encounter records. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Interoperability Readiness}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-INT-001 & Stable identifiers & Core patient, appointment, encounter, and clinical-document entities shall use stable internal identifiers suitable for future mapping to external standards. \\
-NFR-INT-002 & Separation of clinical data & Core clinical concepts shall be represented separately enough to support later mapping to interoperability standards without requiring a complete redesign of the MVP. \\
-NFR-INT-003 & FHIR readiness & The MVP shall not require full external FHIR exchange, but its architecture and data model should avoid unnecessary barriers to a future standards-based API. \\
+NFR-INT-001 & The internal data model shall use stable identifiers for patients, appointments, encounters, and clinical documents. \\
+NFR-INT-002 & Clinical data shall be represented with explicit domain concepts and relationships rather than relying solely on unstructured text fields. \\
+NFR-INT-003 & API and domain boundaries shall avoid unnecessary coupling to a single user interface so that future standards-based interoperability can be introduced. \\
+NFR-INT-004 & The MVP shall remain FHIR-ready in its conceptual boundaries without requiring full FHIR implementation as part of the initial release. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Backup and Recovery}
-\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.50\textwidth}}
+\begin{longtable}{p{0.15\textwidth}p{0.75\textwidth}}
 \toprule
-ID & Requirement & Description \\
+ID & Requirement \\
 \midrule
-NFR-REC-001 & Backup policy & The deployment shall define a documented backup procedure for the clinical database before production-like use. \\
-NFR-REC-002 & Recovery verification & At least one restoration procedure shall be tested before the MVP is considered operationally ready. \\
-NFR-REC-003 & Recovery documentation & Backup location, retention assumptions, restoration steps, and responsible operational role shall be documented for the target deployment. \\
+NFR-REC-001 & The deployment shall provide a documented method for backing up persistent clinical data. \\
+NFR-REC-002 & Backup procedures shall be tested before production use so that backups are not assumed to be recoverable without verification. \\
+NFR-REC-003 & Recovery procedures shall preserve patient, encounter, appointment, clinical-document, and audit relationships. \\
+NFR-REC-004 & Backup copies shall be protected against unauthorized access because they contain sensitive patient information. \\
 \bottomrule
 \end{longtable}
 
-\section{Open Questions}
+\section{Data Requirements}
+
+The detailed database schema is intentionally deferred to the data-design stage. The following logical entities and relationships are requirements-level constraints for that design.
+
+\begin{longtable}{p{0.20\textwidth}p{0.70\textwidth}}
+\toprule
+Entity & Requirements-level responsibility \\
+\midrule
+Patient & Unique patient identity, demographics, status, and longitudinal linkage to clinical information. \\
+Patient Alert & Clinically relevant warnings such as allergies, critical conditions, adverse reactions, follow-up items, and precautions. \\
+Medication Information & Relevant current or historical medication information associated with the patient and/or encounter as appropriate. \\
+Appointment & Scheduled patient interaction, provider/service, time, status, and historical scheduling information. \\
+Encounter & Clinical visit context linked to a patient and optionally to an appointment. \\
+Clinical Note & Clinician-authored documentation associated with an encounter. \\
+Medical Report / Clinical Document & Report or other clinical document with lifecycle status and finalization/amendment behavior. \\
+Document Amendment & Authorized correction associated with an original finalized document while preserving the original. \\
+User & Authenticated application account with an assigned role and permissions. \\
+Audit Event & Record of significant security, patient-record, and clinical-document actions. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Core Relationship Constraints}
 \begin{itemize}[leftmargin=*]
-    \item Which patient fields are mandatory in the target clinical setting?
-    \item Which clinical documentation must be structured versus free text?
-    \item What is the exact signing/finalization workflow for medical reports?
-    \item Who may mark a patient as deceased, and what information must be captured?
-    \item Should future appointments be automatically cancelled or merely blocked/flagged after deceased status?
-    \item Which staff roles may create, modify, or cancel appointments in the target setting?
-    \item Which terminology and interoperability concepts should be represented in the MVP?
-    \item What network-failure behavior is required in the target deployment environment?
-    \item What operating hours and maintenance window should be used when measuring availability?
-    \item What database backup frequency and retention period are appropriate for the target deployment?
+    \item Each patient shall have a unique identifier.
+    \item Each encounter shall identify the patient to whom it belongs.
+    \item An appointment may be linked to an encounter when the scheduled interaction results in a visit.
+    \item A walk-in encounter may exist without a prior appointment.
+    \item Clinical documents shall identify the patient and, where applicable, the encounter from which they originated.
+    \item An amendment shall identify the finalized document it corrects and shall not replace the original content.
+    \item Sensitive actions shall be attributable to an authenticated user through audit information.
 \end{itemize}
 
-\section{Traceability}
-The final SRS will link requirements to design decisions, implementation issues, tests, and release evidence. This is intended to make it possible to answer: \emph{why does this feature exist, where is it implemented, and how was it verified?}
+\section{Constraints and Assumptions}
 
-\section{References}
-References will be added as the research phase is completed. The research set includes established EMR platforms, WHO digital-health guidance, HL7 FHIR, and relevant terminology/interoperability standards.
+\subsection{Constraints}
+\begin{itemize}[leftmargin=*]
+    \item The internship MVP has a deliberately limited scope and shall not attempt to implement every EMR module.
+    \item Development and deployment choices should favor maintainable and accessible technologies suitable for the internship environment.
+    \item The system must treat patient information as sensitive data and apply appropriate access controls.
+    \item External service or network outages cannot be assumed to be absent; failure handling is therefore part of the requirements.
+\end{itemize}
+
+\subsection{Assumptions}
+\begin{itemize}[leftmargin=*]
+    \item A deployment environment will provide persistent storage for application data.
+    \item Authorized users will have accounts associated with one of the three MVP roles.
+    \item Exact clinical terminology, mandatory fields, and operational policies may require additional validation with clinical stakeholders.
+    \item The MVP will not independently provide clinical decision-making; it records and presents information entered by authorized users.
+\end{itemize}
+
+\section{Clinical Validation Evidence}
+
+A preliminary survey response was received from a Doctor/Clinician. The response supports the inclusion of patient demographics, conditions, previous diagnoses, vitals, allergies, medications, previous visits, configurable appointment permissions, preservation of cancelled and rescheduled appointments, core encounter information, clinician-controlled diagnosis/treatment/notes/reports/status changes, amendment rather than silent replacement of finalized reports, clinical alerts, and deceased-patient handling.
+
+The respondent also identified network reliability as a practical concern. AI-assisted capabilities and mobile access were suggested as future opportunities rather than immediate MVP requirements.
+
+This evidence is preliminary and is not treated as statistical validation. Additional clinician or stakeholder review should be used to confirm workflow details and resolve remaining policy decisions before a final production baseline.
+
+\section{Acceptance and Verification Strategy}
+
+Each functional requirement should be verified through an appropriate combination of inspection, unit testing, integration testing, workflow testing, and stakeholder review.
+
+\begin{longtable}{p{0.24\textwidth}p{0.66\textwidth}}
+\toprule
+Area & Verification approach \\
+\midrule
+Patient management & Test patient creation, unique identification, search, profile, summary, alerts, status, and deceased lifecycle behavior. \\
+Appointments & Test creation, viewing, cancellation, rescheduling, history preservation, check-in, walk-in handling, encounter linkage, and deceased-patient restrictions. \\
+Encounter & Test creation and linkage plus recording of complaint, vitals, history, examination, diagnosis, treatment, prescription, and notes. \\
+Clinical documents & Test generation, finalization, edit restriction, amendment, original preservation, amendment history, and status display. \\
+Security & Test authentication, role permissions, denial of unauthorized actions, session behavior, password handling, and sensitive-action audit events. \\
+Data integrity & Test patient/encounter linkage, transaction behavior, failed saves, finalized-document preservation, and validation constraints. \\
+Performance & Measure representative patient, appointment, and encounter operations under the defined MVP load assumptions. \\
+Reliability & Simulate failed network/save operations and verify clear feedback, no false success, and no unintended data loss or duplication. \\
+Usability & Conduct scenario-based review of patient identification, alerts, appointment status, document status, and validation feedback. \\
+\bottomrule
+\end{longtable}
+
+\section{Traceability}
+
+The requirements are supported by the dedicated traceability matrix at:
+
+\begin{center}
+\url{https://github.com/elan-thinks/open-clinical-record/blob/main/docs/03-requirements/traceability-matrix.md}
+\end{center}
+
+The matrix connects clinical discovery and workflow use cases to functional requirements, business rules, non-functional requirements, and verification expectations. It also records role coverage and evidence sources.
+
+The principal use cases are:
+\begin{itemize}[leftmargin=*]
+    \item UC-01 Patient registration and identification
+    \item UC-02 Patient search, chart, and clinical summary
+    \item UC-03 Appointment scheduling and management
+    \item UC-04 Check-in and walk-in handling
+    \item UC-05 Clinical encounter and assessment
+    \item UC-06 Clinical documentation and reporting
+    \item UC-07 Finalization, correction, and amendment of clinical documents
+    \item UC-08 Patient status and deceased-patient lifecycle
+    \item UC-09 Authentication, authorization, and audit
+\end{itemize}
+
+\section{Open Decisions for Review}
+
+The following items should be confirmed during mentor and stakeholder review rather than hidden as assumptions:
+\begin{itemize}[leftmargin=*]
+    \item Exact required demographic and identification fields for patient registration.
+    \item Exact appointment status values and rescheduling-history representation.
+    \item Exact policy for future appointments when a patient is marked deceased, including whether they are automatically cancelled or flagged for authorized review.
+    \item Exact clinical-document amendment permissions and required amendment reason fields.
+    \item Exact session-timeout value and deployment-specific performance environment.
+    \item Backup frequency, retention, and recovery-time expectations for the eventual deployment.
+    \item Final terminology and clinical-field validation with additional clinical stakeholders.
+\end{itemize}
+
+These decisions do not prevent architecture work; they should be represented as explicit configurable or reviewable decisions where appropriate.
+
+\section{Future Expansion Considerations}
+
+The MVP should leave clean boundaries for future modules without implementing them prematurely. Likely expansion areas include laboratory, pharmacy, billing, radiology, patient-facing access, mobile access, AI-assisted functionality, and standards-based interoperability.
+
+Future functionality should build on the existing patient, appointment, encounter, clinical-document, authorization, and audit concepts rather than introducing parallel representations of the same clinical facts.
+
+\section{References and Project Evidence}
+
+The SRS is based primarily on the project's internal research and discovery documents:
+\begin{itemize}[leftmargin=*]
+    \item Clinical workflow discovery: \texttt{docs/02-discovery/clinical-workflow.md}
+    \item Patient-chart research: \texttt{docs/01-research/patient-chart-research.md}
+    \item Appointment-scheduling research: \texttt{docs/01-research/appointment-scheduling-research.md}
+    \item Clinical-documentation research: \texttt{docs/01-research/clinical-documentation-research.md}
+    \item Research log: \texttt{docs/01-research/research-log.md}
+    \item Requirements traceability matrix: \texttt{docs/03-requirements/traceability-matrix.md}
+    \item Architecture decision record: \texttt{docs/04-architecture/adr/0001-record-architectural-decisions.md}
+\end{itemize}
+
+External standards and implementation references should be incorporated into the architecture and interoperability documentation as those decisions are made. The SRS intentionally avoids treating external EMR feature inventories as requirements unless supported by project evidence.
+
+\section{Requirement Baseline Statement}
+
+This document represents the first complete requirements draft for the Open Clinical Record MVP. It establishes a coherent and traceable baseline for moving into architecture and data-model design while clearly identifying remaining decisions and the limits of the preliminary clinical validation.
 
 \end{document}
