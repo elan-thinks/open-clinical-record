@@ -170,10 +170,10 @@ Recovery testing shall confirm that representative patient, chart, appointment, 
 
 The following are **not MVP non-functional commitments**: FHIR implementation, external EMR exchange, enterprise-scale interoperability, advanced analytics, AI clinical decision support, patient portal/mobile functionality, and enterprise scheduling/resource optimization.
 
-International healthcare standards are not required for this internship MVP, following mentor guidance.
+International healthcare standards are not required for this internship MVP.
 
 ## 12. Validation Status
 
-These requirements are an engineering baseline aligned with the mentor-approved scope. Requirements involving clinical permissions, patient-status policy, audit coverage, retention, and recovery should be confirmed with the mentor or relevant clinical stakeholder before being treated as final.
+These requirements form the current engineering baseline for the MVP. Requirements involving clinical permissions, patient-status policy, audit coverage, retention, and recovery should be confirmed with the appropriate clinical stakeholder before being treated as final.
 
-The available clinician feedback is preliminary and qualitative; it is not treated as statistically representative clinical evidence.
+Available clinical feedback is preliminary and qualitative; it is not treated as statistically representative clinical evidence.
