@@ -1,231 +1,212 @@
 # Clinical Workflow Specification
 
 **Project:** Open Clinical Record  
-**Status:** Mentor-approved baseline; broader clinical validation pending  
-**Purpose:** Define the outpatient workflow that guides requirements and design for the MVP.
+**Status:** Mentor-approved MVP baseline; broader clinical validation pending  
+**Purpose:** Define the focused outpatient workflow that guides requirements and design for the internship MVP.
 
 ## 1. Purpose
 
-This document describes the end-to-end clinical workflow for the Open Clinical Record MVP. It connects patient registration, the patient chart, appointments, arrival/check-in, clinical work, documentation, and the longitudinal medical record.
+This document describes the approved MVP workflow for Open Clinical Record (OCR). Following mentor feedback, the workflow is intentionally limited to three core areas:
 
-The workflow has been reviewed and approved as the project baseline by the mentor. Broader clinical validation remains pending and may refine unresolved permissions or policies.
+1. Patient Management
+2. Patient Chart
+3. Appointment Management
+
+The workflow supports patient registration/search, chart access, appointment handling, and check-in/visit history. Full clinical encounter documentation is outside the committed MVP.
 
 ## 2. Actors
 
-The MVP uses exactly three approved application roles:
+The MVP uses exactly three application roles:
 
-| Actor | Primary responsibilities in MVP |
+| Actor | Primary MVP responsibilities |
 |---|---|
-| Receptionist / Front Desk | Register/search patients, manage basic demographics, schedule/reschedule/cancel appointments, and perform check-in |
-| Nurse / Clinical Staff | Support patient flow, record vital signs and permitted observations, and support encounters within assigned permissions |
-| Doctor / Clinician | Review the patient chart, conduct encounters, record clinical findings, diagnosis, treatment, and permitted clinical documentation |
+| Receptionist / Front Desk | Register/search patients, maintain permitted demographics, create/reschedule/cancel appointments, and perform check-in/basic walk-in intake |
+| Nurse / Clinical Staff | View patient/chart information, support check-in/visit workflow, and maintain permitted chart information or basic observations |
+| Clinician / Doctor | Review patient charts/history and perform authorized chart updates required by the MVP |
 
-Administrative/user-management capabilities are deployment-level or future concerns and are **not** an MVP application role.
+There is no Administrator role in the MVP application model.
 
-## 3. Approved End-to-End Workflow
+## 3. Approved MVP Workflow
 
 ```text
 PATIENT
   ↓
-Patient Registration (Receptionist)
+Register / Search / Identify
   ↓
-Patient Chart
-  ├── Schedule Appointment (Receptionist)
-  │       ↓
-  │     SCHEDULED
-  │       ├── Reschedule → new date/time + history
-  │       ├── Cancel → reason + history
-  │       └── No-show
-  │
-  └── Walk-in
+Patient Profile / Chart
+  ├── View demographics and status
+  ├── View allergies / medication history / alerts
+  └── View appointment and visit history
           ↓
-    CHECK-IN / ARRIVAL
+    Appointment Management
+      ├── Create appointment
+      ├── Reschedule
+      └── Cancel
           ↓
-    Waiting / Queue
+      Check-in / Visit
+      ├── Scheduled appointment
+      └── Walk-in without a fabricated appointment
           ↓
-    NURSE / CLINICAL STAFF
-          ├── Vital Signs
-          └── Observations
-          ↓
-    CLINICIAN / DOCTOR
-          ↓
-       ENCOUNTER
-          ├── History
-          ├── Diagnosis
-          └── Treatment
-          ↓
-    Clinical Documentation
-          ├── Draft / In Progress
-          └── Final / Signed
-          ↓
-    Patient Medical Record
-          ↓
-    Patient Timeline
+      Patient history updated
 ```
 
-## 4. Core Concepts
+The patient is the central record. Appointment and visit information remains linked to the correct patient.
 
-### Patient Chart
+## 4. Patient Management Workflow
 
-The patient chart is the main clinical workspace for viewing information about a patient. It should provide access to relevant demographics, allergies, alerts, history, appointments, clinical information, documents, and patient status.
+```text
+Register patient
+      ↓
+Assign unique patient identifier
+      ↓
+Search / identify patient
+      ↓
+View or update permitted information
+```
 
-### Appointment
+The system should detect likely duplicate registrations and prevent invalid patient relationships.
 
-An appointment represents **planned care**: a scheduled date/time for a patient to receive a service from a provider or clinic.
+## 5. Patient Chart Workflow
 
-### Check-in / Arrival
+The patient chart provides a focused longitudinal view of information available in the MVP:
 
-Check-in records that the patient has arrived for care. A walk-in may enter the workflow without a previously scheduled appointment.
+- Demographics and contact information
+- Patient status
+- Allergies
+- Relevant medication/history information
+- Important patient alerts where required
+- Appointment history
+- Visit/check-in history
 
-### Encounter
+Chart access and chart modification are separate permissions. A user being able to open a chart does not automatically allow every type of update.
 
-An encounter represents **actual care** delivered to the patient. It is distinct from the appointment that may have led to it.
+## 6. Appointment Lifecycle
 
-### Clinical Documentation
-
-Clinical documentation records what happened during care. Documentation may begin as a draft/in-progress document and become final/signed after completion.
-
-### Medical Record
-
-The medical record is the longitudinal collection of the patient's clinical information and documentation over time.
-
-### Patient Timeline
-
-The timeline provides a chronological view of important patient events, helping users understand the patient's history without manually searching through separate areas.
-
-## 5. Appointment Lifecycle
-
-The MVP supports the following appointment outcomes:
+The MVP supports a deliberately simple appointment lifecycle:
 
 ```text
 Scheduled
    ├── Checked-in / Arrived
    │       ↓
-   │   In consultation
-   │       ↓
    │   Completed
    │
    ├── Cancelled
    │       ↓
-   │   cancellation reason + history
-   │
-   ├── No-show
+   │   History retained
    │
    └── Rescheduled
            ↓
-       new date/time + history
+       New date/time
+       + history retained
 ```
 
-Cancelled, rescheduled, and no-show events should remain understandable in appointment history rather than silently replacing previous information.
+No-show may be included if it is confirmed as necessary during implementation. Appointment states must not silently destroy historical information.
 
-## 6. Walk-in Workflow
+## 7. Check-in and Walk-in Workflow
 
-A patient may arrive without a scheduled appointment. The system should support registration/search, arrival/check-in, waiting or queue handling, and continuation into the clinical workflow according to clinic policy and availability.
-
-The exact prioritization of walk-ins remains a clinical/business policy question.
-
-## 7. Clinical Visit Workflow
-
-After arrival, clinical staff may record vital signs and permitted observations. The clinician then reviews the patient's information and conducts the encounter.
-
-The encounter may include:
-
-- Relevant history
-- Examination findings
-- Diagnosis
-- Treatment or care plan
-- Medication/prescription information where applicable
-- Follow-up instructions
-- Clinical notes
-
-The final permission matrix for specific nursing/support actions remains subject to clinical stakeholder confirmation.
-
-## 8. Clinical Documentation Lifecycle
+### Scheduled patient
 
 ```text
-Draft / In Progress
-        ↓
-      Review
-        ↓
-   Final / Signed
-```
-
-A finalized clinical document should not be treated like ordinary editable text. Corrections or amendments must preserve the integrity and history of the clinical record and follow the permissions defined for the relevant role.
-
-## 9. Deceased Patient Workflow
-
-```text
-Active Patient
+Existing appointment
       ↓
-Marked Deceased
-      ├── Record death information
-      ├── Preserve existing records
-      ├── Prevent inappropriate new appointments
-      └── Handle future appointments according to policy
+Patient arrives
+      ↓
+Check-in
+      ↓
+Visit created/updated
+      ↓
+Patient history reflects attendance
 ```
 
-The system should clearly display deceased status while preserving the patient's historical record. The exact future-appointment policy remains an open decision.
+### Walk-in patient
+
+```text
+Patient arrives without appointment
+      ↓
+Search existing patient OR register patient
+      ↓
+Check-in / create visit
+      ↓
+Patient history reflects visit
+```
+
+A walk-in visit may exist without an appointment reference. The system must not create a fake appointment merely to support the data model.
+
+## 8. Visit Concept
+
+A visit represents an actual patient attendance/check-in. It is distinct from an appointment, which represents planned care.
+
+For the MVP, the visit model should remain simple. A visit may reference an appointment when one exists, or have no appointment reference for a walk-in.
+
+Detailed encounter documentation is not part of the MVP.
+
+## 9. Patient Status / Deceased Handling
+
+Basic patient status may be maintained when required by the approved workflow. If deceased status is implemented, the system should:
+
+- preserve existing patient history;
+- clearly display the status;
+- prevent inappropriate future appointments; and
+- handle existing future appointments according to the approved policy.
+
+The exact deceased-patient policy remains a mentor/clinical stakeholder decision if this feature is included in the MVP.
 
 ## 10. Role and Permission Principles
 
 - The MVP contains exactly three application roles.
-- Receptionist / Front Desk is the primary registration and appointment-management role.
-- Nurse / Clinical Staff supports patient flow, check-in, vitals, observations, and other explicitly approved clinical-support actions.
-- Clinician / Doctor performs provider-level assessment and documentation, including diagnosis, treatment, prescription, clinical notes/reports, finalized-document actions, and authorized patient-status changes.
-- Receptionist / Front Desk must not perform provider-level diagnosis, treatment, prescribing, or clinical-report authoring.
-- No user gains additional clinical authority merely because they can open a patient chart.
+- Receptionist / Front Desk is the primary patient-registration and appointment-management role.
+- Nurse / Clinical Staff supports patient flow, check-in/visit workflow, and permitted chart/observation updates.
+- Clinician / Doctor reviews patient history and performs authorized chart updates required by the MVP.
+- Chart access does not automatically grant modification authority.
+- Backend authorization must enforce permissions; hiding a UI control is not sufficient.
 - Important actions should be auditable.
 
 ## 11. Key Business Rules
 
-1. A patient must exist before an appointment or clinical record can be associated with them.
-2. Appointment history must preserve meaningful cancellation and rescheduling information.
-3. A walk-in must be supported without requiring a pre-existing appointment.
-4. Check-in represents arrival and is distinct from the actual clinical encounter.
-5. An encounter represents actual care delivered.
-6. Clinical documentation should have a controlled lifecycle from draft to final/signed.
-7. Finalized documentation should preserve record integrity when corrections are required.
-8. Patient history must remain available across visits.
-9. A deceased patient's historical records must be preserved.
-10. New activity involving a deceased patient must follow the approved business policy.
-11. Permissions must reflect clinical responsibilities.
-12. Significant changes should be recorded in an audit trail.
+1. A patient must exist before an appointment or visit can be associated with that patient.
+2. Each patient has a unique patient identifier.
+3. Patient chart information must remain associated with the correct patient.
+4. Cancelled appointments remain visible in history.
+5. Rescheduling preserves enough information to understand the previous appointment state.
+6. A walk-in may create a visit without a prior appointment.
+7. A visit may reference an appointment when applicable.
+8. Appointment actions must respect applicable patient and appointment status rules.
+9. A user does not gain additional authority merely by opening a patient chart.
+10. Important patient and appointment actions should be auditable.
 
-## 12. Clinical Validation Questions
+## 12. Open Decisions for MVP Confirmation
 
-The following items remain for mentor/clinical stakeholder confirmation:
+The following should be confirmed before implementation is treated as final:
 
-- Which role may enter or update allergies and medications?
-- Which specific appointment actions may Nurse / Clinical Staff perform?
-- Which specific encounter-support actions may Nurse / Clinical Staff perform?
-- What information should be mandatory at patient registration?
-- What should happen to future appointments after a patient is recorded deceased?
-- Which audit events are mandatory and who may view them?
-- What are the required retention/deletion rules?
-- What backup and recovery objectives apply to the intended deployment?
-- Which clinical document/report types are required for the MVP?
-- Is No-show a required appointment lifecycle state for the MVP release?
+- Which role may add/update allergies?
+- Which role may add/update medication history?
+- Which role may add/update patient alerts?
+- Which role may change basic patient status?
+- Whether No-show is required in the first release.
+- Whether basic vital signs are necessary for the Patient Chart MVP.
+- What should happen to future appointments when a patient is marked deceased.
+- Which audit events are mandatory.
+- What backup/restore procedure is practical for the internship deployment.
+
+These are focused decisions, not reasons to expand the MVP into a full clinical documentation system.
 
 ## 13. Scope Boundary
 
-This workflow is the foundation for the MVP requirements. It does **not** attempt to model every hospital workflow or enterprise scheduling scenario.
+The following are outside the committed internship MVP:
 
-The following are intentionally outside the initial workflow scope and may be considered for future expansion:
-
-- Laboratory workflows
-- Pharmacy workflows
-- Radiology/PACS
-- Billing and insurance
+- Full clinical encounter documentation
+- Diagnosis and treatment documentation
+- Prescription management
+- Full clinical notes/report generation
+- Clinical document finalization/amendment/versioning
+- Laboratory, pharmacy, billing, insurance, and radiology
 - Patient portal/mobile application
-- External EMR exchange
-- Full FHIR implementation
-- Complex enterprise scheduling/resource optimization
-- AI-assisted clinical features
+- External EMR exchange or FHIR integration
+- Advanced analytics and enterprise scheduling
+- AI clinical decision support
 
-The architecture and requirements should leave room for these capabilities without implementing them during the internship MVP.
+Research documents may discuss these topics as domain context or future work, but they must not be treated as current implementation commitments.
 
 ## 14. Validation Status
 
-**Current status:** Mentor-approved workflow baseline; preliminary clinical validation received from one clinician survey response; broader clinical validation remains pending.
-
-The initial clinician response supports preserving appointment history, separating clinical responsibilities, protecting finalized documentation through amendments, surfacing important chart alerts, and handling deceased-patient status. It also identified network reliability as a practical concern and suggested AI/mobile capabilities as future possibilities. These findings do not constitute statistically representative evidence and should be revisited as additional responses are collected.
+**Current status:** Mentor-approved three-module workflow baseline. Preliminary clinical feedback has informed the project, but broader clinical validation remains pending.
