@@ -108,7 +108,7 @@ Patient Chart
 
 Oracle Health and OpenMRS are reference systems, not requirements for Open Clinical Record. Their feature sets are much larger than this internship project. We should copy useful concepts, not reproduce enterprise complexity.
 
-## Questions for the clinician / mentor
+## Questions for the clinical stakeholder
 
 1. What fields must appear immediately when a clinician opens a patient chart?
 2. Which allergies/alerts must be visible at the top?
