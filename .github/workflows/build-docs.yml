@@ -21,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Remove internal planning references from SRS
+      - name: Normalize SRS document metadata
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -50,8 +50,8 @@ jobs:
           root_file: docs/04-architecture/architecture-overview.tex
           latexmk_use_xelatex: false
 
-      - name: Commit generated PDFs and SRS cleanup
+      - name: Commit generated documentation
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: 'docs: remove internal mentor references from SRS'
+          commit_message: 'docs: update generated documentation'
           file_pattern: 'docs/03-requirements/srs/srs.tex docs/03-requirements/srs/srs.pdf docs/04-architecture/architecture-overview.pdf'
