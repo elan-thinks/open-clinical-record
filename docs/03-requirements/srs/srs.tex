@@ -22,12 +22,12 @@
 \toprule Document Item & Value \\\midrule
 Product & Open Clinical Record \\
 Document & Software Requirements Specification (SRS) \\
-Version & 1.2 --- consistency-revised academic baseline \\
+Version & 1.3 --- requirements-consistency baseline \\
 Status & Draft for review and requirements baseline \\
-Primary scope & Patient chart, medical records/reports, appointments and encounter workflow \\
+Primary scope & Medical Chart, Appointments, and Medical Records/Reports \\
 Primary users & Clinician/Doctor; Nurse/Clinical Staff; Receptionist/Front Desk \\
 Evidence status & Preliminary clinical validation from one clinician survey response; broader validation remains required \\
-Next lifecycle stage & Architecture and data-model design after requirements review \\
+Next lifecycle stage & ERD/data-model and architecture design after requirements review \\
 \bottomrule
 \end{longtable}
 \vfill
@@ -41,7 +41,9 @@ This Software Requirements Specification defines the functional behavior, qualit
 The document translates the project's research and clinical workflow discovery into explicit requirements. It establishes traceability from workflow and evidence through requirements and, later, design and verification. A requirement appearing here does not by itself mean that it has already been implemented or clinically validated.
 
 \subsection{Scope of Product}
-Open Clinical Record is an extensible Electronic Medical Record platform for a focused set of common outpatient workflows. The MVP centers on: (1) a longitudinal patient chart; (2) appointments, visits, check-in, and basic walk-in handling; and (3) clinical encounters, medical records, and reports with appropriate document integrity.
+Open Clinical Record is an extensible Electronic Medical Record platform for a focused set of common outpatient workflows. The MVP is organized into exactly three business modules: (1) Medical Chart; (2) Appointments; and (3) Medical Records. These modules are connected through the patient and care workflow. Authentication, authorization, and audit are cross-cutting concerns and are not treated as a fourth business module.
+
+The \textbf{Medical Chart} provides longitudinal patient context, including identity, demographics, status, allergies, medication history, alerts, and relevant historical clinical information. The \textbf{Appointments} module covers planned care, visits, check-in, scheduling, and supported walk-ins. The \textbf{Medical Records} module covers encounters, clinical assessment, treatment documentation, prescriptions, clinical notes, medical reports, document finalization, and amendments.
 
 Laboratory, pharmacy, billing, insurance, radiology, patient portal, advanced analytics, autonomous AI clinical decision support, and dedicated mobile applications are outside the MVP unless later approved through requirements change control.
 
@@ -51,10 +53,14 @@ Laboratory, pharmacy, billing, insurance, radiology, patient portal, advanced an
 EMR & Electronic Medical Record; a digital record of patient information and clinical care maintained within a healthcare organization or clinical system. \\
 SRS & Software Requirements Specification; the controlled document defining system requirements. \\
 MVP & Minimum Viable Product; the smallest planned release that satisfies the defined initial clinical scope. \\
-Patient chart & The longitudinal clinical context for a patient, including identity, demographics, status, history, encounters, appointments, and relevant clinical information. \\
+Medical Chart & The longitudinal patient context, including identity, demographics, status, allergies, medication history, alerts, and links to relevant appointments, visits, encounters, and clinical documents. \\
+Medication history & Information about medications a patient is currently taking, has previously taken, or that is otherwise clinically relevant. Medication history is distinct from a prescription issued during an encounter. \\
+Patient alert & A clinically relevant warning, reminder, precaution, or other alert associated with a patient and displayed in an appropriate context. \\
 Appointment & Planned care: a scheduled interaction between a patient and provider/service at a defined date/time. \\
+Appointment history/event & A historical record or equivalent append-only mechanism for significant appointment state changes such as creation, rescheduling, cancellation, check-in, and no-show where applicable. \\
 Visit & The operational occurrence in which a patient attends a healthcare service; it may originate from an appointment or walk-in. \\
 Encounter & Actual clinical care delivered to a patient, during which assessment, examination, diagnosis, treatment, and related documentation may be recorded. \\
+Prescription & A medication order or prescription issued by an authorized Clinician/Doctor as part of clinical care; it is not the same as the patient's medication history. \\
 Clinical document & A clinical note, medical report, or other formal record documenting care. \\
 Finalized document & A clinical document whose content has been completed and protected from ordinary editing. \\
 Amendment & An authorized correction or addition to a finalized document that preserves the original content and records the change. \\
@@ -87,23 +93,19 @@ The requirements baseline is informed by the project's internal research and dis
 
 \section{General Description}
 \subsection{Product Perspective}
-Open Clinical Record is conceived as an extensible EMR platform rather than unrelated CRUD screens. The patient chart is the principal clinical context. Appointments and encounters are linked to the patient, and clinical documentation is linked to the encounter and patient so that the longitudinal record remains coherent.
+Open Clinical Record is conceived as an extensible EMR platform rather than unrelated CRUD screens. The patient is the central clinical subject. The Medical Chart provides longitudinal context; Appointments represent planned/operational care; and Medical Records represent documentation of care actually delivered.
 
-\begin{center}\textbf{Patient Registration/Search $\rightarrow$ Chart $\rightarrow$ Appointment/Visit $\rightarrow$ Check-in $\rightarrow$ Encounter $\rightarrow$ Clinical Documentation $\rightarrow$ Longitudinal Record}\end{center}
+\begin{center}\textbf{Patient $\rightarrow$ Medical Chart $\rightarrow$ Appointment or Walk-in $\rightarrow$ Visit $\rightarrow$ Encounter $\rightarrow$ Medical Record/Report $\rightarrow$ Longitudinal Chart}\end{center}
+
+An appointment, visit, and encounter are distinct concepts. A walk-in may create a Visit and Encounter without requiring a fabricated Appointment. A clinical document belongs to the appropriate patient and, where applicable, encounter. Historical states shall remain distinguishable when required for integrity or auditability.
 
 \subsection{Product Functions}
 \begin{enumerate}[leftmargin=*]
-\item Patient registration and unique identification.
-\item Patient search and chart access.
-\item Clinical summary, allergies, medications, alerts, and patient status.
-\item Appointment creation, viewing, rescheduling, cancellation, history, and check-in.
-\item Flexible walk-in handling.
-\item Patient-to-visit-to-encounter linkage.
-\item Clinical encounter documentation: complaint, vitals, history, examination, diagnosis, treatment, prescription, and notes.
-\item Medical report generation and document lifecycle management.
-\item Finalization and controlled amendment of clinical documents.
-\item Authentication, role-based authorization, auditability, and privacy protection.
-\item Input validation and safe error handling.
+\item Medical Chart: patient registration, unique identification, search, profile, clinical summary, allergies, medication history, alerts, and patient status.
+\item Appointments: appointment creation, viewing, rescheduling, cancellation, history, check-in, visits, and supported walk-ins.
+\item Medical Records: encounters, chief complaint, vitals, history, examination, diagnosis, treatment/care plan, prescriptions, clinical notes, medical reports, finalization, and amendments.
+\item Cross-cutting security: authentication, exactly three application roles, authorization, auditability, and privacy protection.
+\item Input validation, transaction safety, and understandable error handling.
 \end{enumerate}
 
 \subsection{User Characteristics}
@@ -112,7 +114,7 @@ The MVP has exactly three primary application roles. These are application roles
 \begin{longtable}{P{0.23\textwidth}P{0.28\textwidth}P{0.39\textwidth}}
 \toprule Role & Typical responsibility & Primary system capabilities \\\midrule
 \textbf{Receptionist / Front Desk} & Patient-facing administrative workflow & Register/search patients; manage permitted demographic information; create, view, reschedule, and cancel appointments; perform check-in; initiate supported walk-in intake. No diagnosis, treatment, prescribing, or clinical-report authoring. \\
-\textbf{Nurse / Clinical Staff} & Clinical workflow support and nursing activities & Search patients; support appointment/check-in workflow; record permitted vitals/observations; support encounters within assigned permissions. Appointment creation by this role remains subject to the approved permission matrix. \\
+\textbf{Nurse / Clinical Staff} & Clinical workflow support and nursing activities & Search patients; support appointment/check-in workflow; record permitted vitals/observations; support encounters within assigned permissions. Additional administrative permissions remain subject to the approved matrix. \\
 \textbf{Clinician / Doctor} & Clinical assessment and clinical decision documentation & Review chart; assess patient; record history/examination, diagnosis, treatment, prescription where applicable; create/finalize permitted clinical notes/reports; perform authorized patient-status changes and amendments. \\
 \bottomrule
 \end{longtable}
@@ -121,7 +123,7 @@ Permissions shall be enforced at operation and data level. The final permission 
 
 \subsection{General Constraints}
 \begin{itemize}[leftmargin=*]
-\item The MVP remains within patient chart, appointment/visit, and medical record/report scope.
+\item The MVP remains within the three business modules defined in Section 1.2.
 \item Sensitive patient and clinical information shall be protected from unauthorized access.
 \item Clinically significant history shall not be silently destroyed.
 \item Finalized clinical documents require stronger integrity protection than ordinary draft content.
@@ -158,17 +160,17 @@ The system shall use explicit boundaries so UI code does not directly manipulate
 Client/server communication shall use secure transport appropriate to deployment. Protected information shall not be transmitted through unprotected channels in production. Communication failures shall be reported as failures unless persistence is confirmed.
 
 \subsection{Functional Requirements}
-\subsubsection{Patient Management Requirements}
+\subsubsection{Medical Chart Requirements}
 \begin{longtable}{P{0.14\textwidth}P{0.20\textwidth}P{0.56\textwidth}}
 \toprule ID & Requirement & Detailed specification \\\hline
-\req{FR-PAT-001}{Register patient}{The system shall allow the Receptionist/Front Desk to create a patient record containing required demographic and administrative information. If later clinical validation authorizes Nurse/Clinical Staff to perform registration, that permission shall be added through controlled requirements change.}
+\req{FR-PAT-001}{Register patient}{The system shall allow the Receptionist/Front Desk to create a patient record containing required demographic and administrative information.}
 \req{FR-PAT-002}{Assign patient identifier}{The system shall assign or record a unique patient identifier and reject duplicate identifiers where uniqueness is required.}
 \req{FR-PAT-003}{Search patient}{The system shall allow authorized users to search using supported identifying information and present results in a way that reduces accidental wrong-patient selection.}
 \req{FR-PAT-004}{View patient profile}{The system shall display demographic information and current patient status to users with appropriate permission.}
-\req{FR-PAT-005}{View clinical summary}{The system shall provide a concise longitudinal summary including available conditions, previous diagnoses, allergies, medications, relevant vitals, and previous visits/encounters.}
+\req{FR-PAT-005}{View clinical summary}{The system shall provide a concise longitudinal summary including available conditions, previous diagnoses, allergies, medication history, relevant vitals, and previous visits/encounters.}
 \req{FR-PAT-006}{Record allergies}{The system shall allow appropriately authorized clinical users to record and update allergy information.}
-\req{FR-PAT-007}{Record medications}{The system shall allow appropriately authorized users to record relevant medication information and associate it with the correct patient.}
-\req{FR-PAT-008}{Display alerts}{The system shall surface clinically relevant alerts, including recorded allergies, critical conditions, medication/adverse-reaction risks, follow-up items, and precautions where applicable.}
+\req{FR-PAT-007}{Record medication history}{The system shall allow appropriately authorized users to record relevant medication history and associate each entry with the correct patient. Medication history shall remain conceptually distinct from prescriptions issued during encounters.}
+\req{FR-PAT-008}{Manage patient alerts}{The system shall allow appropriately authorized users to record and maintain clinically relevant patient alerts and shall display them in the appropriate patient/clinical context.}
 \req{FR-PAT-009}{Record patient status}{The system shall maintain current patient status and restrict status changes according to the approved role matrix.}
 \req{FR-PAT-010}{Mark deceased patient}{The system shall allow an authorized Clinician/Doctor to record deceased status together with date of death and required supporting information.}
 \req{FR-PAT-011}{Handle deceased patient}{After deceased status is recorded, the system shall prevent inappropriate future appointment activity and handle affected future appointments according to the approved policy.}
@@ -182,7 +184,7 @@ Client/server communication shall use secure transport appropriate to deployment
 \req{FR-APT-002}{View appointments}{The system shall allow authorized users to view appointments relevant to their role and permissions.}
 \req{FR-APT-003}{Reschedule appointment}{The system shall allow an authorized Receptionist/Front Desk, or Nurse/Clinical Staff where explicitly approved, to reschedule an eligible appointment while preserving original scheduling history.}
 \req{FR-APT-004}{Cancel appointment}{The system shall allow an authorized Receptionist/Front Desk, or Nurse/Clinical Staff where explicitly approved, to cancel an eligible appointment without deleting its historical existence.}
-\req{FR-APT-005}{Preserve appointment history}{Cancelled, rescheduled, and no-show appointments shall remain distinguishable from active appointments and retain sufficient status/history information for later review.}
+\req{FR-APT-005}{Preserve appointment history}{Cancelled, rescheduled, and no-show appointments shall remain distinguishable from active appointments and retain sufficient historical event/state information for later review.}
 \req{FR-APT-006}{Check in patient}{The system shall allow Receptionist/Front Desk or Nurse/Clinical Staff to record check-in for an eligible appointment or supported walk-in.}
 \req{FR-APT-007}{Support walk-in workflow}{The system shall support a walk-in path that can adapt to urgency and patient condition rather than requiring every walk-in to become an ordinary scheduled appointment.}
 \req{FR-APT-008}{Link appointment to encounter}{When an encounter follows an appointment, the system shall preserve association among appointment, visit, encounter, and patient.}
@@ -190,7 +192,7 @@ Client/server communication shall use secure transport appropriate to deployment
 \bottomrule
 \end{longtable}
 
-\subsubsection{Encounter and Clinical Assessment Requirements}
+\subsubsection{Medical Records Requirements}
 \begin{longtable}{P{0.14\textwidth}P{0.20\textwidth}P{0.56\textwidth}}
 \toprule ID & Requirement & Detailed specification \\\hline
 \req{FR-ENC-001}{Start encounter}{The system shall allow an authorized Nurse/Clinical Staff or Clinician/Doctor user to start/access an encounter associated with a patient visit, according to assigned workflow permissions.}
@@ -199,16 +201,10 @@ Client/server communication shall use secure transport appropriate to deployment
 \req{FR-ENC-004}{Record history}{The system shall allow the Clinician/Doctor to document relevant medical and encounter history.}
 \req{FR-ENC-005}{Record examination}{The system shall allow the Clinician/Doctor to document examination findings.}
 \req{FR-ENC-006}{Record diagnosis}{Only appropriately authorized Clinician/Doctor users may record diagnosis/clinical assessment.}
-\req{FR-ENC-007}{Record treatment}{Only appropriately authorized Clinician/Doctor users may document treatment/care plans.}
-\req{FR-ENC-008}{Record prescription}{Only appropriately authorized Clinician/Doctor users may record prescription information where applicable.}
+\req{FR-ENC-007}{Record treatment/care plan}{Only appropriately authorized Clinician/Doctor users may document treatment or care plans.}
+\req{FR-ENC-008}{Record prescription}{Only appropriately authorized Clinician/Doctor users may issue or record prescription information where applicable. Prescriptions shall be associated with the relevant encounter and patient.}
 \req{FR-ENC-009}{Create clinical note}{The system shall allow an authorized Clinician/Doctor to create and save clinical notes associated with the correct encounter.}
 \req{FR-ENC-010}{Maintain encounter linkage}{Clinical encounter information shall remain linked to exactly the intended patient and encounter context and shall not be silently reassigned.}
-\bottomrule
-\end{longtable}
-
-\subsubsection{Medical Records and Reports Requirements}
-\begin{longtable}{P{0.14\textwidth}P{0.20\textwidth}P{0.56\textwidth}}
-\toprule ID & Requirement & Detailed specification \\\hline
 \req{FR-REC-001}{Generate medical report}{The system shall allow an authorized Clinician/Doctor to generate a medical report using relevant patient and encounter information.}
 \req{FR-REC-002}{Finalize clinical document}{The system shall allow an authorized Clinician/Doctor to finalize an eligible clinical document.}
 \req{FR-REC-003}{Restrict finalized editing}{A finalized document shall not be ordinarily editable in a way that silently changes its finalized content.}
@@ -247,12 +243,13 @@ BR-001 & Cancelled appointments remain in history and are clearly marked as canc
 BR-002 & Rescheduled appointments retain sufficient history to distinguish original and updated scheduling state. \\
 BR-003 & Finalized clinical documents cannot be silently overwritten; corrections are traceable amendments preserving the original. \\
 BR-004 & Diagnosis, treatment, prescription, clinical notes, reports, and patient-status changes are protected by role-based permissions. \\
-BR-005 & Clinically relevant alerts are displayed in the appropriate clinical context. \\
+BR-005 & Clinically relevant patient alerts are displayed in the appropriate clinical context. \\
 BR-006 & Deceased patients cannot receive inappropriate future appointments; affected future appointments are handled according to approved policy. \\
 BR-007 & Walk-in handling remains flexible because urgency and patient condition may affect workflow. \\
 BR-008 & Clinical information remains associated with the correct patient and encounter. \\
 BR-009 & Chart access does not itself grant additional clinical authority. \\
 BR-010 & Historical information shall not be silently destroyed when operational state changes. \\
+BR-011 & Medication history and prescriptions are distinct concepts: medication history represents patient medication information, while a prescription represents an order issued during clinical care. \\
 \bottomrule
 \end{longtable}
 
@@ -262,16 +259,27 @@ The detailed NFR catalogue is maintained in \texttt{docs/03-requirements/non-fun
 Required categories are: security/privacy; data integrity and clinical record safety; performance; reliability/failure handling; usability/accessibility; maintainability/extensibility; interoperability/FHIR readiness; auditability; and backup/recovery.
 
 \subsection{Logical Database Requirements}
-The logical data model shall represent Patient, Allergy, Medication, Appointment, Visit, Encounter, Vital Sign, Clinical Note, Diagnosis, Treatment, Prescription, Clinical Document, Document Amendment, User, and Audit Event. Exact field types, indexes, normalization, and physical schema belong to the data-design stage.
+The logical data model shall represent the entities needed to support the three business modules and their cross-cutting controls.
 
-Core relationships shall preserve patient-to-appointment, patient-to-visit, patient-to-encounter, appointment-to-visit, visit-to-encounter, patient/encounter-to-document, document-to-amendment, and actor-to-audit-event associations as appropriate. Current state and historical state shall be distinguishable where history preservation is required.
+\textbf{Medical Chart entities:} Patient, Allergy, Medication History, Patient Alert.
+
+\textbf{Appointments entities:} Appointment, Appointment History/Event, Visit.
+
+\textbf{Medical Records entities:} Encounter, Vital Sign, Clinical Note, Diagnosis, Treatment/Care Plan, Prescription, Clinical Document/Medical Report, Document Amendment.
+
+\textbf{Cross-cutting entities:} User, Audit Event.
+
+Patient status, including deceased status and date of death, shall be represented explicitly in the patient model. Appointment history shall be represented through a dedicated history/event structure or an equivalent design that preserves significant state transitions. The final ERD shall choose the simplest normalized representation that satisfies these requirements.
+
+Core relationships shall preserve patient-to-appointment, patient-to-visit, patient-to-encounter, appointment-to-visit, visit-to-encounter, patient/encounter-to-document, document-to-amendment, and actor-to-audit-event associations as appropriate. Medication history shall be associated with the patient and may reference a prescription when clinically appropriate without becoming the same entity. Current state and historical state shall be distinguishable where history preservation is required.
 
 \subsection{Design Constraints}
 \begin{enumerate}[leftmargin=*]
 \item The MVP shall use exactly three approved application roles: Clinician/Doctor, Nurse/Clinical Staff, and Receptionist/Front Desk.
+\item The MVP shall contain exactly three business modules: Medical Chart, Appointments, and Medical Records. Authentication, authorization, and audit remain cross-cutting concerns.
 \item The MVP shall not include autonomous AI diagnostic or treatment functionality.
 \item Finalized clinical documents shall not be ordinary mutable comments.
-\item Patient and encounter relationships shall be first-class integrity constraints.
+\item Patient, appointment, visit, and encounter relationships shall be first-class integrity constraints.
 \item Future interoperability shall be supported without requiring production FHIR integration in the MVP.
 \item The system shall remain modular enough for later clinical modules.
 \item Security and privacy controls are requirements, not optional enhancements.
@@ -281,14 +289,24 @@ Core relationships shall preserve patient-to-appointment, patient-to-visit, pati
 The appendices are supporting requirements material. If an appendix conflicts with a normative requirement in Section 3, the approved requirement in Section 3 takes precedence until the SRS is formally revised.
 
 \subsection{Appendix A --- Data Structure Specification}
-\begin{longtable}{P{0.20\textwidth}P{0.68\textwidth}}
+\begin{longtable}{P{0.22\textwidth}P{0.66\textwidth}}
 \toprule Structure & Representative attributes \\\midrule
 Patient & Patient ID; name; date of birth; sex/gender fields as approved; contact/address; emergency/contact information where required; status; date of death when applicable; created/updated metadata. \\
-Appointment & Appointment ID; patient ID; date; start/end time; provider/service; status; reason; created by; rescheduled-from reference; cancellation information. \\
+Allergy & Allergy ID; patient ID; substance/allergen; reaction; severity/status as approved; onset/recorded information; verification/source metadata where required. \\
+Medication History & Medication history ID; patient ID; medication name; dose/route/frequency where known; status such as current/previous as approved; start/end dates where known; source/recorded metadata. \\
+Patient Alert & Alert ID; patient ID; alert type; alert text/value; severity/priority; active/inactive state; created/updated metadata. \\
+Appointment & Appointment ID; patient ID; date; start/end time; provider/service; status; reason; created by; rescheduled-from reference where applicable; cancellation information. \\
+Appointment History/Event & Event ID; appointment ID; event/state type; previous/new state where applicable; event timestamp; actor; reason/notes where required. \\
 Visit & Visit ID; patient ID; appointment reference if any; arrival/check-in time; visit type; operational status. \\
-Encounter & Encounter ID; patient ID; visit ID; clinician; start/end time; complaint; history; examination; diagnosis; treatment; prescription reference; note/document references. \\
-Clinical Document & Document ID; patient ID; encounter ID; document type; content/reference; author; created/finalized times; lifecycle state; amendment linkage. \\
-Amendment & Amendment ID; original document ID; author; timestamp; reason; amendment content/reference; approval/status metadata. \\
+Encounter & Encounter ID; patient ID; visit ID; clinician; start/end time; complaint; history; examination; diagnosis reference(s); treatment/care-plan reference(s); prescription reference(s); note/document references. \\
+Vital Sign & Vital sign ID; encounter/visit ID; type; value/unit; measured time; recorded by. \\
+Diagnosis & Diagnosis ID; encounter ID; patient ID; diagnosis/clinical assessment; status/date; recorded by. \\
+Treatment/Care Plan & Treatment ID; encounter ID; patient ID; treatment/care-plan description; status/date; recorded by. \\
+Prescription & Prescription ID; patient ID; encounter ID; medication; dosage/instructions; quantity/duration where applicable; prescriber; issue date; status. \\
+Clinical Note & Note ID; patient ID; encounter ID; author; note type; content/reference; created/finalized times; lifecycle state. \\
+Clinical Document/Medical Report & Document ID; patient ID; encounter ID where applicable; document/report type; content/reference; author; created/finalized times; lifecycle state. \\
+Document Amendment & Amendment ID; original document ID; author; timestamp; reason; amendment content/reference; approval/status metadata. \\
+User & User ID; username/identity; assigned one of the three approved roles; account status; authentication metadata as appropriate. \\
 Audit Event & Event ID; actor/user; action; target type/ID; timestamp; outcome; relevant metadata. \\
 \bottomrule
 \end{longtable}
@@ -296,12 +314,12 @@ Audit Event & Event ID; actor/user; action; target type/ID; timestamp; outcome; 
 \subsection{Appendix B --- Data-Flow and Workflow Models}
 \begin{center}\textbf{User $\rightarrow$ Authentication/Authorization $\rightarrow$ Application Services $\rightarrow$ Clinical Domain Operations $\rightarrow$ Persistent Data + Audit}\end{center}
 
-The clinical workflow is: register/identify patient; open chart; create/retrieve appointment or initiate walk-in; check in; create/access encounter; record permitted vitals/preliminary information; clinician assesses and records findings; clinician records diagnosis/treatment/prescription/notes as applicable; generate/finalize document; preserve encounter/document in longitudinal record; amend finalized documents through a traceable correction path when authorized.
+The clinical workflow is: register/identify patient; open Medical Chart; create/retrieve Appointment or initiate walk-in; create Visit/check in; create/access Encounter; record permitted vitals/preliminary information; clinician assesses and records findings; clinician records diagnosis/treatment/prescription/notes as applicable; generate/finalize Medical Record document/report; preserve encounter/document in longitudinal chart; amend finalized documents through a traceable correction path when authorized.
 
 \subsection{Appendix C --- Detailed Domain/Object Model}
-Patient is the central clinical context with explicit links to Appointment, Visit, and Encounter. Encounter is the principal clinical context for assessment and care documentation. Clinical documents link to patient and relevant encounter.
+Patient is the central clinical subject with explicit links to Appointment, Visit, and Encounter. The Medical Chart is the longitudinal context, Appointments represent planned/operational care, and Medical Records represent documentation of care delivered. Encounter is the principal clinical context for assessment and care documentation. Clinical documents link to patient and relevant encounter.
 
-Lifecycle concepts: Appointment = scheduled $\rightarrow$ checked-in/attended, cancelled, no-show, or rescheduled as applicable; Visit = appointment or walk-in $\rightarrow$ checked-in/active $\rightarrow$ completed; Encounter = active $\rightarrow$ completed/closed; Clinical document = draft/in-progress $\rightarrow$ finalized/signed $\rightarrow$ amended when authorized; Patient = active/current status with deceased status affecting future scheduling.
+Lifecycle concepts: Appointment = scheduled $\rightarrow$ checked-in/attended, cancelled, no-show, or rescheduled as applicable; Appointment History/Event preserves significant transitions; Visit = appointment or walk-in $\rightarrow$ checked-in/active $\rightarrow$ completed; Encounter = active $\rightarrow$ completed/closed; Clinical document = draft/in-progress $\rightarrow$ finalized/signed $\rightarrow$ amended when authorized; Patient = active/current status with deceased status affecting future scheduling.
 
 \subsection{Appendix D --- Role and Permission Matrix}
 \begin{longtable}{P{0.30\textwidth}P{0.19\textwidth}P{0.19\textwidth}P{0.19\textwidth}}
@@ -361,7 +379,7 @@ OQ-005 & Confirm the policy for future appointments when a patient is marked dec
 OQ-006 & Confirm minimum audit events and who may view audit information. \\
 OQ-007 & Confirm retention and deletion rules for clinical data. \\
 OQ-008 & Confirm backup frequency and acceptable recovery objectives for intended deployment. \\
-OQ-009 & Confirm whether allergies and medications can be entered by Nurse/Clinical Staff or require Clinician/Doctor authorization. \\
+OQ-009 & Confirm whether allergies and medication history can be entered by Nurse/Clinical Staff or require Clinician/Doctor authorization. \\
 OQ-010 & Confirm required report/document types for the MVP. \\
 \bottomrule
 \end{longtable}
