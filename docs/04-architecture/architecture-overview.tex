@@ -1,85 +1,81 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{hyperref}
-\usepackage{graphicx}
 \title{Software Architecture Overview\\[0.4em]Open Clinical Record}
 \author{Open Clinical Record Internship Project}
-\date{Draft --- Architecture Phase}
+\date{MVP Scope Revision --- September 2026}
 \begin{document}
 \maketitle
 \tableofcontents
 \newpage
 
 \section{Status}
-This document records the current architectural direction for the Open Clinical Record (OCR) MVP. The architecture is based on the validated requirements baseline in the Software Requirements Specification (SRS) and will be refined as database design, implementation, and technical validation progress.
+This document records the architectural direction for the reduced Open Clinical Record (OCR) internship MVP. The architecture has been aligned with the revised SRS and mentor guidance to prioritize a deliverable system within the remaining one-month period.
 
 \section{Architectural Intent}
-The system should be modular, maintainable, secure, and ready for API-based integration. The MVP is organized around three core clinical modules: Medical Chart, Appointments, and Medical Records. Authentication, authorization, validation, audit logging, and error handling are cross-cutting concerns rather than additional business modules.
+The architecture should be simple, modular, maintainable, and practical for an internship-scale implementation. The MVP contains exactly three business modules: \textbf{Patient Management}, \textbf{Patient Chart}, and \textbf{Appointment Management}.
 
-The architecture should provide clear separation between the user interface, application/API layer, business logic, and persistence layer so that each part can evolve without unnecessary coupling.
+Authentication, authorization, validation, audit logging, and error handling are cross-cutting support concerns. They are not additional business modules.
+
+The architecture separates the React user interface, ASP.NET Core API/application layer, business logic, and persistence so the three core workflows can be developed and tested independently while remaining connected through the patient record.
 
 \section{Technology Stack}
-The current implementation technology direction for the OCR MVP is:
-
+The current implementation direction is:
 \begin{itemize}
-    \item \textbf{Frontend:} React for the web-based user interface.
-    \item \textbf{Backend:} .NET with ASP.NET Core for application and web API development.
-    \item \textbf{API style:} RESTful HTTP API for communication between the React frontend and the backend services.
-    \item \textbf{Database:} The database technology will be finalized as part of the database design and implementation decisions.
-    \item \textbf{Interoperability:} HL7 FHIR will be considered for standards-based clinical data exchange and external integration where appropriate to the MVP scope.
+    \item \textbf{Frontend:} React for the web user interface.
+    \item \textbf{Backend:} .NET with ASP.NET Core.
+    \item \textbf{API style:} RESTful HTTP API between React and ASP.NET Core.
+    \item \textbf{Database:} To be selected during the database design/implementation step based on simplicity and internship constraints.
 \end{itemize}
 
-These technology choices define the current implementation direction and do not change the functional requirements specified in the SRS.
+International healthcare standards and FHIR integration are \textbf{not MVP requirements}. The architecture should avoid unnecessary complexity while leaving reasonable room for future extension.
 
 \section{Initial Logical View}
 \begin{verbatim}
-                         Open Clinical Record
-                                  |
-              +-------------------+-------------------+
-              |                                       |
-        React Frontend                         ASP.NET Core Backend
-              |                                       |
-        REST API Requests                    Application / API Layer
-              |                                       |
-              |              +------------------------+------------------+
-              |              |                        |                  |
-              |        Medical Chart             Appointments      Medical Records
-              |              |                        |                  |
-              |              +------------------------+------------------+
-              |                                       |
-              |                               Business Logic
-              |                                       |
-              |                                Data Access Layer
-              |                                       |
-              |                                   Database
-              |
-              +-------------------- REST ------------------------------+
-                                                                   
-                         External Integration / FHIR
+                    Open Clinical Record MVP
+                              |
+              +---------------+----------------+
+              |                                |
+       React Frontend                   ASP.NET Core Backend
+              |                                |
+          REST API                    Application / API Layer
+                                               |
+                  +----------------------------+-------------------+
+                  |                            |                   |
+          Patient Management             Patient Chart      Appointment Management
+                  |                            |                   |
+                  +----------------------------+-------------------+
+                                               |
+                                         Business Logic
+                                               |
+                                         Data Access
+                                               |
+                                           Database
 \end{verbatim}
 
 The primary request flow is:
-
 \begin{verbatim}
 React UI -> REST API -> ASP.NET Core -> Business Logic -> Data Access -> Database
 \end{verbatim}
 
-The backend is responsible for enforcing business rules, authorization, validation, clinical data integrity, and audit requirements rather than relying on the frontend to enforce security-sensitive rules.
+The backend is responsible for validation, authorization, business rules, and data integrity. The frontend must not be treated as the security boundary.
 
 \section{Core Module Boundaries}
 
-\subsection{Medical Chart}
-The Medical Chart module manages the longitudinal patient context, including patient demographics, allergies, medication history, patient alerts, and patient status.
+\subsection{Patient Management}
+This module manages the basic patient lifecycle required by the MVP: registration, unique patient identification, search, profile viewing, permitted demographic/contact updates, and basic patient status.
 
-\subsection{Appointments}
-The Appointments module manages planned appointments and operational attendance, including appointment creation, viewing, rescheduling, cancellation, appointment history, check-in, and walk-in support.
+\subsection{Patient Chart}
+This module provides the longitudinal patient context required by the MVP: demographics, status, allergies, relevant medication/history information, important alerts where required, and appointment/visit history.
 
-\subsection{Medical Records}
-The Medical Records module manages clinical encounters and clinical information, including vital signs, diagnoses, treatment/care plans, prescriptions, clinical notes, and medical reports/clinical documents. Finalized documents and their amendments must preserve clinical history and integrity.
+The chart is intentionally limited. Full clinical encounter documentation, diagnosis, treatment, prescriptions, and advanced medical reports are deferred.
+
+\subsection{Appointment Management}
+This module manages the planned and basic operational visit workflow: appointment creation, viewing, rescheduling, cancellation, status, check-in, and basic walk-in support.
+
+Appointments must remain linked to the correct patient. A walk-in may create a visit without a fabricated prior appointment.
 
 \section{Cross-Cutting Concerns}
-Authentication, authorization, validation, audit logging, error handling, configuration, and other platform concerns should be implemented consistently across the application rather than duplicated inside individual clinical features.
-
 The application has exactly three application roles:
 \begin{itemize}
     \item Receptionist / Front Desk
@@ -87,40 +83,95 @@ The application has exactly three application roles:
     \item Clinician / Doctor
 \end{itemize}
 
-Role-based authorization must be enforced at the backend/API level. Access to a patient chart does not by itself grant permission to perform every clinical action.
+Authentication, role-based authorization, validation, error handling, and basic audit logging support the three modules. Access to a patient chart does not automatically grant permission to modify every piece of patient information.
 
-\section{API and Integration Direction}
-The React frontend communicates with the ASP.NET Core backend through RESTful HTTP endpoints. API contracts should use consistent resource naming, HTTP methods, status codes, validation responses, and error handling.
+\section{API Direction}
+React communicates with ASP.NET Core through RESTful HTTP endpoints. The API should expose clear domain operations for patients, charts, appointments, and visits rather than unrestricted database CRUD.
 
-External interoperability should use explicit integration boundaries. HL7 FHIR may be used where appropriate for standards-based exchange of clinical information, without making FHIR an unnecessary dependency for every internal database operation.
+For the internship MVP, API design should prioritize the endpoints needed for the three core workflows. External interoperability APIs and FHIR resources are deferred.
 
 \section{Data and Persistence Direction}
-The database design follows the requirements established in the SRS and is being developed as a separate ERD/database-design deliverable. The logical model should preserve the relationships among Patient, Appointment/Walk-in, Visit, Encounter, Clinical Records, and Clinical Documents.
+The database design will be developed as a separate ERD deliverable. The model should remain small and normalized enough to support the MVP without introducing unnecessary enterprise entities.
 
-The persistence layer should enforce appropriate primary keys, foreign keys, uniqueness constraints, nullability, referential integrity, timestamps, and indexes. Historical clinical and appointment information must not be silently destroyed when business events such as cancellation, rescheduling, finalization, or amendment occur.
+The minimum logical model is expected to include:
+\begin{itemize}
+    \item Patient
+    \item Allergy
+    \item Medication History / relevant medication information
+    \item Patient Alert, if required by the approved workflow
+    \item Appointment
+    \item Appointment History/Event where required to preserve rescheduling/cancellation history
+    \item Visit
+    \item User
+    \item Audit Event where required
+\end{itemize}
 
-\section{Security and Clinical Integrity}
-Security-sensitive and clinically significant operations must be protected by backend authorization and recorded through the audit mechanism where required. The architecture must prevent unauthorized clinical actions and support traceability of important changes.
+The central relationship is:
+\begin{verbatim}
+Patient
+  |
+  +---- Appointments
+  |         |
+  |         +---- Visit / Check-in
+  |
+  +---- Patient Chart information
+\end{verbatim}
 
-Finalized clinical documents must not be silently overwritten. Amendments should preserve the original document and record the reason, author, and time of the amendment.
+A visit may originate from an appointment or from a walk-in. Appointment history must not be silently lost when an appointment is rescheduled or cancelled.
 
-\section{Expansion Strategy}
-Future capabilities such as laboratory, pharmacy, referrals, billing, and patient-facing applications are outside the current MVP scope. If they are introduced later, they should connect through explicit application/service boundaries rather than creating unnecessary coupling with the three current core modules.
+\section{Security and Data Integrity}
+The backend shall enforce authorization and validate all important patient and appointment operations. Patient information must not be exposed to unauthorized users.
+
+The system shall prevent duplicate patient identifiers, invalid relationships, and unsafe appointment operations. Failed operations shall not falsely report success or leave incomplete records where the application can prevent this.
+
+\section{Deferred Functionality}
+The following capabilities are explicitly outside the committed MVP:
+\begin{itemize}
+    \item Full clinical encounter documentation
+    \item Diagnosis and treatment documentation
+    \item Prescription management
+    \item Advanced medical reports and document amendment workflows
+    \item Laboratory, pharmacy, billing, insurance, and radiology
+    \item Patient portal/mobile application
+    \item SMS and external integrations
+    \item FHIR or other international standards implementation
+    \item Advanced analytics and enterprise scheduling
+    \item AI clinical decision support
+\end{itemize}
+
+These features may be considered only after the three core modules are completed, tested, and demonstrated, and only if sufficient time remains.
 
 \section{Architecture Decisions}
-Important decisions will be recorded separately as Architecture Decision Records (ADRs). Each ADR should explain the problem, the decision, alternatives considered, consequences, and the evidence behind the decision.
-
-\section{Current Decisions and Remaining Decisions}
-The current architecture baseline establishes React as the frontend technology, ASP.NET Core/.NET as the backend technology, and REST as the primary frontend-to-backend API style.
-
-The following decisions remain to be finalized through the architecture and database-design work:
+The current baseline decisions are:
 \begin{itemize}
-    \item Database engine and exact persistence technology.
-    \item Detailed project and solution structure.
-    \item Exact REST API resource and endpoint design.
-    \item Deployment topology and hosting environment.
-    \item Exact FHIR resources and integration scope.
-    \item Detailed authentication implementation and token/session strategy.
+    \item React is the frontend technology.
+    \item ASP.NET Core/.NET is the backend technology.
+    \item REST is the primary frontend-to-backend API style.
+    \item The system is organized around Patient Management, Patient Chart, and Appointment Management.
+    \item International standards/FHIR are deferred from the internship MVP.
+    \item The database technology and detailed data model will be finalized during the database design step.
 \end{itemize}
+
+\section{Remaining Decisions}
+The following should be finalized before implementation becomes fixed:
+\begin{itemize}
+    \item Database engine and persistence approach.
+    \item Detailed database schema and ERD.
+    \item Exact REST resources/endpoints.
+    \item Authentication implementation and session/token approach.
+    \item Final role-permission matrix after mentor confirmation.
+    \item Deployment approach appropriate to the internship environment.
+\end{itemize}
+
+\section{Implementation Priority}
+Architecture and implementation work shall follow this priority:
+\begin{enumerate}
+    \item Patient Management
+    \item Patient Chart
+    \item Appointment Management
+    \item Required authentication, authorization, validation, and error handling
+    \item Testing and bug fixing
+    \item Optional future functionality only if the MVP is complete
+\end{enumerate}
 
 \end{document}
