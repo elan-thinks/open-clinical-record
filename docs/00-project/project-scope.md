@@ -1,191 +1,167 @@
 # Project Scope
 
-> Keep the first version small enough to finish, but don't paint the system into a corner.
+> Keep the first version small enough to finish within the remaining internship period.
 
-## What we're building
+## Project Purpose
 
-Open Clinical Record is an EMR foundation for a clinic. The first version is centered on three things that are easy to understand from a real clinical workflow:
+Open Clinical Record (OCR) is a focused outpatient EMR internship project. Following mentor guidance, the MVP is deliberately limited to three core business areas:
 
-- the patient's chart
-- the patient's medical records and reports
-- appointments and the visit/consultation flow
+1. **Patient Management**
+2. **Patient Chart**
+3. **Appointment Management**
 
-Authentication, roles, audit history, validation, and notifications sit around those workflows because a clinical system needs them to be trustworthy.
+The goal is to deliver a usable, coherent patient-to-appointment workflow within the remaining one-month implementation period rather than attempting to build a full EMR platform.
+
+## MVP Modules
+
+### 1. Patient Management
+
+The system shall support the basic lifecycle of a patient record:
+
+- Register a new patient
+- Assign a unique patient identifier
+- Search for patients
+- View patient profile and basic demographic/contact information
+- Update permitted patient information
+- Maintain basic patient status
+- Handle duplicate/invalid patient information appropriately
+
+### 2. Patient Chart
+
+The patient chart shall provide a simple longitudinal view of relevant patient information:
+
+- View patient demographics
+- View patient status
+- Record and view allergies
+- Record and view relevant medication/history information
+- Record and view important patient alerts where required
+- View the patient's appointment/visit history
+- Keep information associated with the correct patient
+
+The chart is intended to provide useful patient context without attempting to implement the full clinical documentation capabilities of a hospital EMR.
+
+### 3. Appointment Management
+
+The appointment workflow shall support:
+
+- Create an appointment for a patient
+- View appointments
+- Reschedule appointments
+- Cancel appointments
+- Maintain appointment status/history
+- Check in a patient for an appointment
+- Support a basic walk-in/unscheduled visit path where practical
+- Prevent inappropriate appointment creation based on basic patient status rules
+
+## Core Workflow
+
+The MVP should support the following simple workflow:
+
+```text
+Patient Registration
+       ↓
+Patient Search / Profile
+       ↓
+Patient Chart
+       ↓
+Create Appointment
+       ↓
+Appointment Management
+       ↓
+Check-in / Visit
+       ↓
+Patient's history is updated
+```
+
+The patient is the central record. Appointments and visit information are linked to the correct patient so that staff can understand the patient's history from the chart.
 
 ## Users and Roles
 
-The MVP is intentionally limited to four operational roles. The goal is to implement clear permissions and realistic workflows rather than create many roles simply to make the system look larger.
+The MVP uses **exactly three application roles**:
 
-### 1. Clinician / Doctor
+### 1. Receptionist / Front Desk
 
-Primary clinical user. Can, according to assigned permissions:
-
-- Search and open patient charts
-- Review demographics, history, allergies, alerts, appointments and timeline
-- Start/view encounters
-- Record clinical notes
-- Record diagnoses
-- Record treatment/medication information within the agreed scope
-- Create and finalize/sign clinical documentation where authorized
-- Review the patient's longitudinal clinical record
-
-### 2. Nurse / Clinical Staff
-
-Clinical support user. Can, according to assigned permissions:
-
-- Search and view patient charts
-- View appointments and patient status
-- Participate in check-in/arrival and encounter workflow
-- Record vital signs and appropriate clinical observations
-- View relevant clinical documentation
-- Add clinical information permitted by the workflow
-
-Nurse/clinical-staff permissions must not automatically be identical to clinician permissions, especially for diagnosis, finalization and other controlled clinical actions.
-
-### 3. Receptionist / Front Desk
-
-Patient-registration and scheduling user. Can, according to assigned permissions:
+Primary responsibilities:
 
 - Register patients
 - Search patients
-- Maintain basic demographic/contact information
-- Create appointments
-- Reschedule appointments
-- Cancel appointments and record reasons
-- Check patients in
-- Mark appropriate appointment states such as no-show
-- View the scheduling information needed for front-desk work
+- Maintain permitted demographic/contact information
+- Create, view, reschedule, and cancel appointments
+- Check in patients
+- Support basic walk-in intake
 
-Reception/front-desk access should not provide unrestricted editing of clinical notes, diagnoses or finalized medical reports.
+### 2. Nurse / Clinical Staff
 
-### 4. System Administrator
+Primary responsibilities:
 
-Technical/system-management user. Can, according to assigned permissions:
+- Search and view patient information
+- View patient charts relevant to care
+- View appointments
+- Support check-in/visit workflow
+- Record permitted clinical/chart information such as allergies, medication history, alerts, or basic observations according to the approved permission matrix
 
-- Manage user accounts
-- Assign/manage roles and permissions
-- Activate/deactivate accounts
-- Perform basic system configuration
-- Review audit logs and important system activity
+### 3. Clinician / Doctor
 
-System-administrator status does not automatically mean unrestricted clinical authority. Clinical access should remain controlled by the authorization model and organizational policy.
+Primary responsibilities:
 
-## Users Not Included in the MVP
+- Search and view patient charts
+- Review relevant patient history
+- View appointments
+- Review patient information needed for care
+- Perform authorized clinical updates to the patient chart
 
-The following are recognized as valid EMR stakeholders or future users, but are deliberately outside the initial implementation unless clinical discovery shows a clear requirement:
+Detailed permissions are subject to mentor/clinical confirmation. No additional application role is part of the MVP.
 
-- Patient / Patient Portal user
-- Pharmacist
-- Laboratory staff
-- Radiology staff
-- Billing/finance staff
-- Hospital/clinic management
-- Referral/coordinating staff
-- Other specialist or department-specific roles
+## Cross-Cutting Concerns
 
-The patient remains a core subject of the EMR even though a patient-facing login/portal is not part of the MVP.
-
-## MVP
-
-### Patient / Medical Chart
-
-- Register and search patients
-- View a patient profile and clinical summary
-- Demographics and contact information
-- Allergies and important alerts
-- Medical history / current problems
-- Basic patient status
-- Deceased status and date of death where clinically required
-- Patient timeline
-
-### Medical Records / Reports
-
-- Create a clinical record for a visit
-- Record structured clinical information where useful
-- Add clinical notes
-- Record diagnoses
-- Record treatment/medication information within the agreed scope
-- Produce a readable medical report
-- Distinguish editable/in-progress documentation from finalized documentation
-- Preserve historical records instead of silently overwriting them
-
-### Appointments
-
-- Create and manage appointments
-- Assign patient and clinician
-- Appointment status
-- Reschedule and cancel
-- Handle the basic check-in → visit/encounter flow
-- Link an appointment/visit to the resulting clinical record
-
-### Cross-cutting
+The following support the three modules but are not separate business modules:
 
 - Authentication
 - Role-based authorization
-- Audit logging for important actions
 - Input validation
 - Error handling
-- Basic notifications/alerts where useful
+- Basic audit logging for important actions
+- Basic protection of patient information
 
-## Not in the MVP
+These should be implemented only to the level needed to make the internship MVP safe and usable.
 
-These are intentionally left out unless discovery shows that they are necessary:
+## Explicitly Deferred
 
-- Full laboratory information system
+The following are **not part of the committed one-month MVP**. They may be considered only after the three core modules are working and there is enough remaining time:
+
+- Full clinical encounter documentation
+- Diagnosis and treatment documentation
+- Prescription management
+- Medical report generation and advanced document lifecycle
+- Document amendments/versioning
+- Laboratory management
 - Pharmacy management
-- Billing and insurance claims
+- Billing and insurance
 - Radiology/PACS
-- Advanced reporting and analytics
-- Patient mobile application/portal
+- Patient portal/mobile application
 - SMS gateway integration
-- External hospital-to-hospital exchange
-- Full FHIR implementation
-- Complex enterprise scheduling/resource optimization
-- Multi-resource booking and advanced recurring scheduling
-- Full terminology service
+- External hospital exchange
+- FHIR implementation/integration
+- Advanced analytics and reporting
+- AI clinical decision support
+- Complex enterprise scheduling
+- Advanced terminology services
 
-They are not forgotten. They belong in the expansion plan so that we can design sensible boundaries now without trying to build a hospital information system during an internship.
+These features are intentionally deferred so they do not put the core internship deliverable at risk.
 
-## Future direction
+## Standards and Interoperability
 
-The long-term idea is that a patient should have one longitudinal record while separate modules can grow around it:
+International healthcare standards are **not an MVP requirement** for this internship project. The implementation may be designed cleanly enough for future extension, but FHIR or other standards-based integrations will not be pursued unless the mentor later requests them after the core functionality is complete.
 
-```text
-                         Open Clinical Record
-                                  |
-             +--------------------+--------------------+
-             |                    |                    |
-          Patient             Encounters          Appointments
-             |                    |                    |
-             |          +---------+---------+          |
-          History    Notes    Diagnosis  Treatment    |
-             |                                             |
-             +--------------------+------------------------+
-                                  |
-                           Integration API
-                                  |
-       +--------------------------+----------------------------+
-       |              |            |            |               |
-     Lab          Pharmacy     Referrals    Radiology       Patient Portal
-```
+## Scope Rule
 
-Future role/module expansion may include patient self-service, pharmacy, laboratory, radiology, referrals, billing, management/reporting, and external interoperability. These should be added as separate bounded capabilities rather than tightly coupling everything to the initial three workflows.
+During implementation, prioritize completion in this order:
 
-The API/integration boundary is a design concern from the beginning, even if external integrations are not implemented in the internship MVP.
+1. Patient Management
+2. Patient Chart
+3. Appointment Management
+4. Cross-cutting security/validation needed by the above
+5. Testing and bug fixing
+6. Optional future functionality only if the core MVP is complete
 
-## Scope rule
-
-When a feature sounds impressive but does not improve the core patient → appointment → visit → record workflow, it goes into **Future** until there is a clear reason to bring it back.
-
-## Clinical Validation Before SRS Freeze
-
-The role list and permissions are a working proposal, not a substitute for clinical validation. Before the SRS is finalized, confirm with the mentor/clinical stakeholder:
-
-- Which staff roles actually use the target workflow?
-- Whether Nurse and Clinician should be separate roles in the MVP
-- Which actions each role may perform
-- Who can create, reschedule and cancel appointments
-- Who can check in patients
-- Who can create, edit, finalize and amend clinical documentation
-- Who can record deceased status
-- Whether administrators should have any clinical-data access
+If a feature does not directly help complete these three core workflows, it should be deferred rather than added to the MVP.

@@ -1,10 +1,10 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[margin=0.9in]{geometry}
-\usepackage{booktabs,longtable,tabularx,array,enumitem,hyperref,xurl,float,amssymb}
+\usepackage{booktabs,longtable,tabularx,array,enumitem,hyperref,xurl,amssymb}
 \usepackage[T1]{fontenc}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
-\renewcommand{\arraystretch}{1.25}
+\renewcommand{\arraystretch}{1.2}
 \hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
@@ -12,379 +12,278 @@
 
 \title{\textbf{Software Requirements Specification}\\[0.4em]\large Open Clinical Record}
 \author{Open Clinical Record Internship Project}
-\date{Requirements Baseline Draft --- September 2026}
+\date{MVP Scope Revision --- September 2026}
 \begin{document}
 \maketitle
 \thispagestyle{empty}
-\begin{center}\textbf{Document Status: Draft for Mentor and Clinical Review}\end{center}
+\begin{center}\textbf{Document Status: Revised for Mentor Review}\end{center}
 \vfill
 \begin{longtable}{P{0.30\textwidth}P{0.58\textwidth}}
 \toprule Document Item & Value \\\midrule
 Product & Open Clinical Record \\
 Document & Software Requirements Specification (SRS) \\
-Version & 1.3 --- requirements-consistency baseline \\
-Status & Draft for review and requirements baseline \\
-Primary scope & Medical Chart, Appointments, and Medical Records/Reports \\
+Version & 1.4 --- internship MVP scope revision \\
+Status & Revised for mentor review and implementation baseline \\
+MVP scope & Patient Management, Patient Chart, and Appointment Management \\
 Primary users & Clinician/Doctor; Nurse/Clinical Staff; Receptionist/Front Desk \\
-Evidence status & Preliminary clinical validation from one clinician survey response; broader validation remains required \\
-Next lifecycle stage & ERD/data-model and architecture design after requirements review \\
+Implementation period & Remaining one-month internship period \\
+Standards & International interoperability standards are deferred from the MVP \\
+Future functionality & Additional EMR capabilities may be considered after the core MVP is complete \\
 \bottomrule
 \end{longtable}
 \vfill
-\textit{This document is a requirements specification. It defines required system behavior and quality characteristics without committing the implementation to a particular programming language, framework, database engine, or deployment architecture unless explicitly identified as a constraint.}
+\textit{This document intentionally limits the internship MVP to functionality that can realistically be implemented, tested, and demonstrated within the remaining project period.}
 \newpage\tableofcontents\newpage
 
 \section{Introduction}
-\subsection{Purpose of the Requirements Document}
-This Software Requirements Specification defines the functional behavior, quality requirements, interfaces, constraints, data requirements, business rules, and acceptance expectations for the Open Clinical Record (OCR) MVP. Its purpose is to establish a clear and testable baseline before architecture, detailed data modeling, and implementation are finalized.
+\subsection{Purpose}
+This Software Requirements Specification defines the reduced and prioritized MVP for Open Clinical Record (OCR). The scope has been revised following mentor feedback to fit the remaining one-month internship period.
 
-The document translates the project's research and clinical workflow discovery into explicit requirements. It establishes traceability from workflow and evidence through requirements and, later, design and verification. A requirement appearing here does not by itself mean that it has already been implemented or clinically validated.
+The MVP is focused on three core business areas: \textbf{Patient Management}, \textbf{Patient Chart}, and \textbf{Appointment Management}. The objective is to deliver these workflows as a coherent, working system before considering additional functionality.
 
 \subsection{Scope of Product}
-Open Clinical Record is an extensible Electronic Medical Record platform for a focused set of common outpatient workflows. The MVP is organized into exactly three business modules: (1) Medical Chart; (2) Appointments; and (3) Medical Records. These modules are connected through the patient and care workflow. Authentication, authorization, and audit are cross-cutting concerns and are not treated as a fourth business module.
+Open Clinical Record is a focused outpatient patient-management and appointment system with a basic electronic patient chart. The patient is the central record around which the three MVP areas are connected.
 
-The \textbf{Medical Chart} provides longitudinal patient context, including identity, demographics, status, allergies, medication history, alerts, and relevant historical clinical information. The \textbf{Appointments} module covers planned care, visits, check-in, scheduling, and supported walk-ins. The \textbf{Medical Records} module covers encounters, clinical assessment, treatment documentation, prescriptions, clinical notes, medical reports, document finalization, and amendments.
+\begin{center}\textbf{Patient Management $\rightarrow$ Patient Chart $\rightarrow$ Appointment Management $\rightarrow$ Check-in/Visit History}\end{center}
 
-Laboratory, pharmacy, billing, insurance, radiology, patient portal, advanced analytics, autonomous AI clinical decision support, and dedicated mobile applications are outside the MVP unless later approved through requirements change control.
+The MVP does not attempt to implement a complete hospital EMR. Full clinical encounter documentation, diagnosis, treatment, prescriptions, advanced medical reports, laboratory, pharmacy, billing, radiology, patient portal, advanced analytics, and standards-based interoperability are deferred.
 
-\subsection{Definitions and Abbreviations}
-\begin{longtable}{P{0.20\textwidth}P{0.70\textwidth}}
+\subsection{Definitions}
+\begin{longtable}{P{0.23\textwidth}P{0.67\textwidth}}
 \toprule Term & Definition \\\midrule
-EMR & Electronic Medical Record; a digital record of patient information and clinical care maintained within a healthcare organization or clinical system. \\
-SRS & Software Requirements Specification; the controlled document defining system requirements. \\
-MVP & Minimum Viable Product; the smallest planned release that satisfies the defined initial clinical scope. \\
-Medical Chart & The longitudinal patient context, including identity, demographics, status, allergies, medication history, alerts, and links to relevant appointments, visits, encounters, and clinical documents. \\
-Medication history & Information about medications a patient is currently taking, has previously taken, or that is otherwise clinically relevant. Medication history is distinct from a prescription issued during an encounter. \\
-Patient alert & A clinically relevant warning, reminder, precaution, or other alert associated with a patient and displayed in an appropriate context. \\
-Appointment & Planned care: a scheduled interaction between a patient and provider/service at a defined date/time. \\
-Appointment history/event & A historical record or equivalent append-only mechanism for significant appointment state changes such as creation, rescheduling, cancellation, check-in, and no-show where applicable. \\
-Visit & The operational occurrence in which a patient attends a healthcare service; it may originate from an appointment or walk-in. \\
-Encounter & Actual clinical care delivered to a patient, during which assessment, examination, diagnosis, treatment, and related documentation may be recorded. \\
-Prescription & A medication order or prescription issued by an authorized Clinician/Doctor as part of clinical care; it is not the same as the patient's medication history. \\
-Clinical document & A clinical note, medical report, or other formal record documenting care. \\
-Finalized document & A clinical document whose content has been completed and protected from ordinary editing. \\
-Amendment & An authorized correction or addition to a finalized document that preserves the original content and records the change. \\
-Walk-in & A patient visit initiated without a previously scheduled appointment. \\
-RBAC & Role-Based Access Control; access decisions based on an authenticated user's assigned role and permissions. \\
-Audit trail & A chronological record of significant system and clinical-record actions, including actor and time information. \\
-FHIR & Fast Healthcare Interoperability Resources, an HL7 standard relevant to future interoperability. \\
-API & Application Programming Interface used to expose or consume software functionality. \\
-UI & User Interface. \\
-UX & User Experience. \\
-NFR & Non-Functional Requirement. \\
-CRUD & Create, Read, Update, Delete operations. \\
+EMR & Electronic Medical Record; a digital record containing patient and healthcare-related information. \\
+MVP & Minimum Viable Product; the smallest planned version that satisfies the approved internship scope. \\
+Patient Management & Functions for registering, identifying, searching, viewing, and maintaining basic patient information. \\
+Patient Chart & A longitudinal view of information associated with a patient, including demographics, allergies, medication/history information, alerts where required, and appointment/visit history. \\
+Appointment & A planned date/time for a patient's scheduled visit. \\
+Appointment status & The current state of an appointment, such as scheduled, checked-in, cancelled, completed, or other approved states. \\
+Visit & An occurrence in which a patient attends the clinic; it may originate from an appointment or a basic walk-in. \\
+Walk-in & A patient visit that begins without a previously scheduled appointment. \\
+RBAC & Role-Based Access Control; access based on the authenticated user's assigned application role. \\
+Audit trail & A record of important system actions including actor and time information. \\
 \bottomrule
 \end{longtable}
 
 \subsection{References}
-The requirements baseline is informed by the project's internal research and discovery artifacts: clinical workflow, patient-chart research, appointment-scheduling research, clinical-documentation research, research log, and architecture decision record. Established healthcare interoperability concepts such as HL7 FHIR are treated as future-facing boundaries rather than MVP integration requirements.
+The requirements are informed by the project's existing research and discovery artifacts, including clinical workflow, patient-chart research, appointment-scheduling research, and the mentor-approved scope direction.
 
 \begin{itemize}[leftmargin=*]
+\item \texttt{docs/00-project/project-scope.md}
 \item \texttt{docs/02-discovery/clinical-workflow.md}
 \item \texttt{docs/01-research/patient-chart-research.md}
 \item \texttt{docs/01-research/appointment-scheduling-research.md}
-\item \texttt{docs/01-research/clinical-documentation-research.md}
-\item \texttt{docs/01-research/research-log.md}
-\item \texttt{docs/03-requirements/functional-requirements.md}
 \item \texttt{docs/03-requirements/non-functional-requirements.md}
-\item \texttt{docs/03-requirements/traceability-matrix.md}
-\item \texttt{docs/04-architecture/adr/0001-record-architectural-decisions.md}
+\item \texttt{docs/04-architecture/architecture-overview.tex}
 \end{itemize}
 
 \section{General Description}
 \subsection{Product Perspective}
-Open Clinical Record is conceived as an extensible EMR platform rather than unrelated CRUD screens. The patient is the central clinical subject. The Medical Chart provides longitudinal context; Appointments represent planned/operational care; and Medical Records represent documentation of care actually delivered.
+The system is designed around a simple clinic workflow. Staff first identify or register the patient, then access the patient chart, manage an appointment, and record attendance/check-in information. The resulting appointment and visit history remains associated with the patient.
 
-\begin{center}\textbf{Patient $\rightarrow$ Medical Chart $\rightarrow$ Appointment or Walk-in $\rightarrow$ Visit $\rightarrow$ Encounter $\rightarrow$ Medical Record/Report $\rightarrow$ Longitudinal Chart}\end{center}
+The system should be modular enough to support future expansion, but future capabilities must not delay completion of the three approved MVP areas.
 
-An appointment, visit, and encounter are distinct concepts. A walk-in may create a Visit and Encounter without requiring a fabricated Appointment. A clinical document belongs to the appropriate patient and, where applicable, encounter. Historical states shall remain distinguishable when required for integrity or auditability.
-
-\subsection{Product Functions}
+\subsection{MVP Modules}
 \begin{enumerate}[leftmargin=*]
-\item Medical Chart: patient registration, unique identification, search, profile, clinical summary, allergies, medication history, alerts, and patient status.
-\item Appointments: appointment creation, viewing, rescheduling, cancellation, history, check-in, visits, and supported walk-ins.
-\item Medical Records: encounters, chief complaint, vitals, history, examination, diagnosis, treatment/care plan, prescriptions, clinical notes, medical reports, finalization, and amendments.
-\item Cross-cutting security: authentication, exactly three application roles, authorization, auditability, and privacy protection.
-\item Input validation, transaction safety, and understandable error handling.
+\item \textbf{Patient Management}: patient registration, unique identifier, search, profile, demographic/contact information, and basic status.
+\item \textbf{Patient Chart}: patient context, allergies, relevant medication/history information, alerts where required, and appointment/visit history.
+\item \textbf{Appointment Management}: appointment creation, viewing, rescheduling, cancellation, status, check-in, and basic walk-in support.
 \end{enumerate}
 
+Authentication, authorization, validation, error handling, and basic audit logging are cross-cutting support concerns. They are not additional business modules.
+
 \subsection{User Characteristics}
-The MVP has exactly three primary application roles. These are application roles, not a claim that every deployment uses identical job titles.
+The MVP has exactly three application roles.
 
-\begin{longtable}{P{0.23\textwidth}P{0.28\textwidth}P{0.39\textwidth}}
-\toprule Role & Typical responsibility & Primary system capabilities \\\midrule
-\textbf{Receptionist / Front Desk} & Patient-facing administrative workflow & Register/search patients; manage permitted demographic information; create, view, reschedule, and cancel appointments; perform check-in; initiate supported walk-in intake. No diagnosis, treatment, prescribing, or clinical-report authoring. \\
-\textbf{Nurse / Clinical Staff} & Clinical workflow support and nursing activities & Search patients; support appointment/check-in workflow; record permitted vitals/observations; support encounters within assigned permissions. Additional administrative permissions remain subject to the approved matrix. \\
-\textbf{Clinician / Doctor} & Clinical assessment and clinical decision documentation & Review chart; assess patient; record history/examination, diagnosis, treatment, prescription where applicable; create/finalize permitted clinical notes/reports; perform authorized patient-status changes and amendments. \\
+\begin{longtable}{P{0.24\textwidth}P{0.28\textwidth}P{0.36\textwidth}}
+\toprule Role & Responsibility & MVP capabilities \\\midrule
+\textbf{Receptionist / Front Desk} & Patient registration and scheduling & Register/search patients; maintain permitted demographics; create, view, reschedule and cancel appointments; check in patients; support basic walk-ins. \\
+\textbf{Nurse / Clinical Staff} & Clinical support & Search/view patients and charts; view appointments; support check-in/visit workflow; maintain permitted chart information according to the approved permission matrix. \\
+\textbf{Clinician / Doctor} & Clinical oversight and patient care context & Search/view patient charts; review patient history and appointments; perform authorized clinical/chart updates required by the MVP. \\
 \bottomrule
 \end{longtable}
 
-Permissions shall be enforced at operation and data level. The final permission matrix requires mentor/clinical stakeholder confirmation; unresolved policy questions are not implementation authority.
+No System Administrator or other application role is included in the MVP.
 
-\subsection{General Constraints}
+\subsection{Constraints}
 \begin{itemize}[leftmargin=*]
-\item The MVP remains within the three business modules defined in Section 1.2.
-\item Sensitive patient and clinical information shall be protected from unauthorized access.
-\item Clinically significant history shall not be silently destroyed.
-\item Finalized clinical documents require stronger integrity protection than ordinary draft content.
-\item Application boundaries should support future interoperability without requiring MVP FHIR integration.
-\item The MVP shall not make autonomous clinical decisions.
-\item Walk-in handling remains flexible because urgency and patient condition may affect the appropriate path.
+\item The MVP must remain small enough to implement and test within the remaining one-month internship period.
+\item Only three business modules are committed: Patient Management, Patient Chart, and Appointment Management.
+\item Exactly three application roles are used: Receptionist/Front Desk, Nurse/Clinical Staff, and Clinician/Doctor.
+\item International healthcare standards and FHIR integration are not required for the internship MVP.
+\item Additional functionality may be added only after the core MVP is complete and only if time remains.
+\item Patient information must be protected from unauthorized access.
 \end{itemize}
-
-\subsection{Assumptions and Dependencies}
-\begin{longtable}{P{0.20\textwidth}P{0.70\textwidth}}
-\toprule ID & Assumption / dependency \\\midrule
-A-001 & Users are authenticated before protected clinical information is displayed. \\
-A-002 & The deployment has access to a supported persistent data store. \\
-A-003 & Patient identifiers are unique within the system's operational scope. \\
-A-004 & Clinical roles and permissions are approved by the responsible project/clinical stakeholder. \\
-A-005 & The organization defines applicable retention, privacy, and access policies. \\
-A-006 & Date/time values are recorded consistently and interpreted in the configured deployment timezone. \\
-A-007 & Future FHIR interoperability, if required, will be based on the finalized domain/data model and is not assumed to be MVP functionality. \\
-A-008 & Network connectivity may occasionally fail; critical writes therefore require safe failure behavior. \\
-\bottomrule
-\end{longtable}
 
 \section{Specific Requirements}
 \subsection{External Interface Requirements}
-\subsubsection{User Interface Requirements}
-The application shall provide a consistent interface for the three approved roles. The UI shall make patient identity/current context clear, distinguish editable drafts from finalized documents, and present appointment status explicitly. It shall include conceptual views for authentication, patient search/registration, chart, appointments, check-in/walk-in, encounter workspace, clinical documentation, amendment history, and error/access-denied states.
+\subsubsection{User Interface}
+The system shall provide clear screens for authentication, patient search, patient registration, patient profile/chart, appointment management, appointment details, check-in, and basic visit history.
 
-The UI shall not expose controls for actions the current user is not permitted to perform. The service/application layer shall independently enforce authorization.
+The interface shall show the current patient context clearly and shall not present controls for operations the current user is not authorized to perform.
 
-\subsubsection{Software Interfaces}
-The system shall use explicit boundaries so UI code does not directly manipulate clinical persistence structures. Conceptual boundaries shall distinguish authentication/authorization, patient management, scheduling, encounter/documentation, persistence, and audit concerns. If an API layer is used, endpoints shall represent domain operations rather than unrestricted database CRUD.
+\subsubsection{Software Interface}
+The React frontend shall communicate with the ASP.NET Core backend through the REST API defined by the architecture. The backend shall enforce validation and authorization independently of the frontend.
 
-\subsubsection{Communication Interfaces}
-Client/server communication shall use secure transport appropriate to deployment. Protected information shall not be transmitted through unprotected channels in production. Communication failures shall be reported as failures unless persistence is confirmed.
+\subsubsection{Communication}
+Client/server communication shall use secure transport in the deployed application. Communication or save failures shall be reported clearly and shall not falsely indicate successful persistence.
 
 \subsection{Functional Requirements}
-\subsubsection{Medical Chart Requirements}
+\subsubsection{Patient Management Requirements}
 \begin{longtable}{P{0.14\textwidth}P{0.20\textwidth}P{0.56\textwidth}}
 \toprule ID & Requirement & Detailed specification \\\hline
-\req{FR-PAT-001}{Register patient}{The system shall allow the Receptionist/Front Desk to create a patient record containing required demographic and administrative information.}
-\req{FR-PAT-002}{Assign patient identifier}{The system shall assign or record a unique patient identifier and reject duplicate identifiers where uniqueness is required.}
-\req{FR-PAT-003}{Search patient}{The system shall allow authorized users to search using supported identifying information and present results in a way that reduces accidental wrong-patient selection.}
-\req{FR-PAT-004}{View patient profile}{The system shall display demographic information and current patient status to users with appropriate permission.}
-\req{FR-PAT-005}{View clinical summary}{The system shall provide a concise longitudinal summary including available conditions, previous diagnoses, allergies, medication history, relevant vitals, and previous visits/encounters.}
-\req{FR-PAT-006}{Record allergies}{The system shall allow appropriately authorized clinical users to record and update allergy information.}
-\req{FR-PAT-007}{Record medication history}{The system shall allow appropriately authorized users to record relevant medication history and associate each entry with the correct patient. Medication history shall remain conceptually distinct from prescriptions issued during encounters.}
-\req{FR-PAT-008}{Manage patient alerts}{The system shall allow appropriately authorized users to record and maintain clinically relevant patient alerts and shall display them in the appropriate patient/clinical context.}
-\req{FR-PAT-009}{Record patient status}{The system shall maintain current patient status and restrict status changes according to the approved role matrix.}
-\req{FR-PAT-010}{Mark deceased patient}{The system shall allow an authorized Clinician/Doctor to record deceased status together with date of death and required supporting information.}
-\req{FR-PAT-011}{Handle deceased patient}{After deceased status is recorded, the system shall prevent inappropriate future appointment activity and handle affected future appointments according to the approved policy.}
+\req{FR-PM-001}{Register patient}{The system shall allow an authorized Receptionist/Front Desk user to create a patient record with the required demographic and contact information.}
+\req{FR-PM-002}{Unique patient ID}{The system shall assign or record a unique patient identifier for each patient.}
+\req{FR-PM-003}{Search patient}{The system shall allow authorized users to search for a patient using supported identifying information.}
+\req{FR-PM-004}{View patient profile}{The system shall display the patient's basic demographic, contact, and status information to authorized users.}
+\req{FR-PM-005}{Update patient information}{The system shall allow authorized users to update permitted patient information while preserving the integrity of the patient record.}
+\req{FR-PM-006}{Prevent duplicate patients}{The system shall validate identifying information and provide appropriate feedback when a likely duplicate patient is detected.}
+\req{FR-PM-007}{Patient status}{The system shall maintain a basic patient status and apply approved restrictions to actions affected by that status.}
 \bottomrule
 \end{longtable}
 
-\subsubsection{Appointment and Visit Requirements}
+\subsubsection{Patient Chart Requirements}
 \begin{longtable}{P{0.14\textwidth}P{0.20\textwidth}P{0.56\textwidth}}
 \toprule ID & Requirement & Detailed specification \\\hline
-\req{FR-APT-001}{Create appointment}{The system shall allow the Receptionist/Front Desk to create an appointment. Nurse/Clinical Staff appointment creation shall be available only if explicitly approved in the final permission matrix.}
-\req{FR-APT-002}{View appointments}{The system shall allow authorized users to view appointments relevant to their role and permissions.}
-\req{FR-APT-003}{Reschedule appointment}{The system shall allow an authorized Receptionist/Front Desk, or Nurse/Clinical Staff where explicitly approved, to reschedule an eligible appointment while preserving original scheduling history.}
-\req{FR-APT-004}{Cancel appointment}{The system shall allow an authorized Receptionist/Front Desk, or Nurse/Clinical Staff where explicitly approved, to cancel an eligible appointment without deleting its historical existence.}
-\req{FR-APT-005}{Preserve appointment history}{Cancelled, rescheduled, and no-show appointments shall remain distinguishable from active appointments and retain sufficient historical event/state information for later review.}
-\req{FR-APT-006}{Check in patient}{The system shall allow Receptionist/Front Desk or Nurse/Clinical Staff to record check-in for an eligible appointment or supported walk-in.}
-\req{FR-APT-007}{Support walk-in workflow}{The system shall support a walk-in path that can adapt to urgency and patient condition rather than requiring every walk-in to become an ordinary scheduled appointment.}
-\req{FR-APT-008}{Link appointment to encounter}{When an encounter follows an appointment, the system shall preserve association among appointment, visit, encounter, and patient.}
-\req{FR-APT-009}{Prevent deceased-patient booking}{The system shall prevent inappropriate future appointments for patients whose status is deceased.}
+\req{FR-PC-001}{Open patient chart}{The system shall allow an authorized user to open a patient's chart from a valid patient record.}
+\req{FR-PC-002}{Chart summary}{The chart shall provide a concise view of important patient information available within the MVP.}
+\req{FR-PC-003}{Allergy information}{The system shall allow appropriately authorized users to record and view allergy information associated with the correct patient.}
+\req{FR-PC-004}{Medication/history information}{The system shall allow appropriately authorized users to record and view relevant medication/history information associated with the patient.}
+\req{FR-PC-005}{Patient alerts}{The system shall support recording and displaying important patient alerts where required by the approved workflow.}
+\req{FR-PC-006}{Appointment history}{The patient chart shall allow authorized users to view the patient's appointment history.}
+\req{FR-PC-007}{Visit/check-in history}{The system shall preserve and display basic visit or check-in history associated with the patient.}
+\req{FR-PC-008}{Correct-patient association}{The system shall ensure chart information is associated with the intended patient and shall prevent accidental cross-patient updates.}
 \bottomrule
 \end{longtable}
 
-\subsubsection{Medical Records Requirements}
+\subsubsection{Appointment Management Requirements}
 \begin{longtable}{P{0.14\textwidth}P{0.20\textwidth}P{0.56\textwidth}}
 \toprule ID & Requirement & Detailed specification \\\hline
-\req{FR-ENC-001}{Start encounter}{The system shall allow an authorized Nurse/Clinical Staff or Clinician/Doctor user to start/access an encounter associated with a patient visit, according to assigned workflow permissions.}
-\req{FR-ENC-002}{Record chief complaint}{The system shall allow the Clinician/Doctor to record the patient's presenting complaint/reason for visit.}
-\req{FR-ENC-003}{Record vitals}{The system shall allow Nurse/Clinical Staff to record relevant vital signs. Clinician/Doctor entry may be supported where required by the approved workflow.}
-\req{FR-ENC-004}{Record history}{The system shall allow the Clinician/Doctor to document relevant medical and encounter history.}
-\req{FR-ENC-005}{Record examination}{The system shall allow the Clinician/Doctor to document examination findings.}
-\req{FR-ENC-006}{Record diagnosis}{Only appropriately authorized Clinician/Doctor users may record diagnosis/clinical assessment.}
-\req{FR-ENC-007}{Record treatment/care plan}{Only appropriately authorized Clinician/Doctor users may document treatment or care plans.}
-\req{FR-ENC-008}{Record prescription}{Only appropriately authorized Clinician/Doctor users may issue or record prescription information where applicable. Prescriptions shall be associated with the relevant encounter and patient.}
-\req{FR-ENC-009}{Create clinical note}{The system shall allow an authorized Clinician/Doctor to create and save clinical notes associated with the correct encounter.}
-\req{FR-ENC-010}{Maintain encounter linkage}{Clinical encounter information shall remain linked to exactly the intended patient and encounter context and shall not be silently reassigned.}
-\req{FR-REC-001}{Generate medical report}{The system shall allow an authorized Clinician/Doctor to generate a medical report using relevant patient and encounter information.}
-\req{FR-REC-002}{Finalize clinical document}{The system shall allow an authorized Clinician/Doctor to finalize an eligible clinical document.}
-\req{FR-REC-003}{Restrict finalized editing}{A finalized document shall not be ordinarily editable in a way that silently changes its finalized content.}
-\req{FR-REC-004}{Amend finalized document}{The system shall provide an authorized correction/amendment path for finalized documents according to approved clinical policy.}
-\req{FR-REC-005}{Preserve original document}{When an amendment occurs, the original finalized content shall remain preserved and identifiable.}
-\req{FR-REC-006}{Record amendment history}{The system shall record amendment metadata including responsible user, date/time, reason or explanation where required, and relationship to the original document.}
-\req{FR-REC-007}{View document status}{The system shall clearly distinguish draft, finalized, amended, and other approved lifecycle states.}
+\req{FR-AP-001}{Create appointment}{The system shall allow an authorized Receptionist/Front Desk user to create an appointment for an existing patient.}
+\req{FR-AP-002}{View appointments}{Authorized users shall be able to view appointments relevant to their work.}
+\req{FR-AP-003}{Appointment details}{Each appointment shall identify the patient, scheduled date/time, purpose/reason where required, and current status.}
+\req{FR-AP-004}{Reschedule appointment}{The system shall allow authorized users to change an eligible appointment's scheduled date/time while retaining sufficient history.}
+\req{FR-AP-005}{Cancel appointment}{The system shall allow authorized users to cancel an eligible appointment and retain its historical existence.}
+\req{FR-AP-006}{Appointment status}{The system shall maintain a clear appointment status throughout its lifecycle.}
+\req{FR-AP-007}{Check-in}{The system shall allow Receptionist/Front Desk or Nurse/Clinical Staff to record patient check-in for an eligible appointment.}
+\req{FR-AP-008}{Basic walk-in}{The system shall support a basic walk-in path without requiring a fabricated prior appointment.}
+\req{FR-AP-009}{Visit linkage}{Check-in/visit information shall remain linked to the correct patient and, when applicable, the originating appointment.}
+\req{FR-AP-010}{Status-based validation}{The system shall prevent appointment actions that violate approved patient or appointment status rules.}
 \bottomrule
 \end{longtable}
 
-\subsubsection{Authentication, Authorization and Audit Requirements}
+\subsubsection{Authentication, Authorization, Validation and Audit}
 \begin{longtable}{P{0.14\textwidth}P{0.20\textwidth}P{0.56\textwidth}}
 \toprule ID & Requirement & Detailed specification \\\hline
-\req{FR-SEC-001}{Authenticate user}{The system shall authenticate users before granting access to protected application functions or clinical data.}
-\req{FR-SEC-002}{Enforce role permissions}{The system shall enforce permissions associated with exactly three approved MVP roles: Receptionist/Front Desk, Nurse/Clinical Staff, and Clinician/Doctor.}
-\req{FR-SEC-003}{Restrict clinical actions}{Diagnosis, treatment, prescriptions, clinical notes, medical reports, patient-status changes, and finalized-document amendments shall require appropriate authorization.}
-\req{FR-SEC-004}{Audit sensitive actions}{The system shall record significant actions affecting patient data, appointments, clinical documents, patient status, and security-sensitive operations.}
-\req{FR-SEC-005}{Protect unauthorized access}{Requests lacking required permission shall be denied without exposing protected data.}
-\bottomrule
-\end{longtable}
-
-\subsubsection{Validation and Error Handling Requirements}
-\begin{longtable}{P{0.14\textwidth}P{0.20\textwidth}P{0.56\textwidth}}
-\toprule ID & Requirement & Detailed specification \\\hline
-\req{FR-VAL-001}{Validate required data}{The system shall validate required fields, formats, relationships, and applicable business rules before committing records.}
-\req{FR-VAL-002}{Prevent invalid appointments}{The system shall reject appointment operations that violate patient status, scheduling, or other approved rules.}
-\req{FR-VAL-003}{Report failures clearly}{The system shall provide understandable error feedback while avoiding unnecessary sensitive disclosure.}
-\req{FR-VAL-004}{Preserve data on failure}{A failed save/communication operation shall not silently create partial clinical records or falsely report success.}
+\req{FR-SEC-001}{Authenticate user}{The system shall authenticate users before granting access to protected functions or patient information.}
+\req{FR-SEC-002}{Enforce three roles}{The system shall enforce permissions for exactly three MVP roles: Receptionist/Front Desk, Nurse/Clinical Staff, and Clinician/Doctor.}
+\req{FR-SEC-003}{Restrict access}{The system shall deny operations for which the authenticated user lacks permission.}
+\req{FR-SEC-004}{Audit important actions}{The system shall record important patient and appointment actions with actor and timestamp information where required.}
+\req{FR-VAL-001}{Validate data}{The system shall validate required fields, formats, identifiers, relationships, and relevant business rules before saving data.}
+\req{FR-VAL-002}{Clear errors}{The system shall provide understandable error feedback without exposing unnecessary protected information.}
+\req{FR-VAL-003}{Safe failure}{A failed operation shall not silently create partial or inconsistent patient/appointment records.}
 \bottomrule
 \end{longtable}
 
 \subsection{Business Rules}
 \begin{longtable}{P{0.14\textwidth}P{0.76\textwidth}}
 \toprule ID & Business rule \\\midrule
-BR-001 & Cancelled appointments remain in history and are clearly marked as cancelled. \\
-BR-002 & Rescheduled appointments retain sufficient history to distinguish original and updated scheduling state. \\
-BR-003 & Finalized clinical documents cannot be silently overwritten; corrections are traceable amendments preserving the original. \\
-BR-004 & Diagnosis, treatment, prescription, clinical notes, reports, and patient-status changes are protected by role-based permissions. \\
-BR-005 & Clinically relevant patient alerts are displayed in the appropriate clinical context. \\
-BR-006 & Deceased patients cannot receive inappropriate future appointments; affected future appointments are handled according to approved policy. \\
-BR-007 & Walk-in handling remains flexible because urgency and patient condition may affect workflow. \\
-BR-008 & Clinical information remains associated with the correct patient and encounter. \\
-BR-009 & Chart access does not itself grant additional clinical authority. \\
-BR-010 & Historical information shall not be silently destroyed when operational state changes. \\
-BR-011 & Medication history and prescriptions are distinct concepts: medication history represents patient medication information, while a prescription represents an order issued during clinical care. \\
+BR-001 & Each patient has one unique patient identifier within the system. \\
+BR-002 & Patient chart information must belong to the correct patient. \\
+BR-003 & Cancelled appointments remain in history rather than being silently deleted. \\
+BR-004 & Rescheduling shall not erase the fact that an earlier appointment state existed. \\
+BR-005 & A walk-in may create a visit without a prior appointment. \\
+BR-006 & Appointment operations must respect the current patient and appointment status. \\
+BR-007 & Chart access does not automatically grant permission to modify every type of chart information. \\
+BR-008 & Only the three approved application roles may be assigned to MVP users. \\
+BR-009 & Additional EMR functionality is deferred until the three core modules are complete. \\
 \bottomrule
 \end{longtable}
 
 \subsection{Non-Functional Requirements}
-The detailed NFR catalogue is maintained in \texttt{docs/03-requirements/non-functional-requirements.md}. The SRS treats that catalogue as the canonical detailed NFR source; this section establishes the quality categories and does not intentionally duplicate every NFR entry.
+The existing detailed NFR document remains supporting material, but the internship MVP prioritizes the following qualities:
 
-Required categories are: security/privacy; data integrity and clinical record safety; performance; reliability/failure handling; usability/accessibility; maintainability/extensibility; interoperability/FHIR readiness; auditability; and backup/recovery.
+\begin{itemize}[leftmargin=*]
+\item \textbf{Usability:} common patient and appointment tasks should be straightforward for clinic staff.
+\item \textbf{Performance:} ordinary patient search and appointment operations should respond promptly under expected internship-scale usage.
+\item \textbf{Security:} authenticated users must only access permitted patient information and operations.
+\item \textbf{Data integrity:} patient and appointment records must not be silently corrupted or lost.
+\item \textbf{Reliability:} failed operations must produce safe, understandable outcomes.
+\item \textbf{Maintainability:} the implementation should keep the three modules separated enough for future extension.
+\end{itemize}
 
 \subsection{Logical Database Requirements}
-The logical data model shall represent the entities needed to support the three business modules and their cross-cutting controls.
+The database shall support the three MVP modules without introducing unnecessary enterprise complexity.
 
-\textbf{Medical Chart entities:} Patient, Allergy, Medication History, Patient Alert.
+\textbf{Patient Management:} Patient.
 
-\textbf{Appointments entities:} Appointment, Appointment History/Event, Visit.
+\textbf{Patient Chart:} Allergy, Medication History, Patient Alert, and patient-linked appointment/visit history.
 
-\textbf{Medical Records entities:} Encounter, Vital Sign, Clinical Note, Diagnosis, Treatment/Care Plan, Prescription, Clinical Document/Medical Report, Document Amendment.
+\textbf{Appointment Management:} Appointment, Appointment History/Event where required, Visit.
 
-\textbf{Cross-cutting entities:} User, Audit Event.
+\textbf{Cross-cutting:} User, Audit Event where implemented.
 
-Patient status, including deceased status and date of death, shall be represented explicitly in the patient model. Appointment history shall be represented through a dedicated history/event structure or an equivalent design that preserves significant state transitions. The final ERD shall choose the simplest normalized representation that satisfies these requirements.
+The central relationships are Patient $1$--$M$ Appointment, Patient $1$--$M$ Visit, and Appointment $0..1$--$1$ Visit where a visit originated from an appointment. A walk-in visit shall be allowed without an appointment reference.
 
-Core relationships shall preserve patient-to-appointment, patient-to-visit, patient-to-encounter, appointment-to-visit, visit-to-encounter, patient/encounter-to-document, document-to-amendment, and actor-to-audit-event associations as appropriate. Medication history shall be associated with the patient and may reference a prescription when clinically appropriate without becoming the same entity. Current state and historical state shall be distinguishable where history preservation is required.
+The final ERD should use the simplest normalized model that supports the approved MVP and can be implemented within the remaining project period.
 
-\subsection{Design Constraints}
+\subsection{Deferred Functionality}
+The following are explicitly outside the committed MVP and shall not be used to expand the implementation schedule:
+
+\begin{itemize}[leftmargin=*]
+\item Full encounter documentation
+\item Diagnosis and treatment documentation
+\item Prescription management
+\item Advanced medical report/document lifecycle
+\item Document amendments/versioning
+\item Laboratory, pharmacy, billing, insurance, and radiology modules
+\item Patient portal/mobile application
+\item SMS and external integrations
+\item FHIR or other international standards implementation
+\item Advanced analytics and enterprise scheduling
+\item AI clinical decision support
+\end{itemize}
+
+These may be considered as future work only after the MVP is functional and tested.
+
+\subsection{Acceptance Criteria}
+The MVP is considered ready for demonstration when the following can be completed successfully:
+
 \begin{enumerate}[leftmargin=*]
-\item The MVP shall use exactly three approved application roles: Clinician/Doctor, Nurse/Clinical Staff, and Receptionist/Front Desk.
-\item The MVP shall contain exactly three business modules: Medical Chart, Appointments, and Medical Records. Authentication, authorization, and audit remain cross-cutting concerns.
-\item The MVP shall not include autonomous AI diagnostic or treatment functionality.
-\item Finalized clinical documents shall not be ordinary mutable comments.
-\item Patient, appointment, visit, and encounter relationships shall be first-class integrity constraints.
-\item Future interoperability shall be supported without requiring production FHIR integration in the MVP.
-\item The system shall remain modular enough for later clinical modules.
-\item Security and privacy controls are requirements, not optional enhancements.
+\item A receptionist can register a patient and receive a unique patient ID.
+\item An authorized user can search for and open that patient.
+\item The patient's chart displays the stored patient information and relevant history.
+\item Authorized staff can record and view supported chart information.
+\item A receptionist can create an appointment for the patient.
+\item Authorized staff can view the appointment and update its status/check in the patient.
+\item An appointment can be rescheduled or cancelled without silently deleting its history.
+\item A basic walk-in can be recorded without inventing a previous appointment.
+\item Role restrictions prevent unauthorized operations.
+\item Invalid input and failed operations are handled without creating inconsistent records.
 \end{enumerate}
 
-\section{Appendices}
-The appendices are supporting requirements material. If an appendix conflicts with a normative requirement in Section 3, the approved requirement in Section 3 takes precedence until the SRS is formally revised.
-
-\subsection{Appendix A --- Data Structure Specification}
-\begin{longtable}{P{0.22\textwidth}P{0.66\textwidth}}
-\toprule Structure & Representative attributes \\\midrule
-Patient & Patient ID; name; date of birth; sex/gender fields as approved; contact/address; emergency/contact information where required; status; date of death when applicable; created/updated metadata. \\
-Allergy & Allergy ID; patient ID; substance/allergen; reaction; severity/status as approved; onset/recorded information; verification/source metadata where required. \\
-Medication History & Medication history ID; patient ID; medication name; dose/route/frequency where known; status such as current/previous as approved; start/end dates where known; source/recorded metadata. \\
-Patient Alert & Alert ID; patient ID; alert type; alert text/value; severity/priority; active/inactive state; created/updated metadata. \\
-Appointment & Appointment ID; patient ID; date; start/end time; provider/service; status; reason; created by; rescheduled-from reference where applicable; cancellation information. \\
-Appointment History/Event & Event ID; appointment ID; event/state type; previous/new state where applicable; event timestamp; actor; reason/notes where required. \\
-Visit & Visit ID; patient ID; appointment reference if any; arrival/check-in time; visit type; operational status. \\
-Encounter & Encounter ID; patient ID; visit ID; clinician; start/end time; complaint; history; examination; diagnosis reference(s); treatment/care-plan reference(s); prescription reference(s); note/document references. \\
-Vital Sign & Vital sign ID; encounter/visit ID; type; value/unit; measured time; recorded by. \\
-Diagnosis & Diagnosis ID; encounter ID; patient ID; diagnosis/clinical assessment; status/date; recorded by. \\
-Treatment/Care Plan & Treatment ID; encounter ID; patient ID; treatment/care-plan description; status/date; recorded by. \\
-Prescription & Prescription ID; patient ID; encounter ID; medication; dosage/instructions; quantity/duration where applicable; prescriber; issue date; status. \\
-Clinical Note & Note ID; patient ID; encounter ID; author; note type; content/reference; created/finalized times; lifecycle state. \\
-Clinical Document/Medical Report & Document ID; patient ID; encounter ID where applicable; document/report type; content/reference; author; created/finalized times; lifecycle state. \\
-Document Amendment & Amendment ID; original document ID; author; timestamp; reason; amendment content/reference; approval/status metadata. \\
-User & User ID; username/identity; assigned one of the three approved roles; account status; authentication metadata as appropriate. \\
-Audit Event & Event ID; actor/user; action; target type/ID; timestamp; outcome; relevant metadata. \\
+\subsection{Traceability Summary}
+\begin{longtable}{P{0.28\textwidth}P{0.55\textwidth}}
+\toprule MVP area & Main requirements \\\midrule
+Patient Management & FR-PM-001 through FR-PM-007 \\
+Patient Chart & FR-PC-001 through FR-PC-008 \\
+Appointment Management & FR-AP-001 through FR-AP-010 \\
+Cross-cutting controls & FR-SEC-001 through FR-SEC-004; FR-VAL-001 through FR-VAL-003 \\
 \bottomrule
 \end{longtable}
 
-\subsection{Appendix B --- Data-Flow and Workflow Models}
-\begin{center}\textbf{User $\rightarrow$ Authentication/Authorization $\rightarrow$ Application Services $\rightarrow$ Clinical Domain Operations $\rightarrow$ Persistent Data + Audit}\end{center}
+\subsection{Mentor Review Items}
+The following decisions should be confirmed before implementation is considered frozen:
 
-The clinical workflow is: register/identify patient; open Medical Chart; create/retrieve Appointment or initiate walk-in; create Visit/check in; create/access Encounter; record permitted vitals/preliminary information; clinician assesses and records findings; clinician records diagnosis/treatment/prescription/notes as applicable; generate/finalize Medical Record document/report; preserve encounter/document in longitudinal chart; amend finalized documents through a traceable correction path when authorized.
+\begin{itemize}[leftmargin=*]
+\item Mandatory patient registration fields.
+\item Exact permissions for each of the three roles.
+\item Required allergy, medication/history, and alert fields.
+\item Appointment statuses required for the MVP.
+\item Whether basic walk-in support is required for the final demonstration or can be deferred.
+\item Required level of audit logging.
+\end{itemize}
 
-\subsection{Appendix C --- Detailed Domain/Object Model}
-Patient is the central clinical subject with explicit links to Appointment, Visit, and Encounter. The Medical Chart is the longitudinal context, Appointments represent planned/operational care, and Medical Records represent documentation of care delivered. Encounter is the principal clinical context for assessment and care documentation. Clinical documents link to patient and relevant encounter.
-
-Lifecycle concepts: Appointment = scheduled $\rightarrow$ checked-in/attended, cancelled, no-show, or rescheduled as applicable; Appointment History/Event preserves significant transitions; Visit = appointment or walk-in $\rightarrow$ checked-in/active $\rightarrow$ completed; Encounter = active $\rightarrow$ completed/closed; Clinical document = draft/in-progress $\rightarrow$ finalized/signed $\rightarrow$ amended when authorized; Patient = active/current status with deceased status affecting future scheduling.
-
-\subsection{Appendix D --- Role and Permission Matrix}
-\begin{longtable}{P{0.30\textwidth}P{0.19\textwidth}P{0.19\textwidth}P{0.19\textwidth}}
-\toprule Capability & Receptionist / Front Desk & Nurse / Clinical Staff & Clinician / Doctor \\\midrule
-Register patient & Yes & Pending clinical approval & No by default \\
-Search/view patient & Yes, limited context & Yes & Yes \\
-Create appointments & Yes & Pending clinical approval & No by default \\
-View appointments & Yes & Yes & Yes, clinical context only \\
-Reschedule/cancel & Yes & Pending clinical approval & No by default \\
-Check-in & Yes & Yes & No by default \\
-Walk-in intake & Yes & Yes & No by default \\
-Record vitals & No & Yes & Yes, where clinically needed \\
-Record diagnosis & No & No & Yes \\
-Record treatment & No & No & Yes \\
-Record prescription & No & No & Yes \\
-Create clinical note & No & Pending clinical approval & Yes \\
-Generate/finalize medical report & No & Pending clinical approval & Yes \\
-Amend finalized document & No & Pending clinical approval & Yes \\
-Change deceased status & No & No by default & Yes \\
-View audit information & Pending policy & Pending policy & Pending policy \\
-\bottomrule
-\end{longtable}
-
-\textit{Pending entries are deliberate. They are unresolved policy decisions, not permissions that implementation may assume.}
-
-\subsection{Appendix E --- Requirements Traceability Summary}
-The traceability chain is: Research/Clinical Discovery $\rightarrow$ Workflow/Use Case $\rightarrow$ Requirement $\rightarrow$ Business Rule $\rightarrow$ Architecture/Data Design $\rightarrow$ Verification.
-
-Canonical use cases:
-\begin{longtable}{P{0.16\textwidth}P{0.68\textwidth}}
-\toprule ID & Use case \\\midrule
-UC-01 & Patient registration and identification \\
-UC-02 & Patient search, chart, and clinical summary \\
-UC-03 & Appointment scheduling and management \\
-UC-04 & Check-in and walk-in handling \\
-UC-05 & Clinical encounter and assessment \\
-UC-06 & Clinical documentation and reporting \\
-UC-07 & Finalization, correction, and amendment of clinical documents \\
-UC-08 & Patient status and deceased-patient lifecycle \\
-UC-09 & Authentication, authorization, and audit \\
-\bottomrule
-\end{longtable}
-
-The complete requirement-to-source mapping is maintained in \texttt{docs/03-requirements/traceability-matrix.md}. Verification references are planned evidence; a requirement is verified only when objective test, review, or acceptance evidence exists.
-
-\subsection{Appendix F --- Clinical Validation Evidence}
-Current clinical validation is preliminary: one Doctor/Clinician survey response. Because the sample size is one, it is qualitative preliminary validation, not statistical validation. The response supports the directions documented in the clinical workflow and research log, including chart contents, appointment-history preservation, flexible walk-ins, role separation, clinical documentation, amendments, alerts, deceased-patient handling, and network reliability concerns.
-
-\subsection{Appendix G --- Open Questions and Items for Mentor Review}
-\begin{longtable}{P{0.12\textwidth}P{0.70\textwidth}}
-\toprule ID & Open question / decision required \\\midrule
-OQ-001 & Confirm the final permission matrix for the three MVP roles, especially pending appointment/registration permissions. \\
-OQ-002 & Confirm which patient demographic fields are mandatory for the MVP. \\
-OQ-003 & Confirm the exact amendment workflow, including required reason, review, and authorization rules. \\
-OQ-004 & Confirm appointment states and whether no-show is included in the MVP lifecycle. \\
-OQ-005 & Confirm the policy for future appointments when a patient is marked deceased. \\
-OQ-006 & Confirm minimum audit events and who may view audit information. \\
-OQ-007 & Confirm retention and deletion rules for clinical data. \\
-OQ-008 & Confirm backup frequency and acceptable recovery objectives for intended deployment. \\
-OQ-009 & Confirm whether allergies and medication history can be entered by Nurse/Clinical Staff or require Clinician/Doctor authorization. \\
-OQ-010 & Confirm required report/document types for the MVP. \\
-\bottomrule
-\end{longtable}
-
-\subsection{Appendix H --- Requirements Change Control}
-Changes to approved requirements shall record requirement identifier, reason, evidence/source, affected requirements, and review status. Requirements shall not be silently modified in implementation documentation. Changes affecting architecture/data model shall update the corresponding design artifact or ADR.
+\section{Scope Change Control}
+Any new feature proposed during implementation should first be classified as either MVP or Future. A Future feature shall not displace unfinished core functionality unless the mentor explicitly approves the scope change.
 
 \end{document}
