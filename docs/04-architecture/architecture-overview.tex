@@ -10,7 +10,7 @@
 \newpage
 
 \section{Status}
-This document records the architectural direction for the reduced Open Clinical Record (OCR) internship MVP. The architecture has been aligned with the revised SRS, current logical ERD, and mentor guidance to prioritize a deliverable system within the remaining one-month period.
+This document records the architectural direction for the reduced Open Clinical Record (OCR) internship MVP. The architecture is aligned with the revised SRS, current logical ERD, and project constraints to prioritize a deliverable system within the remaining one-month period.
 
 \section{Architectural Intent}
 The architecture should be simple, modular, maintainable, and practical for an internship-scale implementation. The MVP contains exactly three business modules: \textbf{Patient Management}, \textbf{Patient Chart}, and \textbf{Appointment Management}.
@@ -154,19 +154,19 @@ The current baseline decisions are:
 \end{itemize}
 
 \section{Remaining Decisions}
-The following remain implementation decisions rather than unresolved scope decisions:
+The following remain project decisions rather than unresolved scope decisions:
 \begin{itemize}
     \item Database engine and persistence approach.
     \item Exact REST resources/endpoints.
     \item Authentication implementation and session/token approach.
-    \item Final role-permission matrix after mentor confirmation.
+    \item Final role-permission matrix after clinical confirmation.
     \item Deployment approach appropriate to the internship environment.
 \end{itemize}
 
 The logical ERD and three-module data-model baseline are already established and should not be expanded unless a justified MVP requirement requires a change.
 
 \section{Implementation Priority}
-Architecture and implementation work shall follow this priority:
+Architecture and project work shall follow this priority:
 \begin{enumerate}
     \item Patient Management
     \item Patient Chart
