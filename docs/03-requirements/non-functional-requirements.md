@@ -6,182 +6,174 @@
 
 ## 1. Purpose
 
-This document defines the quality requirements for the reduced Open Clinical Record internship MVP. It complements the functional requirements by describing security, privacy, reliability, performance, usability, maintainability, auditability, and backup/recovery expectations.
+This document defines the practical quality requirements for the internship MVP. It supports the three approved business areas without committing the project to enterprise EMR capabilities.
 
-These requirements are intentionally practical for an internship-scale system. Enterprise capabilities and international interoperability are outside the committed MVP.
-
-## 2. Approved MVP Roles
+## 2. Approved Application Roles
 
 The MVP has exactly three application roles:
 
-- **Receptionist / Front Desk** — patient registration/search, permitted demographic updates, appointment scheduling/rescheduling/cancellation, check-in, and supported walk-in intake.
-- **Nurse / Clinical Staff** — patient/chart access, check-in/visit support, and permitted chart or basic observation updates.
-- **Clinician / Doctor** — patient/chart review and authorized clinical/chart updates required by the MVP.
+- **Receptionist / Front Desk** — patient registration/search, permitted demographic updates, appointment management, check-in, and basic walk-in intake.
+- **Nurse / Clinical Staff** — patient/chart access, permitted chart updates, patient flow, check-in support, and observations such as vitals where included in the final MVP.
+- **Clinician / Doctor** — patient/chart review and authorized clinical/chart updates included in the MVP.
 
-There is **no Administrator role in the MVP application role model**.
+There is **no Administrator role in the MVP**. Authentication, authorization, validation, audit, and error handling are cross-cutting concerns.
 
 ## 3. Security and Privacy
 
 **NFR-SEC-001 — Authentication**  
-The system shall require authenticated access before protected patient, chart, or appointment information is displayed.
+Protected patient, chart, appointment, and visit information shall require authenticated access.
 
 **NFR-SEC-002 — Authorization enforcement**  
-Authorization shall be enforced at the backend/service boundary and shall not depend solely on UI visibility.
+Authorization shall be enforced at the backend/application-service boundary, not only through UI visibility.
 
 **NFR-SEC-003 — Least privilege**  
-Permissions shall follow least-privilege principles within the three approved MVP roles.
+Permissions shall follow least-privilege principles across the three approved roles.
 
 **NFR-SEC-004 — Session protection**  
-Sessions shall be protected against trivial unauthorized reuse, and inactive sessions shall follow an approved timeout policy.
+Authenticated sessions shall use an approved timeout and protection against trivial unauthorized reuse.
 
 **NFR-SEC-005 — Password protection**  
-Passwords shall never be stored as plaintext; an appropriate password-hashing mechanism shall be used.
+Passwords shall never be stored as plaintext and shall use an appropriate password-hashing mechanism.
 
 **NFR-SEC-006 — Sensitive-data exposure**  
-Patient or chart information shall not be unnecessarily exposed in logs, errors, URLs, or client-side messages.
+Patient and clinical information shall not be unnecessarily exposed through logs, URLs, or error messages.
 
 **NFR-SEC-007 — Sensitive-action auditability**  
-Important patient, chart, appointment, and security actions shall be auditable by actor and timestamp where required by the final audit policy.
+Important patient, chart, appointment, status, and security actions shall be attributable to an actor and timestamp where audit is required.
 
 **NFR-SEC-008 — Role separation**  
-The system shall prevent a user from performing operations outside the permissions of the user's assigned MVP role.
+Receptionist / Front Desk users shall not receive permissions intended only for authorized clinical roles.
 
 **NFR-PRI-001 — Minimum necessary access**  
 Patient information shall be exposed only to authenticated users with permission for the requested operation.
 
 **NFR-PRI-002 — Safe development data**  
-Development examples, test data, screenshots, demonstrations, and documentation shall use synthetic or de-identified patient information.
+Examples, tests, screenshots, demonstrations, and documentation shall use synthetic or de-identified patient information.
 
 **NFR-PRI-003 — Safe application logging**  
-Ordinary application logs shall avoid patient-identifying or sensitive clinical information unless explicitly required for a controlled audit purpose.
+Normal application logs shall avoid patient-identifying or clinical information unless explicitly required for controlled auditing.
 
 ## 4. Data Integrity
 
-**NFR-DAT-001 — Identifier and relationship consistency**  
-Patient identifiers and core patient, appointment, and visit relationships shall remain unique and internally consistent.
+**NFR-DAT-001 — Unique patient identity**  
+Patient identifiers shall be unique within the system.
 
-**NFR-DAT-002 — Atomic related changes**  
-Related changes that must succeed together shall be handled atomically where the persistence technology supports transactions.
+**NFR-DAT-002 — Relationship consistency**  
+Patient, chart, appointment, and visit relationships shall remain internally consistent.
 
-**NFR-DAT-003 — Pre-persistence validation**  
-Required fields, relationships, dates, identifiers, and applicable business rules shall be validated before persistence.
+**NFR-DAT-003 — Validation before persistence**  
+Required fields, identifiers, dates, relationships, and applicable business rules shall be validated before data is saved.
 
 **NFR-DAT-004 — Cross-patient integrity**  
-Patient chart, appointment, and visit relationships shall prevent accidental association with the wrong patient.
+The system shall prevent accidental association of chart, appointment, or visit information with the wrong patient.
 
-**NFR-DAT-005 — Historical preservation**  
-Cancelled and rescheduled appointments shall retain sufficient history to understand what happened rather than silently destroying the previous state.
+**NFR-DAT-005 — Atomic related changes**  
+Changes that must succeed together shall be persisted atomically where transactions are supported.
 
-**NFR-DAT-006 — Walk-in integrity**  
-A walk-in visit shall be representable without creating a fabricated appointment solely to satisfy the data model.
+**NFR-DAT-006 — Historical preservation**  
+Cancelled and rescheduled appointment information shall remain understandable rather than being silently destroyed.
 
 ## 5. Performance
 
 **NFR-PERF-001 — Common reads**  
-Under normal MVP deployment conditions, at least 95% of common read operations such as patient search, chart opening, and appointment-list loading should complete within 2 seconds.
+Under normal MVP deployment conditions, at least 95% of common operations such as patient search, chart opening, and appointment-list loading should complete within 2 seconds.
 
 **NFR-PERF-002 — Standard writes**  
-Under normal MVP deployment conditions, at least 95% of standard patient, chart, appointment, and visit/check-in saves should complete within 3 seconds, excluding unavailable external services.
+At least 95% of normal patient and appointment save operations should complete within 3 seconds, excluding unavailable external services.
 
 **NFR-PERF-003 — Concurrent users**  
-The MVP should support at least 10 concurrent authenticated users without violating the response targets under a representative workload.
+The MVP should support at least 10 concurrent authenticated users under a representative workload.
 
 **NFR-PERF-004 — Repeatable measurement**  
-Performance tests shall document the test environment and workload so the stated targets are meaningful and repeatable.
+Performance testing shall document the environment and workload used for measurement.
 
 ## 6. Reliability and Failure Handling
 
 **NFR-REL-001 — Safe failure state**  
-A temporary network or persistence failure shall result in a clear failure state rather than an unverified success state.
+Network or persistence failures shall result in a clear failure state rather than an unverified success state.
 
-**NFR-REL-002 — Duplicate prevention on retry**  
-The application should avoid duplicate creation when a retried operation can be identified as a retry of the same request.
+**NFR-REL-002 — Duplicate prevention**  
+The application should avoid duplicate creation when a retry can be identified as the same operation.
 
 **NFR-REL-003 — Actionable errors**  
 Recoverable errors shall provide a practical next step without exposing implementation details or sensitive information.
 
-**NFR-REL-004 — Recovery procedure**  
-Critical MVP data shall be recoverable from backups according to the deployment's approved recovery procedure.
+**NFR-REL-004 — Preserve confirmed data**  
+A failed subsequent operation shall not corrupt already-confirmed patient, chart, appointment, or visit data.
 
-**NFR-REL-005 — Preserve confirmed data**  
-The system shall preserve already-confirmed data when a subsequent operation fails.
+**NFR-REL-005 — Recovery procedure**  
+Critical persistent data shall have a documented recovery procedure appropriate to the internship deployment.
 
 ## 7. Usability and Accessibility
 
 **NFR-USE-001 — Consistent workflow**  
-Common patient and appointment workflows shall use consistent navigation, terminology, and action placement.
+Core workflows shall use consistent navigation, terminology, and action placement.
 
 **NFR-USE-002 — Wrong-patient prevention**  
-Patient identity and context shall remain visible enough to reduce wrong-patient actions.
+Patient identity and context shall remain visible during chart-related operations to reduce wrong-patient actions.
 
 **NFR-USE-003 — Understandable validation**  
-Required fields and validation errors shall be understandable to non-technical users.
+Required fields and validation messages shall be understandable to non-technical users.
 
 **NFR-USE-004 — Appointment status visibility**  
-Appointment states used by the MVP, such as Scheduled, Checked-in/Arrived, Completed, Cancelled, and optionally No-show, shall be distinguishable.
+Relevant appointment states such as Scheduled, Checked-in/Arrived, Completed, Cancelled, and No-show shall be distinguishable where included in the final MVP.
 
 **NFR-USE-005 — Accessible controls**  
-Interactive controls should support keyboard navigation and readable labels where the selected UI technology permits.
+Interactive controls should have readable labels and support keyboard navigation where the selected UI technology permits.
 
-## 8. Maintainability and Extensibility
+## 8. Maintainability
 
 **NFR-MNT-001 — Separation of concerns**  
-Business rules shall be separated from presentation concerns sufficiently to allow testing without relying exclusively on UI automation.
+Business rules shall be sufficiently separated from presentation concerns to allow testing without relying exclusively on UI automation.
 
 **NFR-MNT-002 — Understandable domain model**  
-Core domain concepts and persistence mappings shall be documented well enough for another developer to understand the model.
+Patient, chart, appointment, and visit concepts shall be documented clearly enough for another developer to understand the model.
 
-**NFR-MNT-003 — Future module support**  
-The architecture should leave reasonable room for future EMR capabilities without adding those capabilities to the MVP implementation.
+**NFR-MNT-003 — Modular design**  
+The architecture shall keep the three MVP business areas sufficiently separated to support later expansion without complicating the current implementation.
 
 **NFR-MNT-004 — Lifecycle traceability**  
-Requirements, architecture decisions, implementation changes, and verification evidence shall remain traceable through documentation and version control.
+Requirements, architecture decisions, implementation changes, and tests shall remain traceable through documentation and version control.
 
 **NFR-MNT-005 — ADR discipline**  
-Significant architectural decisions shall be recorded as ADRs with context, decision, alternatives, consequences, and evidence.
+Significant architectural decisions shall be recorded using the project's ADR format.
 
 ## 9. Auditability
 
 **NFR-AUD-001 — Actor and timestamp**  
-Audit records shall identify the relevant user or system actor and event timestamp.
+Audit events shall identify the relevant user or system actor and event timestamp.
 
-**NFR-AUD-002 — Significant event coverage**  
-Auditable events shall cover important patient, chart, appointment, check-in/visit, and security actions according to the final audit policy.
+**NFR-AUD-002 — Important event coverage**  
+The final audit policy shall cover important patient, appointment, status, access, and other sensitive operations included in the MVP.
 
-**NFR-AUD-003 — Audit immutability**  
+**NFR-AUD-003 — Audit protection**  
 Audit information shall not be editable through ordinary application workflows.
 
-**NFR-AUD-004 — Minimum necessary audit content**  
-The audit mechanism shall not unnecessarily store sensitive patient content when event metadata is sufficient.
+**NFR-AUD-004 — Minimum necessary content**  
+Audit records shall store event metadata rather than unnecessary clinical content.
 
 ## 10. Backup and Recovery
 
-**NFR-BAK-001 — Backup before production**  
-The deployment shall define a backup mechanism for persistent MVP data before production use.
+**NFR-BAK-001 — Backup mechanism**  
+A backup mechanism for persistent MVP data shall be defined before any production-like deployment.
 
-**NFR-BAK-002 — Tested restore procedure**  
-Backup and restore procedures shall be documented and tested at an appropriate internship-project scale.
+**NFR-BAK-002 — Restore procedure**  
+Backup and restore procedures shall be documented and tested at least once using representative data.
 
 **NFR-BAK-003 — Protected backups**  
-Backup access shall be protected because backups contain sensitive patient information.
+Backup access shall be protected because backups may contain sensitive patient information.
 
 **NFR-BAK-004 — Relationship-preserving recovery**  
-Recovery testing shall demonstrate that a representative dataset can be restored without losing required patient, appointment, and visit relationships.
+Recovery testing shall confirm that representative patient, chart, appointment, and visit relationships remain intact.
 
-## 11. MVP Workflow Alignment
+## 11. Scope Boundary
 
-The quality requirements support the approved workflow:
+The following are **not MVP non-functional commitments**: FHIR implementation, external EMR exchange, enterprise-scale interoperability, advanced analytics, AI clinical decision support, patient portal/mobile functionality, and enterprise scheduling/resource optimization.
 
-**Patient Registration/Search → Patient Chart → Appointment or Walk-in → Check-in/Visit → Updated Patient History**
+International healthcare standards are not required for this internship MVP, following mentor guidance.
 
-They reinforce the key boundaries: exactly three application roles, correct-patient association, preserved appointment history, protected patient information, and safe failure handling.
+## 12. Validation Status
 
-## 12. Deferred Standards and Features
+These requirements are an engineering baseline aligned with the mentor-approved scope. Requirements involving clinical permissions, patient-status policy, audit coverage, retention, and recovery should be confirmed with the mentor or relevant clinical stakeholder before being treated as final.
 
-International interoperability standards, including FHIR implementation/integration, are **not MVP requirements**. Full clinical encounters, diagnosis, treatment, prescriptions, advanced medical reports, laboratory, pharmacy, billing, insurance, radiology, patient portals, advanced analytics, and AI clinical decision support are also outside this NFR baseline.
-
-Future work may define additional quality requirements when those features are formally approved.
-
-## 13. Validation Status
-
-**Current status:** Revised engineering baseline aligned with the mentor-approved one-month MVP. Requirements affecting clinical permissions, retention, audit policy, backup/recovery, or patient-status handling should be confirmed with the mentor/clinical stakeholder before final implementation decisions.
+The available clinician feedback is preliminary and qualitative; it is not treated as statistically representative clinical evidence.
