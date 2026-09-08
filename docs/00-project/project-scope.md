@@ -4,7 +4,7 @@
 
 ## Project Purpose
 
-Open Clinical Record (OCR) is a focused outpatient EMR internship project. Following mentor guidance, the MVP is deliberately limited to three core business areas:
+Open Clinical Record (OCR) is a focused outpatient EMR internship project. The MVP is deliberately limited to three core business areas:
 
 1. **Patient Management**
 2. **Patient Chart**
@@ -54,8 +54,6 @@ The appointment workflow shall support:
 - Prevent inappropriate appointment creation based on basic patient status rules
 
 ## Core Workflow
-
-The MVP should support the following simple workflow:
 
 ```text
 Patient Registration
@@ -110,7 +108,7 @@ Primary responsibilities:
 - Review patient information needed for care
 - Perform authorized clinical updates to the patient chart
 
-Detailed permissions are subject to mentor/clinical confirmation. No additional application role is part of the MVP.
+Detailed permissions are subject to clinical/stakeholder confirmation. No additional application role is part of the MVP.
 
 ## Cross-Cutting Concerns
 
@@ -151,7 +149,7 @@ These features are intentionally deferred so they do not put the core internship
 
 ## Standards and Interoperability
 
-International healthcare standards are **not an MVP requirement** for this internship project. The implementation may be designed cleanly enough for future extension, but FHIR or other standards-based integrations will not be pursued unless the mentor later requests them after the core functionality is complete.
+International healthcare standards are **not an MVP requirement** for this internship project. The implementation may be designed cleanly enough for future extension, but FHIR or other standards-based integrations will not be pursued unless they are later established as necessary after the core functionality is complete.
 
 ## Scope Rule
 
