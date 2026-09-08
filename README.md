@@ -1,67 +1,126 @@
 # Open Clinical Record
 
-**Open Clinical Record** is an extensible Electronic Medical Record (EMR) platform designed around three core clinical workflows: **patient/medical chart management, medical records and reports, and appointments**.
+**Open Clinical Record (OCR)** is a focused outpatient EMR internship project built around three core workflows:
 
-The project is being developed as a professional software-engineering internship project, with an emphasis on maintainability, security, interoperability, clinical usability, and future expansion.
+1. **Patient Management**
+2. **Patient Chart**
+3. **Appointment Management**
+
+The MVP is intentionally limited to functionality that can realistically be implemented, tested, and demonstrated within the remaining one-month internship period.
 
 ## Project Direction
 
-The initial system will focus on a practical MVP while preserving a foundation for future modules such as laboratory, pharmacy, referrals, billing, immunization, patient portals, notifications, and interoperability.
+The patient is the central record connecting the three MVP areas:
 
-### Primary users
-- Clinicians and clinical staff
-- Reception and administrative staff
-- System administrators
+```text
+Patient Management
+       ↓
+Patient Chart
+       ↓
+Appointment Management
+       ↓
+Check-in / Visit History
+```
 
-### Primary clinical areas
-1. Patient / Medical Chart
-2. Medical Records / Clinical Reports
-3. Appointments / Visits / Consultation workflow
+The project is not attempting to build a complete hospital EMR during the internship. Additional capabilities may be considered only after the core MVP is working and only if sufficient time remains.
 
-### Design principles
-- Patient safety and data integrity first
-- Role-based access and auditability
-- Modular and extensible architecture
-- API-ready and interoperability-aware design
-- Clear separation of clinical, application, and data concerns
-- MVP-first implementation with future expansion in mind
+### Application Roles
 
-## Research Basis
+The MVP uses **exactly three application roles**:
 
-The project research considers established EMR platforms and digital-health standards, including Oracle Health, OpenMRS, Epic, WHO digital-health guidance, HL7 FHIR, and relevant clinical terminology/interoperability standards. Clinical requirements will be validated with healthcare professionals before final requirements are baselined.
+- Receptionist / Front Desk
+- Nurse / Clinical Staff
+- Clinician / Doctor
+
+Authentication, authorization, validation, error handling, and basic audit logging are cross-cutting concerns, not additional business roles or modules.
+
+## MVP Modules
+
+### 1. Patient Management
+
+- Register patients
+- Assign unique patient identifiers
+- Search patients
+- View patient profiles
+- Update permitted demographic/contact information
+- Maintain basic patient status
+- Detect likely duplicate patient records
+
+### 2. Patient Chart
+
+- View patient demographics and status
+- Record and view allergies
+- Record and view relevant medication/history information
+- Record and view important patient alerts where required
+- View appointment and visit/check-in history
+
+The chart is intentionally basic. Full clinical encounter documentation is outside the committed MVP.
+
+### 3. Appointment Management
+
+- Create appointments for existing patients
+- View appointments
+- Reschedule appointments
+- Cancel appointments
+- Maintain appointment status/history
+- Check in patients
+- Support a basic walk-in path without fabricating an appointment
+
+## Technology Direction
+
+- **Frontend:** React
+- **Backend:** .NET / ASP.NET Core
+- **API:** RESTful HTTP API
+- **Database:** To be selected during database design and implementation
+
+The implementation is database-independent at the design stage. International healthcare standards and FHIR integration are **not required for the internship MVP**.
+
+## Deferred / Future Work
+
+The following are outside the committed MVP and may be considered later:
+
+- Full clinical encounter documentation
+- Diagnosis and treatment documentation
+- Prescription management
+- Medical report generation and advanced document lifecycle
+- Laboratory, pharmacy, billing, insurance, and radiology
+- Patient portal/mobile application
+- SMS and external integrations
+- FHIR or other international-standard integrations
+- Advanced analytics and enterprise scheduling
+- AI clinical decision support
 
 ## Documentation
 
-The `docs/` directory separates living engineering documentation from formal documents.
+The `docs/` directory separates engineering documentation from formal documents:
 
 - `00-project/` — project identity, scope, objectives, glossary
-- `01-research/` — EMR landscape and standards research
+- `01-research/` — EMR and domain research
 - `02-discovery/` — clinical workflows and stakeholder discovery
-- `03-requirements/` — requirements and formal SRS
-- `04-architecture/` — architecture decisions and diagrams
-- `05-data/` — data model, ERD and data dictionary
+- `03-requirements/` — requirements, NFRs, traceability, and formal SRS
+- `04-architecture/` — architecture overview and ADRs
+- `05-data/` — data model, ERD, and data dictionary
 - `06-ux/` — user flows and wireframes
 - `07-api/` — API design
-- `08-security/` — security, permissions and audit logging
+- `08-security/` — security and audit design
 - `09-testing/` — testing strategy and test plans
 - `10-release/` — deployment and release documentation
 
-Formal documents such as the SRS and architecture document will use LaTeX and be compiled to PDF where appropriate. GitHub-native and frequently changing engineering notes will remain in Markdown.
-
 ## Development Approach
 
-The project follows an evidence-driven workflow:
+```text
+Research → Discovery → Requirements → Architecture → Data Model
+→ UX → Implementation → Testing → Release
+```
 
-**Research → Clinical Discovery → Requirements → Architecture → Data Model → UX → Implementation → Testing → Release**
-
-Requirements will not be finalized before research and clinical validation are completed.
+The current priority is to baseline the three approved MVP modules before implementation expands into optional functionality.
 
 ## Status
 
-**Current phase: Discovery and EMR research**
+**Current phase: Requirements and architecture baseline → Database design**
 
-The repository is intentionally starting with project and research documentation before implementation. This keeps architectural and clinical decisions traceable instead of prematurely locking the design.
+The project scope, SRS, and architecture have been revised to match the mentor-approved one-month MVP. The ERD/data model is the next major baseline deliverable.
 
 ## License
 
-License will be selected as part of the project governance and release planning.
+License will be selected as part of project governance and release planning.
