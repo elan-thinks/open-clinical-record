@@ -1,0 +1,7 @@
+\contentsline {section}{\numberline {1}Status}{2}{section.1}%
+\contentsline {section}{\numberline {2}Architectural Intent}{2}{section.2}%
+\contentsline {section}{\numberline {3}Initial Logical View}{2}{section.3}%
+\contentsline {section}{\numberline {4}Cross-Cutting Concerns}{2}{section.4}%
+\contentsline {section}{\numberline {5}Expansion Strategy}{2}{section.5}%
+\contentsline {section}{\numberline {6}Architecture Decisions}{2}{section.6}%
+\contentsline {section}{\numberline {7}What Is Not Decided Yet}{3}{section.7}%
