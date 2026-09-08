@@ -117,7 +117,7 @@ Research → Discovery → Requirements → Architecture → Data Model
 
 **Current phase: Requirements + architecture + MVP data-model baseline → UX / implementation planning**
 
-The mentor-approved scope, SRS, workflow, NFRs, traceability matrix, architecture, clinical domain rules, and logical ERD have been revised to the same three-module MVP. The next implementation work should begin only after the remaining open workflow decisions are confirmed or deliberately deferred.
+The scope, SRS, workflow, NFRs, traceability matrix, architecture, clinical domain rules, and logical ERD are aligned to the same three-module MVP. The next project work should follow the established requirements and resolve any remaining workflow decisions before they are treated as final.
 
 ## License
 
