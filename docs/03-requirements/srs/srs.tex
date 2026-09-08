@@ -167,7 +167,7 @@ Client/server communication shall use secure transport in the deployed applicati
 \req{FR-AP-007}{Check-in}{The system shall allow Receptionist/Front Desk or Nurse/Clinical Staff to record patient check-in for an eligible appointment.}
 \req{FR-AP-008}{Basic walk-in}{The system shall support a basic walk-in path without requiring a fabricated prior appointment.}
 \req{FR-AP-009}{Visit linkage}{Check-in/visit information shall remain linked to the correct patient and, when applicable, the originating appointment.}
-\req{FR-AP-010}{Status-based validation}{The system shall prevent appointment actions that violate approved patient or appointment status rules.}
+\req{FR-AP-010}{Appointment history}{The system shall preserve meaningful appointment history when an appointment is rescheduled or cancelled.}
 \bottomrule
 \end{longtable}
 
@@ -181,6 +181,7 @@ Client/server communication shall use secure transport in the deployed applicati
 \req{FR-VAL-001}{Validate data}{The system shall validate required fields, formats, identifiers, relationships, and relevant business rules before saving data.}
 \req{FR-VAL-002}{Clear errors}{The system shall provide understandable error feedback without exposing unnecessary protected information.}
 \req{FR-VAL-003}{Safe failure}{A failed operation shall not silently create partial or inconsistent patient/appointment records.}
+\req{FR-VAL-004}{Preserve consistency on failure}{The system shall prevent failed operations from leaving incomplete or inconsistent related records when the operation requires atomic persistence.}
 \bottomrule
 \end{longtable}
 
@@ -195,7 +196,8 @@ BR-005 & A walk-in may create a visit without a prior appointment. \\
 BR-006 & Appointment operations must respect the current patient and appointment status. \\
 BR-007 & Chart access does not automatically grant permission to modify every type of chart information. \\
 BR-008 & Only the three approved application roles may be assigned to MVP users. \\
-BR-009 & Additional EMR functionality is deferred until the three core modules are complete. \\
+BR-009 & Important patient and appointment actions should be auditable. \\
+BR-010 & Additional EMR functionality is deferred until the three core modules are complete. \\
 \bottomrule
 \end{longtable}
 
@@ -207,7 +209,7 @@ The existing detailed NFR document remains supporting material, but the internsh
 \item \textbf{Performance:} ordinary patient search and appointment operations should respond promptly under expected internship-scale usage.
 \item \textbf{Security:} authenticated users must only access permitted patient information and operations.
 \item \textbf{Data integrity:} patient and appointment records must not be silently corrupted or lost.
-\item \textbf{Reliability:} failed operations must produce safe, understandable outcomes.
+\item \textbf{Reliability:} failed operations should produce safe, understandable outcomes.
 \item \textbf{Maintainability:} the implementation should keep the three modules separated enough for future extension.
 \end{itemize}
 
@@ -218,13 +220,13 @@ The database shall support the three MVP modules without introducing unnecessary
 
 \textbf{Patient Chart:} Allergy, Medication History, Patient Alert, and patient-linked appointment/visit history.
 
-\textbf{Appointment Management:} Appointment, Appointment History/Event where required, Visit.
+\textbf{Appointment Management:} Appointment, Appointment History/Event, Visit.
 
-\textbf{Cross-cutting:} User, Audit Event where implemented.
+\textbf{Cross-cutting:} User, Audit Event.
 
 The central relationships are Patient $1$--$M$ Appointment, Patient $1$--$M$ Visit, and Appointment $0..1$--$1$ Visit where a visit originated from an appointment. A walk-in visit shall be allowed without an appointment reference.
 
-The final ERD should use the simplest normalized model that supports the approved MVP and can be implemented within the remaining project period.
+The current logical ERD in \texttt{docs/03-requirements/ER/OCR\_MVP\_ERD.html} defines the MVP entity set and relationships. The implementation shall use the simplest normalized model that supports the approved MVP.
 
 \subsection{Deferred Functionality}
 The following are explicitly outside the committed MVP and shall not be used to expand the implementation schedule:
@@ -267,7 +269,7 @@ The MVP is considered ready for demonstration when the following can be complete
 Patient Management & FR-PM-001 through FR-PM-007 \\
 Patient Chart & FR-PC-001 through FR-PC-008 \\
 Appointment Management & FR-AP-001 through FR-AP-010 \\
-Cross-cutting controls & FR-SEC-001 through FR-SEC-004; FR-VAL-001 through FR-VAL-003 \\
+Cross-cutting controls & FR-SEC-001 through FR-SEC-004; FR-VAL-001 through FR-VAL-004 \\
 \bottomrule
 \end{longtable}
 
