@@ -99,7 +99,7 @@ The `docs/` directory separates engineering documentation from formal documents:
 - `02-discovery/` — clinical workflows and stakeholder discovery
 - `03-requirements/` — requirements, NFRs, traceability, and formal SRS
 - `04-architecture/` — architecture overview and ADRs
-- `05-data/` — data model, ERD, and data dictionary
+- `05-data/` — data-model baseline and data dictionary material
 - `06-ux/` — user flows and wireframes
 - `07-api/` — API design
 - `08-security/` — security and audit design
@@ -113,13 +113,11 @@ Research → Discovery → Requirements → Architecture → Data Model
 → UX → Implementation → Testing → Release
 ```
 
-The current priority is to baseline the three approved MVP modules before implementation expands into optional functionality.
-
 ## Status
 
-**Current phase: Requirements and architecture baseline → Database design**
+**Current phase: Requirements + architecture + MVP data-model baseline → UX / implementation planning**
 
-The project scope, SRS, and architecture have been revised to match the mentor-approved one-month MVP. The ERD/data model is the next major baseline deliverable.
+The mentor-approved scope, SRS, workflow, NFRs, traceability matrix, architecture, clinical domain rules, and logical ERD have been revised to the same three-module MVP. The next implementation work should begin only after the remaining open workflow decisions are confirmed or deliberately deferred.
 
 ## License
 
