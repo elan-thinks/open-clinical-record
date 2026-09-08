@@ -1,573 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Open Clinical Record — MVP ERD</title>
 <style>
-  :root {
-    --bg: #0d0f16;
-    --panel: #151824;
-    --border: #262b3d;
-    --text: #e6e9f2;
-    --muted: #8891a8;
-    --violet: #6C5CE7;
-    --blue: #2F80ED;
-    --teal: #17A589;
-    --amber: #E08E34;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: radial-gradient(1200px 600px at 10% 0%, #171b28 0%, #0d0f16 55%);
-    color: var(--text);
-    font-family: 'Segoe UI', Arial, sans-serif;
-    padding: 36px 28px 60px;
-  }
-  .wrap { max-width: 2100px; margin: 0 auto; }
-  header { margin-bottom: 22px; }
-  .eyebrow { color: var(--muted); font-size: 12.5px; letter-spacing: 1.5px; font-weight: 600; }
-  h1 { margin: 6px 0 6px; font-size: 26px; font-weight: 800; }
-  .sub { color: var(--muted); font-size: 14px; max-width: 820px; line-height: 1.5; }
-
-  .legend {
-    display: flex; gap: 22px; flex-wrap: wrap;
-    margin: 18px 0 22px;
-    padding: 14px 18px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    font-size: 12.5px;
-    color: var(--muted);
-  }
-  .legend .grp { display:flex; align-items:center; gap:8px; }
-  .swatch { width: 12px; height: 12px; border-radius: 3px; display:inline-block; }
-  .legend .mark { display:flex; align-items:center; gap:6px; color: var(--text); }
-
-  .canvas-outer {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: auto;
-    padding: 6px;
-  }
-  svg { display: block; }
-
-  footer { margin-top: 18px; color: var(--muted); font-size: 12px; }
+body{margin:0;padding:32px;background:#0d0f16;color:#e8eaf0;font:15px/1.5 Arial,sans-serif}main{max-width:1500px;margin:auto}.card{background:#151824;border:1px solid #303548;border-radius:12px;padding:22px;margin:18px 0}h1{margin:0 0 8px}h2{margin-top:0;color:#8fa8ff}.muted{color:#a4a9b8}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.entity{border:1px solid #394052;border-radius:10px;padding:14px;background:#11141d}.entity h3{margin:0 0 8px}.entity ul{margin:0;padding-left:20px}.pm{border-top:4px solid #6c5ce7}.pc{border-top:4px solid #2f80ed}.ap{border-top:4px solid #17a589}.cross{border-top:4px solid #e08e34}table{width:100%;border-collapse:collapse}th,td{border:1px solid #394052;padding:9px;text-align:left;vertical-align:top}th{background:#202536}code,pre{font-family:Consolas,monospace}pre{background:#0a0c11;padding:18px;overflow:auto;border-radius:8px}li{margin:4px 0}@media(max-width:900px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
-<body>
-<div class="wrap">
-  <header>
-    <div class="eyebrow">OPEN CLINICAL RECORD &nbsp;·&nbsp; INTERNSHIP MVP</div>
-    <h1>Revised 1-Month MVP — Entity Relationship Diagram</h1>
-    <div class="sub">Scope: Patient Management, Patient Chart, Appointment Management. Cross-cutting: Authentication / Authorization / Audit. Ten entities, no future-scope modules (billing, pharmacy, lab, radiology, portal, FHIR) included.</div>
-  </header>
-
-  <div class="legend">
-    <div class="grp"><span class="swatch" style="background:var(--violet)"></span> Patient Management</div>
-    <div class="grp"><span class="swatch" style="background:var(--blue)"></span> Patient Chart</div>
-    <div class="grp"><span class="swatch" style="background:var(--teal)"></span> Appointment Management</div>
-    <div class="grp"><span class="swatch" style="background:var(--amber)"></span> Cross-cutting (Auth / Audit)</div>
-    <div class="mark">
-      <svg width="34" height="16" viewBox="0 0 34 16"><line x1="1" y1="8" x2="33" y2="8" stroke="#8891a8" stroke-width="1.6"/><line x1="9" y1="1" x2="9" y2="15" stroke="#8891a8" stroke-width="1.6"/></svg>
-      one (mandatory)
-    </div>
-    <div class="mark">
-      <svg width="34" height="16" viewBox="0 0 34 16"><line x1="1" y1="8" x2="33" y2="8" stroke="#8891a8" stroke-width="1.6"/><line x1="13" y1="1" x2="13" y2="15" stroke="#8891a8" stroke-width="1.6"/><circle cx="6" cy="8" r="4.5" fill="none" stroke="#8891a8" stroke-width="1.6"/></svg>
-      one (optional)
-    </div>
-    <div class="mark">
-      <svg width="34" height="16" viewBox="0 0 34 16"><line x1="1" y1="8" x2="33" y2="8" stroke="#8891a8" stroke-width="1.6"/><line x1="33" y1="8" x2="19" y2="1" stroke="#8891a8" stroke-width="1.6"/><line x1="33" y1="8" x2="19" y2="15" stroke="#8891a8" stroke-width="1.6"/></svg>
-      many (mandatory)
-    </div>
-    <div class="mark">
-      <svg width="34" height="16" viewBox="0 0 34 16"><line x1="1" y1="8" x2="27" y2="8" stroke="#8891a8" stroke-width="1.6"/><line x1="27" y1="8" x2="13" y2="1" stroke="#8891a8" stroke-width="1.6"/><line x1="27" y1="8" x2="13" y2="15" stroke="#8891a8" stroke-width="1.6"/><circle cx="6" cy="8" r="4.5" fill="none" stroke="#8891a8" stroke-width="1.6"/></svg>
-      zero-or-many
-    </div>
-  </div>
-
-  <div class="canvas-outer">
-    <svg width="2020" height="1214" viewBox="0 0 2020 1214" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="2020" height="1214" fill="#0d0f16"/>
-      <rect x="36" y="52" width="388" height="514" rx="14" fill="rgba(108,92,231,0.05)" stroke="#4b3fa0" stroke-width="1.5" stroke-dasharray="6,5"/>
-<text x="54" y="74" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="1" fill="#6C5CE7">PATIENT MANAGEMENT</text>
-<rect x="456" y="52" width="728" height="682" rx="14" fill="rgba(47,128,237,0.05)" stroke="#245ea3" stroke-width="1.5" stroke-dasharray="6,5"/>
-<text x="474" y="74" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="1" fill="#2F80ED">PATIENT CHART</text>
-<rect x="1256" y="52" width="738" height="720" rx="14" fill="rgba(23,165,137,0.05)" stroke="#0f7a65" stroke-width="1.5" stroke-dasharray="6,5"/>
-<text x="1274" y="74" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="1" fill="#17A589">APPOINTMENT MANAGEMENT</text>
-<rect x="216" y="842" width="818" height="346" rx="14" fill="rgba(224,142,52,0.05)" stroke="#b06f2a" stroke-width="1.5" stroke-dasharray="6,5"/>
-<text x="234" y="864" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="1" fill="#E08E34">AUTHENTICATION / AUTHORIZATION / AUDIT  (cross-cutting)</text>
-      <path d="M 390 160.0 C 460 160.0, 420 184.0, 490 184.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="398" y1="153.0" x2="398" y2="167.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="490" y1="184.0" x2="476" y2="176.0" stroke="#8891a8" stroke-width="1.6"/><line x1="490" y1="184.0" x2="476" y2="192.0" stroke="#8891a8" stroke-width="1.6"/><line x1="490" y1="184.0" x2="476" y2="184.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="470" cy="184.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 390 160.0 C 530 160.0, 690 184.0, 830 184.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="398" y1="153.0" x2="398" y2="167.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="830" y1="184.0" x2="816" y2="176.0" stroke="#8891a8" stroke-width="1.6"/><line x1="830" y1="184.0" x2="816" y2="192.0" stroke="#8891a8" stroke-width="1.6"/><line x1="830" y1="184.0" x2="816" y2="184.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="810" cy="184.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 390 160.0 C 460 160.0, 420 454.0, 490 454.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="398" y1="153.0" x2="398" y2="167.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="490" y1="454.0" x2="476" y2="446.0" stroke="#8891a8" stroke-width="1.6"/><line x1="490" y1="454.0" x2="476" y2="462.0" stroke="#8891a8" stroke-width="1.6"/><line x1="490" y1="454.0" x2="476" y2="454.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="470" cy="454.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 390 160.0 C 560 160.0, 660 544.0, 830 544.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="398" y1="153.0" x2="398" y2="167.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="830" y1="544.0" x2="816" y2="536.0" stroke="#8891a8" stroke-width="1.6"/><line x1="830" y1="544.0" x2="816" y2="552.0" stroke="#8891a8" stroke-width="1.6"/><line x1="830" y1="544.0" x2="816" y2="544.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="810" cy="544.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 110 532 C 110 642, 1180 184.0, 1290 184.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="103" y1="540" x2="117" y2="540" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="1290" y1="184.0" x2="1276" y2="176.0" stroke="#8891a8" stroke-width="1.6"/><line x1="1290" y1="184.0" x2="1276" y2="192.0" stroke="#8891a8" stroke-width="1.6"/><line x1="1290" y1="184.0" x2="1276" y2="184.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="1270" cy="184.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 150 532 C 150 702, 1490 184.0, 1660 184.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="143" y1="540" x2="157" y2="540" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="1660" y1="184.0" x2="1646" y2="176.0" stroke="#8891a8" stroke-width="1.6"/><line x1="1660" y1="184.0" x2="1646" y2="192.0" stroke="#8891a8" stroke-width="1.6"/><line x1="1660" y1="184.0" x2="1646" y2="184.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="1640" cy="184.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 1330 412 C 1330 502, 1200 534.0, 1290 534.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="1323" y1="420" x2="1337" y2="420" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="1290" y1="534.0" x2="1276" y2="526.0" stroke="#8891a8" stroke-width="1.6"/><line x1="1290" y1="534.0" x2="1276" y2="542.0" stroke="#8891a8" stroke-width="1.6"/><line x1="1290" y1="534.0" x2="1276" y2="534.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="1270" cy="534.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 1610 160.0 C 1670 160.0, 1600 208.0, 1660 208.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="1618" y1="153.0" x2="1618" y2="167.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="1626" cy="160.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="1660" y1="208.0" x2="1646" y2="200.0" stroke="#8891a8" stroke-width="1.6"/><line x1="1660" y1="208.0" x2="1646" y2="216.0" stroke="#8891a8" stroke-width="1.6"/><line x1="1660" y1="208.0" x2="1646" y2="208.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="1640" cy="208.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 1690 340 C 1690 480, 980.0 330, 980.0 470" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="1683" y1="348" x2="1697" y2="348" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="980.0" y1="470" x2="972.0" y2="456" stroke="#8891a8" stroke-width="1.6"/><line x1="980.0" y1="470" x2="988.0" y2="456" stroke="#8891a8" stroke-width="1.6"/><line x1="980.0" y1="470" x2="980.0" y2="456" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="980.0" cy="448" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 550 950.0 C 750 950.0, 1350 612, 1350 412" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="558" y1="943.0" x2="558" y2="957.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="1350" y1="412" x2="1342" y2="426" stroke="#8891a8" stroke-width="1.6"/><line x1="1350" y1="412" x2="1358" y2="426" stroke="#8891a8" stroke-width="1.6"/><line x1="1350" y1="412" x2="1350" y2="426" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="1350" cy="434" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 550 974.0 C 810 974.0, 1330 998, 1330 738" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="558" y1="967.0" x2="558" y2="981.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="1330" y1="738" x2="1322" y2="752" stroke="#8891a8" stroke-width="1.6"/><line x1="1330" y1="738" x2="1338" y2="752" stroke="#8891a8" stroke-width="1.6"/><line x1="1330" y1="738" x2="1330" y2="752" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="1330" cy="760" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 550 950.0 C 610 950.0, 640 974.0, 700 974.0" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="558" y1="943.0" x2="558" y2="957.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="700" y1="974.0" x2="686" y2="966.0" stroke="#8891a8" stroke-width="1.6"/><line x1="700" y1="974.0" x2="686" y2="982.0" stroke="#8891a8" stroke-width="1.6"/><line x1="700" y1="974.0" x2="686" y2="974.0" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="680" cy="974.0" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 250 998.0 C 30 998.0, 530 560, 530 340" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="242" y1="991.0" x2="242" y2="1005.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="530" y1="340" x2="522" y2="354" stroke="#8891a8" stroke-width="1.6"/><line x1="530" y1="340" x2="538" y2="354" stroke="#8891a8" stroke-width="1.6"/><line x1="530" y1="340" x2="530" y2="354" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="530" cy="362" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 250 1022.0 C 100 1022.0, 530 784, 530 634" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="242" y1="1015.0" x2="242" y2="1029.0" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="530" y1="634" x2="522" y2="648" stroke="#8891a8" stroke-width="1.6"/><line x1="530" y1="634" x2="538" y2="648" stroke="#8891a8" stroke-width="1.6"/><line x1="530" y1="634" x2="530" y2="648" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="530" cy="656" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 340.0 900 C 340.0 640, 890 696, 890 436" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="333.0" y1="892" x2="347.0" y2="892" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="890" y1="436" x2="882" y2="450" stroke="#8891a8" stroke-width="1.6"/><line x1="890" y1="436" x2="898" y2="450" stroke="#8891a8" stroke-width="1.6"/><line x1="890" y1="436" x2="890" y2="450" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="890" cy="458" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-<path d="M 430.0 900 C 430.0 700, 890 900, 890 700" fill="none" stroke="#5b6478" stroke-width="1.6" opacity="0.85"/>
-<line x1="423.0" y1="892" x2="437.0" y2="892" stroke="#8891a8" stroke-width="1.6"/>
-<line x1="890" y1="700" x2="882" y2="714" stroke="#8891a8" stroke-width="1.6"/><line x1="890" y1="700" x2="898" y2="714" stroke="#8891a8" stroke-width="1.6"/><line x1="890" y1="700" x2="890" y2="714" stroke="#8891a8" stroke-width="1.6"/>
-<circle cx="890" cy="722" r="4.5" fill="#12141c" stroke="#8891a8" stroke-width="1.6"/>
-      <g class="table-group" data-table="PATIENT">
-<rect x="74" y="116" width="320" height="422" rx="10" fill="#000" opacity="0.35"/>
-<rect x="70" y="110" width="320" height="422" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 70 120 a10,10 0 0 1 10,-10 h 300 a10,10 0 0 1 10,10 v 28 h -320 z" fill="#6C5CE7"/>
-<text x="230.0" y="134.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">PATIENT</text>
-<rect x="81" y="154" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="94" y="164.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="116" y="164.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">patient_id</text>
-<text x="378" y="164.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="70" y1="172" x2="390" y2="172" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="81" y="178" width="26" height="14" rx="3" fill="none" stroke="#c9a6f7" stroke-width="1"/>
-<text x="94" y="188.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#c9a6f7">AK</text>
-<text x="116" y="188.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">patient_identifier</text>
-<text x="378" y="188.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(32)</text>
-<line x1="70" y1="196" x2="390" y2="196" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="212.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">first_name</text>
-<text x="378" y="212.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(100)</text>
-<line x1="70" y1="220" x2="390" y2="220" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="236.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">middle_name</text>
-<text x="378" y="236.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(100)</text>
-<line x1="70" y1="244" x2="390" y2="244" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="260.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">last_name</text>
-<text x="378" y="260.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(100)</text>
-<line x1="70" y1="268" x2="390" y2="268" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="284.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">date_of_birth</text>
-<text x="378" y="284.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">date</text>
-<line x1="70" y1="292" x2="390" y2="292" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="308.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">gender</text>
-<text x="378" y="308.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="70" y1="316" x2="390" y2="316" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="332.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">phone</text>
-<text x="378" y="332.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="70" y1="340" x2="390" y2="340" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="356.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">email</text>
-<text x="378" y="356.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(150)</text>
-<line x1="70" y1="364" x2="390" y2="364" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="380.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">address</text>
-<text x="378" y="380.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(255)</text>
-<line x1="70" y1="388" x2="390" y2="388" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="404.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">emergency_contact_name</text>
-<text x="378" y="404.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(150)</text>
-<line x1="70" y1="412" x2="390" y2="412" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="428.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">emergency_contact_phone</text>
-<text x="378" y="428.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="70" y1="436" x2="390" y2="436" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="452.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">status</text>
-<text x="378" y="452.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="70" y1="460" x2="390" y2="460" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="476.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">date_of_death</text>
-<text x="378" y="476.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">date</text>
-<line x1="70" y1="484" x2="390" y2="484" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="500.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">created_at</text>
-<text x="378" y="500.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="70" y1="508" x2="390" y2="508" stroke="#2a2e3f" stroke-width="1"/>
-<text x="116" y="524.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">updated_at</text>
-<text x="378" y="524.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-</g>
-<g class="table-group" data-table="ALLERGY">
-<rect x="494" y="116" width="300" height="230" rx="10" fill="#000" opacity="0.35"/>
-<rect x="490" y="110" width="300" height="230" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 490 120 a10,10 0 0 1 10,-10 h 280 a10,10 0 0 1 10,10 v 28 h -300 z" fill="#2F80ED"/>
-<text x="640.0" y="134.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">ALLERGY</text>
-<rect x="501" y="154" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="514" y="164.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="536" y="164.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">allergy_id</text>
-<text x="778" y="164.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="490" y1="172" x2="790" y2="172" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="501" y="178" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="514" y="188.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="536" y="188.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">patient_id</text>
-<text x="778" y="188.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="490" y1="196" x2="790" y2="196" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="212.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">allergen</text>
-<text x="778" y="212.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(150)</text>
-<line x1="490" y1="220" x2="790" y2="220" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="236.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">reaction</text>
-<text x="778" y="236.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(255)</text>
-<line x1="490" y1="244" x2="790" y2="244" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="260.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">severity</text>
-<text x="778" y="260.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="490" y1="268" x2="790" y2="268" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="284.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">status</text>
-<text x="778" y="284.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="490" y1="292" x2="790" y2="292" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="308.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">recorded_at</text>
-<text x="778" y="308.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="490" y1="316" x2="790" y2="316" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="501" y="322" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="514" y="332.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="536" y="332.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">recorded_by</text>
-<text x="778" y="332.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-</g>
-<g class="table-group" data-table="MEDICATION_HISTORY">
-<rect x="834" y="116" width="320" height="326" rx="10" fill="#000" opacity="0.35"/>
-<rect x="830" y="110" width="320" height="326" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 830 120 a10,10 0 0 1 10,-10 h 300 a10,10 0 0 1 10,10 v 28 h -320 z" fill="#2F80ED"/>
-<text x="990.0" y="134.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">MEDICATION_HISTORY</text>
-<rect x="841" y="154" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="854" y="164.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="876" y="164.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">medication_history_id</text>
-<text x="1138" y="164.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="830" y1="172" x2="1150" y2="172" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="841" y="178" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="854" y="188.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="876" y="188.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">patient_id</text>
-<text x="1138" y="188.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="830" y1="196" x2="1150" y2="196" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="212.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">medication_name</text>
-<text x="1138" y="212.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(150)</text>
-<line x1="830" y1="220" x2="1150" y2="220" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="236.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">dosage</text>
-<text x="1138" y="236.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(50)</text>
-<line x1="830" y1="244" x2="1150" y2="244" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="260.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">frequency</text>
-<text x="1138" y="260.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(50)</text>
-<line x1="830" y1="268" x2="1150" y2="268" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="284.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">route</text>
-<text x="1138" y="284.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(50)</text>
-<line x1="830" y1="292" x2="1150" y2="292" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="308.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">status</text>
-<text x="1138" y="308.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="830" y1="316" x2="1150" y2="316" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="332.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">start_date</text>
-<text x="1138" y="332.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">date</text>
-<line x1="830" y1="340" x2="1150" y2="340" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="356.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">end_date</text>
-<text x="1138" y="356.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">date</text>
-<line x1="830" y1="364" x2="1150" y2="364" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="380.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">notes</text>
-<text x="1138" y="380.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">text</text>
-<line x1="830" y1="388" x2="1150" y2="388" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="404.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">recorded_at</text>
-<text x="1138" y="404.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="830" y1="412" x2="1150" y2="412" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="841" y="418" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="854" y="428.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="876" y="428.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">recorded_by</text>
-<text x="1138" y="428.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-</g>
-<g class="table-group" data-table="PATIENT_ALERT">
-<rect x="494" y="386" width="300" height="254" rx="10" fill="#000" opacity="0.35"/>
-<rect x="490" y="380" width="300" height="254" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 490 390 a10,10 0 0 1 10,-10 h 280 a10,10 0 0 1 10,10 v 28 h -300 z" fill="#2F80ED"/>
-<text x="640.0" y="404.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">PATIENT_ALERT</text>
-<rect x="501" y="424" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="514" y="434.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="536" y="434.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">alert_id</text>
-<text x="778" y="434.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="490" y1="442" x2="790" y2="442" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="501" y="448" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="514" y="458.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="536" y="458.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">patient_id</text>
-<text x="778" y="458.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="490" y1="466" x2="790" y2="466" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="482.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">alert_type</text>
-<text x="778" y="482.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(50)</text>
-<line x1="490" y1="490" x2="790" y2="490" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="506.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">description</text>
-<text x="778" y="506.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(255)</text>
-<line x1="490" y1="514" x2="790" y2="514" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="530.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">severity</text>
-<text x="778" y="530.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="490" y1="538" x2="790" y2="538" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="554.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">active</text>
-<text x="778" y="554.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">boolean</text>
-<line x1="490" y1="562" x2="790" y2="562" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="578.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">created_at</text>
-<text x="778" y="578.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="490" y1="586" x2="790" y2="586" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="501" y="592" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="514" y="602.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="536" y="602.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">created_by</text>
-<text x="778" y="602.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="490" y1="610" x2="790" y2="610" stroke="#2a2e3f" stroke-width="1"/>
-<text x="536" y="626.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">resolved_at</text>
-<text x="778" y="626.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-</g>
-<g class="table-group" data-table="VITAL_SIGN">
-<rect x="834" y="476" width="300" height="230" rx="10" fill="#000" opacity="0.35"/>
-<rect x="830" y="470" width="300" height="230" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 830 480 a10,10 0 0 1 10,-10 h 280 a10,10 0 0 1 10,10 v 28 h -300 z" fill="#2F80ED"/>
-<text x="980.0" y="494.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">VITAL_SIGN</text>
-<rect x="841" y="514" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="854" y="524.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="876" y="524.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">vital_id</text>
-<text x="1118" y="524.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="830" y1="532" x2="1130" y2="532" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="841" y="538" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="854" y="548.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="876" y="548.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">patient_id</text>
-<text x="1118" y="548.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="830" y1="556" x2="1130" y2="556" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="841" y="562" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="854" y="572.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="876" y="572.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">visit_id</text>
-<text x="1118" y="572.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="830" y1="580" x2="1130" y2="580" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="596.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">vital_type</text>
-<text x="1118" y="596.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(30)</text>
-<line x1="830" y1="604" x2="1130" y2="604" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="620.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">value</text>
-<text x="1118" y="620.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">numeric(6,2)</text>
-<line x1="830" y1="628" x2="1130" y2="628" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="644.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">unit</text>
-<text x="1118" y="644.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(10)</text>
-<line x1="830" y1="652" x2="1130" y2="652" stroke="#2a2e3f" stroke-width="1"/>
-<text x="876" y="668.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">recorded_at</text>
-<text x="1118" y="668.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="830" y1="676" x2="1130" y2="676" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="841" y="682" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="854" y="692.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="876" y="692.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">recorded_by</text>
-<text x="1118" y="692.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-</g>
-<g class="table-group" data-table="APPOINTMENT">
-<rect x="1294" y="116" width="320" height="302" rx="10" fill="#000" opacity="0.35"/>
-<rect x="1290" y="110" width="320" height="302" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 1290 120 a10,10 0 0 1 10,-10 h 300 a10,10 0 0 1 10,10 v 28 h -320 z" fill="#17A589"/>
-<text x="1450.0" y="134.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">APPOINTMENT</text>
-<rect x="1301" y="154" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="1314" y="164.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="1336" y="164.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">appointment_id</text>
-<text x="1598" y="164.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="1290" y1="172" x2="1610" y2="172" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="1301" y="178" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="1314" y="188.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="1336" y="188.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">patient_id</text>
-<text x="1598" y="188.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="1290" y1="196" x2="1610" y2="196" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="1301" y="202" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="1314" y="212.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="1336" y="212.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">clinician_id</text>
-<text x="1598" y="212.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="1290" y1="220" x2="1610" y2="220" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="236.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">scheduled_start</text>
-<text x="1598" y="236.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1290" y1="244" x2="1610" y2="244" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="260.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">scheduled_end</text>
-<text x="1598" y="260.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1290" y1="268" x2="1610" y2="268" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="284.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">reason</text>
-<text x="1598" y="284.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(255)</text>
-<line x1="1290" y1="292" x2="1610" y2="292" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="308.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">status</text>
-<text x="1598" y="308.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="1290" y1="316" x2="1610" y2="316" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="332.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">notes</text>
-<text x="1598" y="332.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">text</text>
-<line x1="1290" y1="340" x2="1610" y2="340" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="356.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">created_at</text>
-<text x="1598" y="356.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1290" y1="364" x2="1610" y2="364" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="380.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">updated_at</text>
-<text x="1598" y="380.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1290" y1="388" x2="1610" y2="388" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="1301" y="394" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="1314" y="404.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="1336" y="404.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">created_by</text>
-<text x="1598" y="404.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-</g>
-<g class="table-group" data-table="VISIT">
-<rect x="1664" y="116" width="300" height="230" rx="10" fill="#000" opacity="0.35"/>
-<rect x="1660" y="110" width="300" height="230" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 1660 120 a10,10 0 0 1 10,-10 h 280 a10,10 0 0 1 10,10 v 28 h -300 z" fill="#17A589"/>
-<text x="1810.0" y="134.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">VISIT</text>
-<rect x="1671" y="154" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="1684" y="164.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="1706" y="164.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">visit_id</text>
-<text x="1948" y="164.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="1660" y1="172" x2="1960" y2="172" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="1671" y="178" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="1684" y="188.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="1706" y="188.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">patient_id</text>
-<text x="1948" y="188.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="1660" y1="196" x2="1960" y2="196" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="1671" y="202" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="1684" y="212.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="1706" y="212.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">appointment_id</text>
-<text x="1948" y="212.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint NULL</text>
-<line x1="1660" y1="220" x2="1960" y2="220" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1706" y="236.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">visit_type</text>
-<text x="1948" y="236.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="1660" y1="244" x2="1960" y2="244" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1706" y="260.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">check_in_time</text>
-<text x="1948" y="260.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1660" y1="268" x2="1960" y2="268" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1706" y="284.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">check_out_time</text>
-<text x="1948" y="284.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1660" y1="292" x2="1960" y2="292" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1706" y="308.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">status</text>
-<text x="1948" y="308.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="1660" y1="316" x2="1960" y2="316" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1706" y="332.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">notes</text>
-<text x="1948" y="332.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">text</text>
-</g>
-<g class="table-group" data-table="APPOINTMENT_HISTORY_EVENT">
-<rect x="1294" y="466" width="340" height="278" rx="10" fill="#000" opacity="0.35"/>
-<rect x="1290" y="460" width="340" height="278" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 1290 470 a10,10 0 0 1 10,-10 h 320 a10,10 0 0 1 10,10 v 28 h -340 z" fill="#17A589"/>
-<text x="1460.0" y="484.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">APPOINTMENT_HISTORY_EVENT</text>
-<rect x="1301" y="504" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="1314" y="514.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="1336" y="514.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">event_id</text>
-<text x="1618" y="514.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="1290" y1="522" x2="1630" y2="522" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="1301" y="528" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="1314" y="538.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="1336" y="538.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">appointment_id</text>
-<text x="1618" y="538.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="1290" y1="546" x2="1630" y2="546" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="562.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">event_type</text>
-<text x="1618" y="562.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="1290" y1="570" x2="1630" y2="570" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="586.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">previous_status</text>
-<text x="1618" y="586.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="1290" y1="594" x2="1630" y2="594" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="610.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">new_status</text>
-<text x="1618" y="610.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="1290" y1="618" x2="1630" y2="618" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="634.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">previous_scheduled_start</text>
-<text x="1618" y="634.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1290" y1="642" x2="1630" y2="642" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="658.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">new_scheduled_start</text>
-<text x="1618" y="658.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1290" y1="666" x2="1630" y2="666" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="682.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">event_time</text>
-<text x="1618" y="682.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="1290" y1="690" x2="1630" y2="690" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="1301" y="696" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="1314" y="706.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="1336" y="706.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">actor_user_id</text>
-<text x="1618" y="706.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="1290" y1="714" x2="1630" y2="714" stroke="#2a2e3f" stroke-width="1"/>
-<text x="1336" y="730.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">reason</text>
-<text x="1618" y="730.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(255)</text>
-</g>
-<g class="table-group" data-table="USER">
-<rect x="254" y="906" width="300" height="254" rx="10" fill="#000" opacity="0.35"/>
-<rect x="250" y="900" width="300" height="254" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 250 910 a10,10 0 0 1 10,-10 h 280 a10,10 0 0 1 10,10 v 28 h -300 z" fill="#E08E34"/>
-<text x="400.0" y="924.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">USER</text>
-<rect x="261" y="944" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="274" y="954.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="296" y="954.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">user_id</text>
-<text x="538" y="954.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="250" y1="962" x2="550" y2="962" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="261" y="968" width="26" height="14" rx="3" fill="none" stroke="#c9a6f7" stroke-width="1"/>
-<text x="274" y="978.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#c9a6f7">AK</text>
-<text x="296" y="978.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">username</text>
-<text x="538" y="978.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(50)</text>
-<line x1="250" y1="986" x2="550" y2="986" stroke="#2a2e3f" stroke-width="1"/>
-<text x="296" y="1002.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">password_hash</text>
-<text x="538" y="1002.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(255)</text>
-<line x1="250" y1="1010" x2="550" y2="1010" stroke="#2a2e3f" stroke-width="1"/>
-<text x="296" y="1026.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">first_name</text>
-<text x="538" y="1026.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(100)</text>
-<line x1="250" y1="1034" x2="550" y2="1034" stroke="#2a2e3f" stroke-width="1"/>
-<text x="296" y="1050.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">last_name</text>
-<text x="538" y="1050.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(100)</text>
-<line x1="250" y1="1058" x2="550" y2="1058" stroke="#2a2e3f" stroke-width="1"/>
-<text x="296" y="1074.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">role</text>
-<text x="538" y="1074.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(20)</text>
-<line x1="250" y1="1082" x2="550" y2="1082" stroke="#2a2e3f" stroke-width="1"/>
-<text x="296" y="1098.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">active</text>
-<text x="538" y="1098.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">boolean</text>
-<line x1="250" y1="1106" x2="550" y2="1106" stroke="#2a2e3f" stroke-width="1"/>
-<text x="296" y="1122.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">created_at</text>
-<text x="538" y="1122.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="250" y1="1130" x2="550" y2="1130" stroke="#2a2e3f" stroke-width="1"/>
-<text x="296" y="1146.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">last_login_at</text>
-<text x="538" y="1146.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-</g>
-<g class="table-group" data-table="AUDIT_EVENT">
-<rect x="704" y="906" width="300" height="206" rx="10" fill="#000" opacity="0.35"/>
-<rect x="700" y="900" width="300" height="206" rx="10" fill="#1a1d29" stroke="#2a2e3f" stroke-width="1"/>
-<path d="M 700 910 a10,10 0 0 1 10,-10 h 280 a10,10 0 0 1 10,10 v 28 h -300 z" fill="#E08E34"/>
-<text x="850.0" y="924.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff" letter-spacing="0.4">AUDIT_EVENT</text>
-<rect x="711" y="944" width="26" height="14" rx="3" fill="none" stroke="#f5b942" stroke-width="1"/>
-<text x="724" y="954.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#f5b942">PK</text>
-<text x="746" y="954.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">audit_event_id</text>
-<text x="988" y="954.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="700" y1="962" x2="1000" y2="962" stroke="#2a2e3f" stroke-width="1"/>
-<rect x="711" y="968" width="26" height="14" rx="3" fill="none" stroke="#5ec2e8" stroke-width="1"/>
-<text x="724" y="978.5" text-anchor="middle" font-family="Consolas, monospace" font-size="9.5" font-weight="700" fill="#5ec2e8">FK</text>
-<text x="746" y="978.5" font-family="Consolas, monospace" font-size="12.5" font-weight="700" fill="#e6e9f2">user_id</text>
-<text x="988" y="978.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="700" y1="986" x2="1000" y2="986" stroke="#2a2e3f" stroke-width="1"/>
-<text x="746" y="1002.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">action</text>
-<text x="988" y="1002.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(50)</text>
-<line x1="700" y1="1010" x2="1000" y2="1010" stroke="#2a2e3f" stroke-width="1"/>
-<text x="746" y="1026.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">entity_type</text>
-<text x="988" y="1026.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">varchar(50)</text>
-<line x1="700" y1="1034" x2="1000" y2="1034" stroke="#2a2e3f" stroke-width="1"/>
-<text x="746" y="1050.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">entity_id</text>
-<text x="988" y="1050.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">bigint</text>
-<line x1="700" y1="1058" x2="1000" y2="1058" stroke="#2a2e3f" stroke-width="1"/>
-<text x="746" y="1074.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">occurred_at</text>
-<text x="988" y="1074.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">timestamp</text>
-<line x1="700" y1="1082" x2="1000" y2="1082" stroke="#2a2e3f" stroke-width="1"/>
-<text x="746" y="1098.5" font-family="Consolas, monospace" font-size="12.5" font-weight="400" fill="#e6e9f2">details</text>
-<text x="988" y="1098.5" text-anchor="end" font-family="Consolas, monospace" font-size="11" fill="#7b8296">text</text>
-</g>
-    </svg>
-  </div>
-
-  <footer>Generated for internship documentation — Open Clinical Record MVP · crow's-foot notation · PK = primary key · FK = foreign key · AK = alternate/unique key</footer>
+<body><main>
+<div class="card">
+<h1>Open Clinical Record — MVP Entity Relationship Model</h1>
+<p class="muted"><strong>Approved scope:</strong> Patient Management · Patient Chart · Appointment Management</p>
+<p class="muted"><strong>Application roles:</strong> Receptionist / Front Desk · Nurse / Clinical Staff · Clinician / Doctor</p>
+<p><strong>Design boundary:</strong> The model is deliberately small enough for the remaining internship period. Diagnosis, treatment, prescriptions, medical reports, laboratory, pharmacy, billing, insurance, radiology, patient portal, FHIR/international-standard integration, advanced analytics, and enterprise scheduling are deferred.</p>
 </div>
-</body>
-</html>
+
+<div class="card"><h2>1. Entities</h2><div class="grid">
+<section class="entity pm"><h3>PATIENT</h3><ul><li><b>PK</b> patient_id</li><li><b>UQ</b> patient_identifier</li><li>first_name, middle_name, last_name</li><li>date_of_birth, sex</li><li>phone, email, address</li><li>emergency_contact_name, emergency_contact_phone</li><li>status, date_of_death</li><li>created_at, updated_at</li></ul></section>
+<section class="entity cross"><h3>USER</h3><ul><li><b>PK</b> user_id</li><li><b>UQ</b> username</li><li>password_hash</li><li>first_name, last_name</li><li>role — Receptionist, Nurse, Clinician only</li><li>active, created_at, last_login_at</li></ul></section>
+<section class="entity pc"><h3>ALLERGY</h3><ul><li><b>PK</b> allergy_id</li><li><b>FK</b> patient_id</li><li>allergen, reaction, severity, status</li><li>recorded_at, recorded_by</li></ul></section>
+<section class="entity pc"><h3>MEDICATION_HISTORY</h3><ul><li><b>PK</b> medication_history_id</li><li><b>FK</b> patient_id</li><li>medication_name</li><li>dosage, frequency, route</li><li>status, start_date, end_date</li><li>notes, recorded_at, recorded_by</li></ul></section>
+<section class="entity pc"><h3>PATIENT_ALERT</h3><ul><li><b>PK</b> alert_id</li><li><b>FK</b> patient_id</li><li>alert_type, description, severity</li><li>active, created_at, created_by, resolved_at</li></ul></section>
+<section class="entity ap"><h3>APPOINTMENT</h3><ul><li><b>PK</b> appointment_id</li><li><b>FK</b> patient_id</li><li><b>FK</b> clinician_id → USER</li><li>scheduled_start, scheduled_end</li><li>reason, status, notes</li><li>created_at, updated_at, created_by</li></ul></section>
+<section class="entity ap"><h3>APPOINTMENT_HISTORY_EVENT</h3><ul><li><b>PK</b> event_id</li><li><b>FK</b> appointment_id</li><li>event_type</li><li>previous_status, new_status</li><li>previous_scheduled_start, new_scheduled_start</li><li>event_time, actor_user_id, reason</li></ul></section>
+<section class="entity ap"><h3>VISIT</h3><ul><li><b>PK</b> visit_id</li><li><b>FK</b> patient_id</li><li><b>FK nullable</b> appointment_id</li><li>visit_type, status</li><li>check_in_time, check_out_time</li><li>notes</li></ul></section>
+<section class="entity cross"><h3>AUDIT_EVENT</h3><ul><li><b>PK</b> audit_event_id</li><li><b>FK</b> user_id</li><li>action, entity_type, entity_id</li><li>occurred_at, details</li></ul></section>
+</div></div>
+
+<div class="card"><h2>2. Relationships & Cardinalities</h2><table><tr><th>Parent</th><th>Child</th><th>Cardinality</th><th>Reason</th></tr>
+<tr><td>PATIENT</td><td>ALLERGY</td><td>1 : 0..N</td><td>A patient may have zero or many allergy records.</td></tr>
+<tr><td>PATIENT</td><td>MEDICATION_HISTORY</td><td>1 : 0..N</td><td>Medication history is longitudinal and may have many entries.</td></tr>
+<tr><td>PATIENT</td><td>PATIENT_ALERT</td><td>1 : 0..N</td><td>A patient may have multiple important alerts.</td></tr>
+<tr><td>PATIENT</td><td>APPOINTMENT</td><td>1 : 0..N</td><td>Appointments belong to existing patients.</td></tr>
+<tr><td>USER</td><td>APPOINTMENT (clinician)</td><td>1 : 0..N</td><td>A clinician can be assigned many appointments.</td></tr>
+<tr><td>APPOINTMENT</td><td>APPOINTMENT_HISTORY_EVENT</td><td>1 : 0..N</td><td>Status and scheduling changes can generate multiple history events.</td></tr>
+<tr><td>PATIENT</td><td>VISIT</td><td>1 : 0..N</td><td>A patient may attend many times.</td></tr>
+<tr><td>APPOINTMENT</td><td>VISIT</td><td>0..1 : 0..1</td><td>An appointment may have no visit yet; a visit has at most one originating appointment. Walk-ins have none.</td></tr>
+<tr><td>USER</td><td>AUDIT_EVENT</td><td>1 : 0..N</td><td>A user may generate many audit events.</td></tr>
+</table></div>
+
+<div class="card"><h2>3. Mermaid Source</h2><pre>erDiagram
+    PATIENT ||--o{ ALLERGY : has
+    PATIENT ||--o{ MEDICATION_HISTORY : has
+    PATIENT ||--o{ PATIENT_ALERT : has
+    PATIENT ||--o{ APPOINTMENT : books
+    PATIENT ||--o{ VISIT : attends
+    USER ||--o{ APPOINTMENT : assigned
+    APPOINTMENT ||--o{ APPOINTMENT_HISTORY_EVENT : records
+    APPOINTMENT o|--o| VISIT : originates
+    USER ||--o{ AUDIT_EVENT : creates
+
+    PATIENT {
+      int patient_id PK
+      string patient_identifier UK
+      string first_name
+      string middle_name
+      string last_name
+      date date_of_birth
+      string sex
+      string phone
+      string email
+      string address
+      string status
+      date date_of_death
+    }
+    USER {
+      int user_id PK
+      string username UK
+      string password_hash
+      string role
+      boolean active
+    }
+    ALLERGY {
+      int allergy_id PK
+      int patient_id FK
+      string allergen
+      string reaction
+      string severity
+      string status
+      datetime recorded_at
+      int recorded_by FK
+    }
+    MEDICATION_HISTORY {
+      int medication_history_id PK
+      int patient_id FK
+      string medication_name
+      string status
+      date start_date
+      date end_date
+      int recorded_by FK
+    }
+    PATIENT_ALERT {
+      int alert_id PK
+      int patient_id FK
+      string alert_type
+      string description
+      string severity
+      boolean active
+      int created_by FK
+    }
+    APPOINTMENT {
+      int appointment_id PK
+      int patient_id FK
+      int clinician_id FK
+      datetime scheduled_start
+      datetime scheduled_end
+      string reason
+      string status
+      int created_by FK
+    }
+    APPOINTMENT_HISTORY_EVENT {
+      int event_id PK
+      int appointment_id FK
+      string event_type
+      string previous_status
+      string new_status
+      datetime event_time
+      int actor_user_id FK
+      string reason
+    }
+    VISIT {
+      int visit_id PK
+      int patient_id FK
+      int appointment_id FK
+      string visit_type
+      string status
+      datetime check_in_time
+      datetime check_out_time
+    }
+    AUDIT_EVENT {
+      int audit_event_id PK
+      int user_id FK
+      string action
+      string entity_type
+      int entity_id
+      datetime occurred_at
+    }</pre></div>
+
+<div class="card"><h2>4. MVP Validation</h2><ul>
+<li>Exactly three business modules.</li>
+<li>Exactly three application roles; no Administrator role.</li>
+<li>A patient exists before an appointment references that patient.</li>
+<li>A walk-in visit can exist with <code>VISIT.appointment_id = NULL</code>; no fake appointment is created.</li>
+<li>Appointment history is preserved through <code>APPOINTMENT_HISTORY_EVENT</code>.</li>
+<li>Medication history is explicitly separate from prescription management.</li>
+<li>No diagnosis, treatment, prescription, report/document, lab, pharmacy, billing, insurance, radiology, portal, or FHIR entity is included.</li>
+<li>Patient is the central record connecting chart and appointment/visit history.</li>
+<li>The logical model is database-independent and suitable for React + ASP.NET Core + REST implementation.</li>
+</ul></div>
+
+<div class="card"><h2>5. Final Design Notes</h2><p>The physical database should add appropriate data types, indexes, foreign-key constraints, uniqueness constraints, and transaction behavior. Backend authorization must enforce the role matrix independently of React UI visibility.</p><p class="muted">This ERD is the MVP logical data-model baseline. Optional concepts such as vital signs may be added only after explicit confirmation that they fit the remaining implementation time.</p></div>
+</main></body></html>
