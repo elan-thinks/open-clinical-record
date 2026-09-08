@@ -81,8 +81,8 @@ These six workflows are the canonical MVP set. Individual CRUD actions are requi
 | Role | Core responsibilities |
 |---|---|
 | Receptionist / Front Desk | Register/search patients, maintain permitted demographics, manage appointments, check in patients, support basic walk-ins |
-| Nurse / Clinical Staff | View patient/chart information, support check-in/visit workflow, maintain permitted chart information and observations |
-| Clinician / Doctor | Review patient charts/history and perform authorized clinical/chart updates required by the MVP |
+| Nurse / Clinical Staff | View patient/chart information, support check-in/visit workflow, maintain permitted chart information |
+| Clinician / Doctor | Review patient charts/history and perform authorized chart updates required by the MVP |
 
 **There is no Administrator role in the MVP.** Authentication and authorization are cross-cutting mechanisms supporting these three roles.
 
@@ -111,7 +111,7 @@ International interoperability/FHIR is intentionally not included in the MVP NFR
 | Authentication/authorization | User/authentication service and backend authorization |
 | Audit | Audit Event or equivalent minimal audit mechanism |
 
-The final ERD must validate these relationships before implementation begins.
+The current logical ERD at `docs/03-requirements/ER/OCR_MVP_ERD.html` and the data-model baseline at `docs/05-data/README.md` are the current data references for implementation.
 
 ## 8. Scope Exclusions
 
@@ -133,6 +133,6 @@ They may remain in research documents as future/domain context, but they must no
 
 ## 9. Status
 
-**Current status:** Scope, SRS, architecture, NFRs, and traceability are aligned to the mentor-approved three-module MVP. Detailed data-model and ERD references will be added after the ERD is finalized.
+**Current status:** Scope, SRS, architecture, NFRs, traceability, clinical domain rules, and logical ERD are aligned to the mentor-approved three-module MVP. The data-model baseline is established and implementation planning can proceed while the remaining mentor-review decisions are resolved.
 
 A requirement moves to **verified** only when objective implementation/test evidence exists.

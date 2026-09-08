@@ -36,8 +36,8 @@ Prefer short, meaningful commits using a simple prefix:
 
 ## Pull Requests
 
-A pull request should explain what changed, why it changed, how it was validated, and any clinical, data, security, or architectural implications.
+A pull request should explain what changed, why it changed, how it was validated, and any patient-data, clinical-workflow, security, data, or architectural implications.
 
 ## Clinical Changes
 
-Changes affecting patient information, appointments, encounters, clinical documentation, patient status, permissions, or audit history should be reviewed carefully and should not silently change the approved clinical workflow.
+Changes affecting patient information, appointments, visit/check-in workflow, patient-chart information, permissions, or audit history should be reviewed carefully and should not silently change the approved three-module MVP workflow.
