@@ -1,26 +1,26 @@
 # Clinical Workflow Specification
 
 **Project:** Open Clinical Record  
-**Status:** Draft for clinical validation  
-**Purpose:** Define the outpatient workflow that will guide requirements and design for the MVP.
+**Status:** Mentor-approved baseline; broader clinical validation pending  
+**Purpose:** Define the outpatient workflow that guides requirements and design for the MVP.
 
 ## 1. Purpose
 
-This document describes the proposed end-to-end clinical workflow for the Open Clinical Record MVP. It connects patient registration, the patient chart, appointments, arrival/check-in, clinical work, documentation, and the longitudinal medical record.
+This document describes the end-to-end clinical workflow for the Open Clinical Record MVP. It connects patient registration, the patient chart, appointments, arrival/check-in, clinical work, documentation, and the longitudinal medical record.
 
-The workflow is intended to be validated against real clinical practice before functional requirements are finalized.
+The workflow has been reviewed and approved as the project baseline by the mentor. Broader clinical validation remains pending and may refine unresolved permissions or policies.
 
 ## 2. Actors
 
-The MVP uses exactly three approved user roles:
+The MVP uses exactly three approved application roles:
 
 | Actor | Primary responsibilities in MVP |
 |---|---|
-| Receptionist / Front Desk | Register/search patients, manage basic demographics, schedule/reschedule/cancel appointments, and check-in patients |
+| Receptionist / Front Desk | Register/search patients, manage basic demographics, schedule/reschedule/cancel appointments, and perform check-in |
 | Nurse / Clinical Staff | Support patient flow, record vital signs and permitted observations, and support encounters within assigned permissions |
 | Doctor / Clinician | Review the patient chart, conduct encounters, record clinical findings, diagnosis, treatment, and permitted clinical documentation |
 
-Administrative/user-management capabilities are treated as a future or deployment-level concern and are **not** an MVP user role.
+Administrative/user-management capabilities are deployment-level or future concerns and are **not** an MVP application role.
 
 ## 3. Approved End-to-End Workflow
 
@@ -122,7 +122,7 @@ Cancelled, rescheduled, and no-show events should remain understandable in appoi
 
 A patient may arrive without a scheduled appointment. The system should support registration/search, arrival/check-in, waiting or queue handling, and continuation into the clinical workflow according to clinic policy and availability.
 
-The exact prioritization of walk-ins is a clinical/business rule to be validated with stakeholders.
+The exact prioritization of walk-ins remains a clinical/business policy question.
 
 ## 7. Clinical Visit Workflow
 
@@ -138,7 +138,7 @@ The encounter may include:
 - Follow-up instructions
 - Clinical notes
 
-The exact responsibilities of nurses and clinicians must be confirmed during clinical validation.
+The final permission matrix for specific nursing/support actions remains subject to clinical stakeholder confirmation.
 
 ## 8. Clinical Documentation Lifecycle
 
@@ -164,18 +164,19 @@ Marked Deceased
       └── Handle future appointments according to policy
 ```
 
-The system should clearly display deceased status while preserving the patient's historical record. The exact information recorded at death and the permissions for recording it require clinical validation.
+The system should clearly display deceased status while preserving the patient's historical record. The exact future-appointment policy remains an open decision.
 
 ## 10. Role and Permission Principles
 
-- Users should only perform actions appropriate to their assigned role.
-- Reception/front-desk users should not have unrestricted access to clinical documentation or diagnosis editing.
-- Clinical staff should have access to the clinical information required for their work.
-- Clinicians should be able to create and finalize permitted clinical documentation.
-- No MVP role should automatically receive unrestricted clinical authority merely because of a broader administrative responsibility.
+- The MVP contains exactly three application roles.
+- Receptionist / Front Desk is the primary registration and appointment-management role.
+- Nurse / Clinical Staff supports patient flow, check-in, vitals, observations, and other explicitly approved clinical-support actions.
+- Clinician / Doctor performs provider-level assessment and documentation, including diagnosis, treatment, prescription, clinical notes/reports, finalized-document actions, and authorized patient-status changes.
+- Receptionist / Front Desk must not perform provider-level diagnosis, treatment, prescribing, or clinical-report authoring.
+- No user gains additional clinical authority merely because they can open a patient chart.
 - Important actions should be auditable.
 
-## 11. Key Business Rules to Validate
+## 11. Key Business Rules
 
 1. A patient must exist before an appointment or clinical record can be associated with them.
 2. Appointment history must preserve meaningful cancellation and rescheduling information.
@@ -186,27 +187,24 @@ The system should clearly display deceased status while preserving the patient's
 7. Finalized documentation should preserve record integrity when corrections are required.
 8. Patient history must remain available across visits.
 9. A deceased patient's historical records must be preserved.
-10. New activity involving a deceased patient must follow appropriate business rules.
+10. New activity involving a deceased patient must follow the approved business policy.
 11. Permissions must reflect clinical responsibilities.
 12. Significant changes should be recorded in an audit trail.
 
 ## 12. Clinical Validation Questions
 
-The following questions should be confirmed with healthcare staff before requirements are finalized:
+The following items remain for mentor/clinical stakeholder confirmation:
 
-- Are the proposed three MVP roles accurate: receptionist/front desk, nurse/clinical staff, and doctor/clinician?
-- Which role performs each patient-registration action?
-- Who schedules, reschedules, and cancels appointments?
-- How are walk-ins handled in practice?
-- Which staff members perform check-in?
-- Which observations are normally recorded by nurses/clinical staff?
-- Who creates, edits, finalizes, and amends clinical documents?
-- Which documents are required for common outpatient visits?
-- What information should be immediately visible on the patient chart?
-- What information should trigger a prominent alert?
-- Who is authorized to record deceased status?
+- Which role may enter or update allergies and medications?
+- Which specific appointment actions may Nurse / Clinical Staff perform?
+- Which specific encounter-support actions may Nurse / Clinical Staff perform?
+- What information should be mandatory at patient registration?
 - What should happen to future appointments after a patient is recorded deceased?
-- What actions must be included in the audit history?
+- Which audit events are mandatory and who may view them?
+- What are the required retention/deletion rules?
+- What backup and recovery objectives apply to the intended deployment?
+- Which clinical document/report types are required for the MVP?
+- Is No-show a required appointment lifecycle state for the MVP release?
 
 ## 13. Scope Boundary
 
@@ -228,6 +226,6 @@ The architecture and requirements should leave room for these capabilities witho
 
 ## 14. Validation Status
 
-**Current status:** Proposed workflow approved by mentor; preliminary clinical validation received from one clinician survey response; broader clinical validation remains pending.
+**Current status:** Mentor-approved workflow baseline; preliminary clinical validation received from one clinician survey response; broader clinical validation remains pending.
 
 The initial clinician response supports preserving appointment history, separating clinical responsibilities, protecting finalized documentation through amendments, surfacing important chart alerts, and handling deceased-patient status. It also identified network reliability as a practical concern and suggested AI/mobile capabilities as future possibilities. These findings do not constitute statistically representative evidence and should be revisited as additional responses are collected.
