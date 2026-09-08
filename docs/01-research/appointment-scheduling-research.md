@@ -71,7 +71,7 @@ Established systems use appointment states to distinguish planned, checked-in, c
 - Cancelled
 - No-show
 
-**Note:** The exact status vocabulary should be validated with the mentor/clinician before being frozen in the SRS.
+**Note:** The exact status vocabulary should be validated with the clinical stakeholder before being frozen in the SRS.
 
 ### 8. Appointment information should be practical, not excessive
 
@@ -95,7 +95,7 @@ The common scheduling information across the researched systems is:
 
 Healthcare workflows may receive patients without a previously scheduled appointment. Oracle documentation includes walk-in appointment workflows, and OpenMRS connects check-in with active visits.
 
-**Implication:** A future-proof design should allow an encounter/visit to originate without a normal scheduled appointment. The internship MVP can support this simply as a "walk-in" path if the clinician confirms it is useful.
+**Implication:** A future-proof design should allow an encounter/visit to originate without a normal scheduled appointment. The internship MVP can support this simply as a "walk-in" path if the clinical stakeholder confirms it is useful.
 
 ### 10. Deceased patients require scheduling safeguards
 
@@ -107,7 +107,7 @@ Oracle's deceased-patient workflow can cancel future appointments after a patien
 
 Scheduling actions are not necessarily available to every user. Oracle exposes actions according to workflow and context, while patient-facing systems can restrict cancellation/rescheduling according to organization policy.
 
-**Implication:** Appointment permissions should be role-based. For example, reception/admin staff may manage scheduling while clinicians may view and manage appointments relevant to their workflow. Exact permissions should be validated before implementation.
+**Implication:** Appointment permissions should be role-based. For example, front-desk staff may manage scheduling while clinicians may view and manage appointments relevant to their workflow. Exact permissions should be validated before implementation.
 
 ## Proposed Open Clinical Record Workflow
 
@@ -207,7 +207,7 @@ If appointment history is required as a separate entity, use an `AppointmentHist
 
 ## Clinical Validation Questions
 
-Before finalizing the SRS, ask the mentor/clinician:
+Before finalizing the SRS, ask the clinical stakeholder:
 
 1. What appointment types are actually used in the target clinic?
 2. Who creates appointments: receptionist, nurse, clinician, or multiple roles?
