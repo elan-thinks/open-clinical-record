@@ -4,7 +4,7 @@
 **Scope:** Open Clinical Record — Patient Management, Patient Chart, Appointment Management  
 **Application roles:** Clinician / Doctor, Nurse / Clinical Staff, Receptionist / Front Desk
 
-> This document explains domain rules that affect requirements, data modeling, UX, and testing. The approved SRS and mentor decisions take precedence over this reference.
+> This document explains domain rules that affect requirements, data modeling, UX, and testing. The approved SRS and approved project decisions take precedence over this reference.
 
 ## 1. Core Principle
 
@@ -195,4 +195,4 @@ The ERD must not introduce diagnosis, treatment/care-plan, prescription, clinica
 - The **architecture** defines system boundaries and components.
 - The **ERD/data model** defines persistent entities and relationships.
 
-If this document conflicts with the SRS or a later mentor/clinical decision, the approved requirement or decision wins and this document must be updated.
+If this document conflicts with the SRS or a later approved clinical decision, the approved requirement or decision wins and this document must be updated.
