@@ -1,7 +1,7 @@
 # Clinical Workflow Specification
 
 **Project:** Open Clinical Record  
-**Status:** Mentor-approved MVP baseline  
+**Status:** Current MVP workflow baseline  
 **Purpose:** Define the practical outpatient workflow for the three core internship modules.
 
 ## 1. Scope
@@ -166,7 +166,7 @@ The exact policy for already-scheduled future appointments remains a stakeholder
 
 ## 12. Open Decisions Before Implementation
 
-The following should be confirmed with the mentor/stakeholder rather than guessed:
+The following should be confirmed with the appropriate clinical stakeholder rather than guessed:
 
 - Which role may create/update allergies?
 - Which role may create/update medication history?
@@ -179,4 +179,4 @@ The following should be confirmed with the mentor/stakeholder rather than guesse
 
 ## 13. Validation Status
 
-**Current status:** Mentor-approved scope baseline. The workflow is intentionally limited to Patient Management, Patient Chart, and Appointment Management. Open clinical-policy questions require stakeholder confirmation before implementation decisions are frozen.
+**Current status:** Current MVP workflow baseline. The workflow is intentionally limited to Patient Management, Patient Chart, and Appointment Management. Open clinical-policy questions require stakeholder confirmation before implementation decisions are frozen.
