@@ -133,6 +133,6 @@ They may remain in research documents as future/domain context, but they must no
 
 ## 9. Status
 
-**Current status:** Scope, SRS, architecture, NFRs, traceability, clinical domain rules, and logical ERD are aligned to the mentor-approved three-module MVP. The data-model baseline is established and implementation planning can proceed while the remaining mentor-review decisions are resolved.
+**Current status:** Scope, SRS, architecture, NFRs, traceability, clinical domain rules, and logical ERD are aligned to the same three-module MVP. The data-model baseline is established and project work can proceed while the remaining workflow decisions are resolved.
 
 A requirement moves to **verified** only when objective implementation/test evidence exists.
