@@ -21,23 +21,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Normalize SRS document metadata
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('docs/03-requirements/srs/srs.tex')
-          s = p.read_text(encoding='utf-8')
-          replacements = {
-              r'\\begin{center}\\textbf{Document Status: Revised for Mentor Review}\\end{center}': r'\\begin{center}\\textbf{Document Status: Revised MVP Baseline}\\end{center}',
-              'Status & Revised for mentor review and implementation baseline': 'Status & Revised MVP implementation baseline',
-              'This Software Requirements Specification defines the reduced and prioritized MVP for Open Clinical Record (OCR). The scope has been revised following mentor feedback to fit the remaining one-month internship period.': 'This Software Requirements Specification defines the reduced and prioritized MVP for Open Clinical Record (OCR). The scope is limited to functionality that can be implemented and tested within the remaining one-month internship period.',
-              'and the mentor-approved scope direction.': 'and the approved project scope.',
-          }
-          for old, new in replacements.items():
-              s = s.replace(old, new)
-          p.write_text(s, encoding='utf-8')
-          PY
-
       - name: Compile SRS
         uses: xu-cheng/latex-action@v4
         with:
@@ -54,4 +37,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'docs: update generated documentation'
-          file_pattern: 'docs/03-requirements/srs/srs.tex docs/03-requirements/srs/srs.pdf docs/04-architecture/architecture-overview.pdf'
+          file_pattern: 'docs/03-requirements/srs/srs.pdf docs/04-architecture/architecture-overview.pdf'
