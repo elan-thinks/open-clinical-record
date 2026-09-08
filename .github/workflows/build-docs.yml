@@ -1,0 +1,40 @@
+name: Build documentation PDFs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/03-requirements/srs/srs.tex'
+      - 'docs/04-architecture/architecture-overview.tex'
+      - '.github/workflows/build-docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-pdfs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compile SRS
+        uses: xu-cheng/latex-action@v4
+        with:
+          root_file: docs/03-requirements/srs/srs.tex
+          latexmk_use_xelatex: false
+
+      - name: Compile architecture overview
+        uses: xu-cheng/latex-action@v4
+        with:
+          root_file: docs/04-architecture/architecture-overview.tex
+          latexmk_use_xelatex: false
+
+      - name: Commit generated PDFs
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: 'docs: regenerate LaTeX PDFs'
+          file_pattern: 'docs/03-requirements/srs/srs.pdf docs/04-architecture/architecture-overview.pdf'
