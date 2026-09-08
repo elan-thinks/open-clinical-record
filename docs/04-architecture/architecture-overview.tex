@@ -10,7 +10,7 @@
 \newpage
 
 \section{Status}
-This document records the architectural direction for the reduced Open Clinical Record (OCR) internship MVP. The architecture has been aligned with the revised SRS and mentor guidance to prioritize a deliverable system within the remaining one-month period.
+This document records the architectural direction for the reduced Open Clinical Record (OCR) internship MVP. The architecture has been aligned with the revised SRS, current logical ERD, and mentor guidance to prioritize a deliverable system within the remaining one-month period.
 
 \section{Architectural Intent}
 The architecture should be simple, modular, maintainable, and practical for an internship-scale implementation. The MVP contains exactly three business modules: \textbf{Patient Management}, \textbf{Patient Chart}, and \textbf{Appointment Management}.
@@ -25,7 +25,7 @@ The current implementation direction is:
     \item \textbf{Frontend:} React for the web user interface.
     \item \textbf{Backend:} .NET with ASP.NET Core.
     \item \textbf{API style:} RESTful HTTP API between React and ASP.NET Core.
-    \item \textbf{Database:} To be selected during the database design/implementation step based on simplicity and internship constraints.
+    \item \textbf{Database:} To be selected during implementation based on simplicity and internship constraints.
 \end{itemize}
 
 International healthcare standards and FHIR integration are \textbf{not MVP requirements}. The architecture should avoid unnecessary complexity while leaving reasonable room for future extension.
@@ -91,19 +91,19 @@ React communicates with ASP.NET Core through RESTful HTTP endpoints. The API sho
 For the internship MVP, API design should prioritize the endpoints needed for the three core workflows. External interoperability APIs and FHIR resources are deferred.
 
 \section{Data and Persistence Direction}
-The database design will be developed as a separate ERD deliverable. The model should remain small and normalized enough to support the MVP without introducing unnecessary enterprise entities.
+The current logical data model is defined in \texttt{docs/03-requirements/ER/OCR\_MVP\_ERD.html} and summarized in \texttt{docs/05-data/README.md}. The model is intentionally small and normalized enough to support the MVP without introducing unnecessary enterprise entities.
 
-The minimum logical model is expected to include:
+The current logical model includes:
 \begin{itemize}
     \item Patient
     \item Allergy
     \item Medication History / relevant medication information
-    \item Patient Alert, if required by the approved workflow
+    \item Patient Alert
     \item Appointment
-    \item Appointment History/Event where required to preserve rescheduling/cancellation history
+    \item Appointment History/Event
     \item Visit
     \item User
-    \item Audit Event where required
+    \item Audit Event
 \end{itemize}
 
 The central relationship is:
@@ -148,20 +148,22 @@ The current baseline decisions are:
     \item ASP.NET Core/.NET is the backend technology.
     \item REST is the primary frontend-to-backend API style.
     \item The system is organized around Patient Management, Patient Chart, and Appointment Management.
+    \item The logical ERD is maintained as the current MVP data-model baseline.
     \item International standards/FHIR are deferred from the internship MVP.
-    \item The database technology and detailed data model will be finalized during the database design step.
+    \item The physical database engine and detailed persistence implementation will be finalized during implementation.
 \end{itemize}
 
 \section{Remaining Decisions}
-The following should be finalized before implementation becomes fixed:
+The following remain implementation decisions rather than unresolved scope decisions:
 \begin{itemize}
     \item Database engine and persistence approach.
-    \item Detailed database schema and ERD.
     \item Exact REST resources/endpoints.
     \item Authentication implementation and session/token approach.
     \item Final role-permission matrix after mentor confirmation.
     \item Deployment approach appropriate to the internship environment.
 \end{itemize}
+
+The logical ERD and three-module data-model baseline are already established and should not be expanded unless a justified MVP requirement requires a change.
 
 \section{Implementation Priority}
 Architecture and implementation work shall follow this priority:
