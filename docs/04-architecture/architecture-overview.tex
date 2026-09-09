@@ -20,13 +20,16 @@ Authentication, authorization, validation, audit logging, and error handling are
 The architecture separates the React user interface, ASP.NET Core API/application layer, business logic, and persistence so the three core workflows can be developed and tested independently while remaining connected through the patient record.
 
 \section{Technology Stack}
-The current implementation direction is:
+The approved implementation stack is:
 \begin{itemize}
     \item \textbf{Frontend:} React for the web user interface.
     \item \textbf{Backend:} .NET with ASP.NET Core.
     \item \textbf{API style:} RESTful HTTP API between React and ASP.NET Core.
-    \item \textbf{Database:} To be selected during implementation based on simplicity and internship constraints.
+    \item \textbf{Database:} PostgreSQL.
+    \item \textbf{Data access:} Entity Framework Core with the official PostgreSQL provider (Npgsql), unless a justified project decision changes the persistence approach.
 \end{itemize}
+
+PostgreSQL is the selected database engine for the internship MVP and shall be used consistently in the database design, local development environment, application configuration, migrations, testing, and deployment documentation.
 
 International healthcare standards and FHIR integration are \textbf{not MVP requirements}. The architecture should avoid unnecessary complexity while leaving reasonable room for future extension.
 
@@ -48,14 +51,16 @@ International healthcare standards and FHIR integration are \textbf{not MVP requ
                                                |
                                          Business Logic
                                                |
-                                         Data Access
+                                    Entity Framework Core
                                                |
-                                           Database
+                                            Npgsql
+                                               |
+                                         PostgreSQL
 \end{verbatim}
 
 The primary request flow is:
 \begin{verbatim}
-React UI -> REST API -> ASP.NET Core -> Business Logic -> Data Access -> Database
+React UI -> REST API -> ASP.NET Core -> Business Logic -> EF Core/Npgsql -> PostgreSQL
 \end{verbatim}
 
 The backend is responsible for validation, authorization, business rules, and data integrity. The frontend must not be treated as the security boundary.
@@ -93,6 +98,8 @@ For the internship MVP, API design should prioritize the endpoints needed for th
 \section{Data and Persistence Direction}
 The current logical data model is defined in \texttt{docs/03-requirements/ER/OCR\_MVP\_ERD.html} and summarized in \texttt{docs/05-data/README.md}. The model is intentionally small and normalized enough to support the MVP without introducing unnecessary enterprise entities.
 
+PostgreSQL is the authoritative persistence engine for the MVP. Database-specific implementation should use PostgreSQL-compatible types, constraints, indexes, migrations, and transaction behavior. Application code should access PostgreSQL through the persistence layer rather than embedding database-specific SQL throughout business logic.
+
 The current logical model includes:
 \begin{itemize}
     \item Patient
@@ -122,7 +129,7 @@ A visit may originate from an appointment or from a walk-in. Appointment history
 \section{Security and Data Integrity}
 The backend shall enforce authorization and validate all important patient and appointment operations. Patient information must not be exposed to unauthorized users.
 
-The system shall prevent duplicate patient identifiers, invalid relationships, and unsafe appointment operations. Failed operations shall not falsely report success or leave incomplete records where the application can prevent this.
+PostgreSQL constraints and application-level validation should work together to protect referential integrity, uniqueness, required relationships, and valid status transitions. The system shall prevent duplicate patient identifiers, invalid relationships, and unsafe appointment operations. Failed operations shall not falsely report success or leave incomplete records where the application can prevent this.
 
 \section{Deferred Functionality}
 The following capabilities are explicitly outside the committed MVP:
@@ -147,20 +154,21 @@ The current baseline decisions are:
     \item React is the frontend technology.
     \item ASP.NET Core/.NET is the backend technology.
     \item REST is the primary frontend-to-backend API style.
+    \item PostgreSQL is the selected MVP database engine.
+    \item Entity Framework Core with Npgsql is the planned persistence approach.
     \item The system is organized around Patient Management, Patient Chart, and Appointment Management.
     \item The logical ERD is maintained as the current MVP data-model baseline.
     \item International standards/FHIR are deferred from the internship MVP.
-    \item The physical database engine and detailed persistence implementation will be finalized during implementation.
 \end{itemize}
 
 \section{Remaining Decisions}
-The following remain project decisions rather than unresolved scope decisions:
+The following remain project decisions rather than database-engine selection decisions:
 \begin{itemize}
-    \item Database engine and persistence approach.
     \item Exact REST resources/endpoints.
     \item Authentication implementation and session/token approach.
     \item Final role-permission matrix after clinical confirmation.
     \item Deployment approach appropriate to the internship environment.
+    \item PostgreSQL deployment configuration and backup procedure.
 \end{itemize}
 
 The logical ERD and three-module data-model baseline are already established and should not be expanded unless a justified MVP requirement requires a change.
