@@ -11,9 +11,11 @@ The patient chart is the center of the Open Clinical Record workflow. This resea
 
 ### Oracle Health
 
-Oracle Health describes the patient panel as a static part of the patient chart containing both demographic and encounter-specific information. Its documented fields include patient name, pronouns, age, administrative sex, date of birth, deceased date when applicable, allergies, weight, BMI, chief complaint, reason for visit, PCP, care-team information, encounter type, location, visit provider, visit date/time, visit number, advance-care information and MRNs.
+Oracle Health describes the patient panel as a static part of the patient chart containing both demographic and encounter-specific information. Its documented enterprise fields include patient name, age, administrative sex, date of birth, deceased date when applicable, allergies, weight, BMI, chief complaint, reason for visit, PCP, care-team information, encounter type, location, visit provider, visit date/time, visit number, advance-care information and MRNs.
 
 Oracle also provides a patient-chart notifications banner. Notifications are ordered by severity (alert, warning, informational). Its life timeline can display clinical information over selectable time periods and allow a user to inspect a specific visit.
+
+**Important:** Oracle Health is being used as a reference system. Its enterprise demographic fields are not automatically Open Clinical Record requirements. Only fields justified by the approved MVP requirements and clinical workflow should be implemented.
 
 ### OpenMRS
 
