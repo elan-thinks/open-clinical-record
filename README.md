@@ -66,14 +66,17 @@ The chart is intentionally basic. Full clinical encounter documentation is outsi
 - Check in patients
 - Support a basic walk-in path without fabricating an appointment
 
-## Technology Direction
+## Technology Stack
 
 - **Frontend:** React
 - **Backend:** .NET / ASP.NET Core
 - **API:** RESTful HTTP API
-- **Database:** To be selected during database design and implementation
+- **Database:** PostgreSQL
+- **ORM / Data Access:** Entity Framework Core + Npgsql
 
-The implementation is database-independent at the design stage. International healthcare standards and FHIR integration are **not required for the internship MVP**.
+PostgreSQL is the selected and authoritative database engine for the internship MVP. It is used consistently across the database design, local development environment, application persistence, migrations, testing, and deployment planning.
+
+International healthcare standards and FHIR integration are **not required for the internship MVP**.
 
 ## Deferred / Future Work
 
@@ -97,7 +100,7 @@ The `docs/` directory separates engineering documentation from formal documents:
 - `00-project/` — project identity, scope, objectives, glossary
 - `01-research/` — EMR and domain research
 - `02-discovery/` — clinical workflows and stakeholder discovery
-- `03-requirements/` — requirements, NFRs, traceability, and formal SRS
+- `03-requirements/` — requirements, NFRs, traceability, SRS, and clinical domain rules
 - `04-architecture/` — architecture overview and ADRs
 - `05-data/` — data-model baseline and data dictionary material
 - `06-ux/` — user flows and wireframes
@@ -117,7 +120,7 @@ Research → Discovery → Requirements → Architecture → Data Model
 
 **Current phase: Requirements + architecture + MVP data-model baseline → UX / implementation planning**
 
-The scope, SRS, workflow, NFRs, traceability matrix, architecture, clinical domain rules, and logical ERD are aligned to the same three-module MVP. The next project work should follow the established requirements and resolve any remaining workflow decisions before they are treated as final.
+The scope, SRS, workflow, NFRs, traceability matrix, architecture, clinical domain rules, and logical ERD are aligned to the same three-module MVP. PostgreSQL is the selected database engine. The next project work should follow the established requirements and resolve any remaining workflow decisions before they are treated as final.
 
 ## License
 
