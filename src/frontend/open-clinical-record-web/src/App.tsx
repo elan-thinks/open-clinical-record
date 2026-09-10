@@ -38,25 +38,42 @@ function App() {
         ? 'Backend Unavailable'
         : 'Checking backend…';
 
-  const statusClass =
-    status === 'online'
-      ? 'status-online'
-      : status === 'unavailable'
-        ? 'status-offline'
-        : 'status-checking';
+  const statusKey =
+    status === 'online' ? 'online' : status === 'unavailable' ? 'offline' : 'checking';
 
   return (
     <div className="app">
       <header className="header">
-        <h1>Open Clinical Record</h1>
-        <p className="subtitle">Project status: Foundation</p>
+        <div className="brand-mark" aria-hidden>
+          OCR
+        </div>
+        <div className="brand-text">
+          <h1 className="brand-name">Open Clinical Record</h1>
+          <p className="brand-sub">Project status: Foundation</p>
+        </div>
       </header>
 
       <main className="main">
+        <div className="hero">
+          <p className="hero-eyebrow">Milestone 1</p>
+          <h2 className="hero-title">
+            Application foundation is <b>running</b>
+          </h2>
+          <p className="hero-desc">
+            Backend API and frontend shell are connected. Authentication, database, and business
+            modules are not implemented yet.
+          </p>
+        </div>
+
         <section className="card">
           <h2>Backend connection</h2>
-          <p className={`status ${statusClass}`}>{statusLabel}</p>
-          <p className="meta">API base: <code>{getApiBaseUrl()}</code></p>
+          <div className="status-row">
+            <span className={`status-dot ${statusKey}`} aria-hidden />
+            <p className={`status-label ${statusKey}`}>{statusLabel}</p>
+          </div>
+          <p className="meta">
+            API base: <code>{getApiBaseUrl()}</code>
+          </p>
           {lastChecked && <p className="meta">Last checked: {lastChecked}</p>}
           {errorMessage && <p className="error">{errorMessage}</p>}
           <button type="button" onClick={() => void checkBackend()} className="btn">
@@ -65,12 +82,14 @@ function App() {
         </section>
 
         <section className="card muted">
-          <h2>Milestone 1</h2>
+          <h2>What comes next</h2>
           <p>
-            Application foundation only. Authentication, database, and business modules are not
-            implemented yet.
+            Later milestones will add the role-aware shell, login, patient management, medical
+            chart, and appointments — matching the approved UI mocks.
           </p>
         </section>
+
+        <p className="footer-note">Open Clinical Record · Internship MVP</p>
       </main>
     </div>
   );
