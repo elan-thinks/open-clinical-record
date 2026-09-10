@@ -1,0 +1,105 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #f4f6f8;
+  color: #1a1a1a;
+}
+
+.header {
+  background: #0d47a1;
+  color: #fff;
+  padding: 1.5rem 2rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+.main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.25rem;
+}
+
+.card.muted {
+  background: #eef2f6;
+  box-shadow: none;
+}
+
+.card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.status {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.status-online {
+  color: #1b5e20;
+}
+
+.status-offline {
+  color: #b71c1c;
+}
+
+.status-checking {
+  color: #e65100;
+}
+
+.meta {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.meta code {
+  background: #e8eef5;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.error {
+  color: #b71c1c;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #1565c0;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #0d47a1;
+}

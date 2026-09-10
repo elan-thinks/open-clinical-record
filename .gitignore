@@ -1,0 +1,59 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE / OS
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Secrets / local config (never commit)
+appsettings.*.local.json
+*.pfx
+secrets.json
