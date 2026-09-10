@@ -1,10 +1,14 @@
 # Open Clinical Record
 
+
+
 **Open Clinical Record (OCR)** is a focused outpatient EMR internship project built around three core workflows:
 
 1. **Patient Management**
 2. **Patient Chart**
 3. **Appointment Management**
+
+![alt text](image.png)
 
 The MVP is intentionally limited to functionality that can realistically be implemented, tested, and demonstrated within the remaining one-month internship period.
 
