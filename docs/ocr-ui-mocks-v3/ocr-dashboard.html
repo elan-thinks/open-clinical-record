@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCR — Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1310; --surface:#121a15; --surface-2:#16201a; --line:#1e2b23; --line-soft:#182219;
+    --text:#eef3ef; --text-dim:#a7bdae; --text-faint:#6d8577;
+    --teal:#3ddc97; --teal-dim:#29a874; --teal-glow:rgba(61,220,151,.16);
+    --amber:#eab35a; --amber-glow:rgba(234,179,90,.14);
+    --red:#e8778a; --red-glow:rgba(232,119,138,.13);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  *::-webkit-scrollbar{width:8px;height:8px;}
+  *::-webkit-scrollbar-track{background:transparent;}
+  *::-webkit-scrollbar-thumb{background:#1e2b23;border-radius:8px;border:2px solid transparent;background-clip:padding-box;}
+  *::-webkit-scrollbar-thumb:hover{background:#6d8577;}
+  body{
+    background:var(--bg); color:var(--text); font-family:Inter,sans-serif;
+    min-height:100vh; scrollbar-width:thin; scrollbar-color:#1e2b23 #0c1310;
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(61,220,151,.07), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(61,220,151,.04), transparent 55%);
+  }
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{
+    width:226px;flex-shrink:0;border-right:1px solid var(--line-soft);
+    display:flex;flex-direction:column;padding:22px 14px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 10px 26px;}
+  .brand-mark{
+    width:28px;height:28px;border-radius:8px;
+    background:linear-gradient(150deg,var(--teal),var(--teal-dim));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#04140c;
+  }
+  .brand-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;}
+  .nav-group{margin-bottom:18px;}
+  .nav-label{font-size:10.5px;color:var(--text-faint);padding:0 10px 8px;letter-spacing:.06em;text-transform:uppercase;}
+  .nav-item{
+    display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;
+    font-size:13.5px;color:var(--text-dim);cursor:pointer;margin-bottom:2px;text-decoration:none;
+  }
+  .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.75;}
+  .nav-item:hover{background:var(--surface-2);color:var(--text);}
+  .nav-item.active{background:var(--teal-glow);color:var(--teal);box-shadow:inset 0 0 0 1px rgba(61,220,151,.18);}
+  .nav-item.active svg{opacity:1;}
+  .sidebar-foot{margin-top:auto;padding:12px 10px;border-top:1px solid var(--line-soft);}
+  .user-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .avatar-sm{
+    width:30px;height:30px;border-radius:50%;background:var(--surface-2);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--teal);
+  }
+  .foot-name{font-size:13px;font-weight:500;}
+  .foot-role{font-size:11px;color:var(--text-faint);}
+  .role-switcher{
+    width:100%;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:8px;padding:7px 10px;color:var(--text-dim);font-size:12px;font-family:inherit;cursor:pointer;
+  }
+
+  .main{flex:1;padding:26px 34px 40px;max-width:1180px;min-width:0;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
+  .greeting h1{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;}
+  .greeting .date{font-size:12.5px;color:var(--text-faint);margin-top:3px;}
+  .top-actions{display:flex;align-items:center;gap:12px;}
+  .search-box{
+    display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
+    padding:8px 12px;border-radius:9px;width:220px;color:var(--text-faint);font-size:13px;
+  }
+  .icon-btn{
+    width:34px;height:34px;border-radius:9px;background:var(--surface);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;
+  }
+  .icon-btn .dot{position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--amber);}
+
+  .role-switch{
+    display:flex;gap:6px;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);
+    padding:4px;border-radius:10px;width:fit-content;flex-wrap:wrap;
+  }
+  .role-pill{
+    padding:6px 14px;border-radius:7px;font-size:12.5px;font-weight:500;
+    color:var(--text-dim);cursor:pointer;
+  }
+  .role-pill.active{background:var(--teal-glow);color:var(--teal);}
+
+  .hero{
+    background:linear-gradient(135deg,rgba(61,220,151,.09),var(--surface) 55%);
+    border:1px solid var(--line);border-radius:16px;padding:22px 26px;
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;
+    position:relative;overflow:hidden;gap:16px;flex-wrap:wrap;
+  }
+  .hero::after{
+    content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;
+    background:radial-gradient(circle,var(--teal-glow),transparent 70%);pointer-events:none;
+  }
+  .hero-eyebrow{font-size:12px;color:var(--teal);font-weight:500;margin-bottom:6px;}
+  .hero-title{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;max-width:520px;line-height:1.4;}
+  .hero-title b{color:var(--teal);font-weight:600;}
+  .hero-cta{
+    background:var(--teal);color:#04140c;border:none;padding:11px 18px;border-radius:10px;
+    font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit;text-decoration:none;
+    display:inline-flex;align-items:center;white-space:nowrap;position:relative;z-index:1;
+  }
+
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+  @media(max-width:900px){.stat-row{grid-template-columns:1fr 1fr;}}
+  .stat-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:16px;display:flex;align-items:center;gap:14px;
+  }
+  .ring{position:relative;width:56px;height:56px;flex-shrink:0;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring-bg{fill:none;stroke:var(--line);stroke-width:5;}
+  .ring-fg{fill:none;stroke-width:5;stroke-linecap:round;}
+  .stat-num{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;line-height:1;}
+  .stat-label{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+  .stat-sub{font-size:11.5px;margin-top:2px;}
+
+  .grid-2{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;margin-bottom:14px;}
+  @media(max-width:960px){.grid-2{grid-template-columns:1fr;}}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .panel-title{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;}
+  .panel-link{font-size:12.5px;color:var(--teal);text-decoration:none;font-weight:500;}
+
+  .timeline-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--text-faint);margin-bottom:6px;}
+  .timeline-track{height:10px;background:var(--surface-2);border-radius:6px;position:relative;margin-bottom:14px;}
+  .timeline-block{position:absolute;top:0;height:100%;border-radius:6px;}
+
+  .appt-row{
+    display:flex;align-items:center;gap:12px;padding:10px 0;
+    border-bottom:1px solid var(--line-soft);font-size:13.5px;
+  }
+  .appt-row:last-child{border-bottom:none;}
+  .appt-time{width:48px;color:var(--text-faint);font-variant-numeric:tabular-nums;flex-shrink:0;}
+  .appt-name{flex:1;font-weight:500;}
+  .appt-name .muted{font-weight:400;font-size:12px;color:var(--text-faint);display:block;}
+  .appt-actions{display:flex;gap:8px;}
+  .appt-actions a{font-size:12px;color:var(--teal);text-decoration:none;font-weight:500;}
+
+  .status-pill{
+    font-size:10.5px;padding:3px 9px;border-radius:20px;font-weight:500;
+    display:inline-flex;align-items:center;gap:5px;flex-shrink:0;
+  }
+  .status-pill .dot{width:5px;height:5px;border-radius:50%;}
+  .status-checked{background:var(--teal-glow);color:var(--teal);}
+  .status-checked .dot{background:var(--teal);}
+  .status-waiting{background:var(--amber-glow);color:var(--amber);}
+  .status-waiting .dot{background:var(--amber);}
+  .status-scheduled{background:var(--surface-2);color:var(--text-faint);}
+  .status-scheduled .dot{background:var(--text-faint);}
+
+  .feed-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:13px;}
+  .feed-item:last-child{border-bottom:none;}
+  .feed-item.dim{opacity:.7;}
+  .feed-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);margin-top:5px;flex-shrink:0;}
+  .feed-item.dim .feed-dot{background:var(--text-faint);}
+  .feed-text{flex:1;}
+  .feed-time{font-size:11.5px;color:var(--text-faint);white-space:nowrap;}
+
+  .grid-bottom{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:800px){.grid-bottom{grid-template-columns:1fr;}}
+  .attn-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-soft);}
+  .attn-item:last-child{border-bottom:none;}
+  .attn-icon{
+    width:28px;height:28px;border-radius:8px;background:var(--amber-glow);color:var(--amber);
+    display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:14px;
+  }
+  .attn-item.crit .attn-icon{background:var(--red-glow);color:var(--red);}
+  .attn-text{font-size:13.5px;font-weight:500;}
+  .attn-text span{display:block;font-size:12px;color:var(--text-faint);font-weight:400;margin-top:2px;}
+
+  .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .quick-btn{
+    display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;
+    background:var(--surface-2);border:1px solid var(--line);text-decoration:none;color:var(--text);
+    font-size:13px;font-weight:500;
+  }
+  .quick-btn:hover{background:var(--teal-glow);color:var(--teal);border-color:transparent;}
+  .quick-btn.wide{grid-column:1 / -1;}
+  .quick-ico{font-size:16px;}
+
+  .perm-bar{
+    margin-top:14px;padding:10px 14px;border-radius:10px;
+    background:rgba(91,159,212,.08);border:1px solid rgba(91,159,212,.18);
+    font-size:12px;color:var(--text-dim);line-height:1.45;
+  }
+
+  @media(max-width:900px){.sidebar{display:none;}}
+
+  /* Nav icons — force small size (SVG defaults can blow up) */
+  .nav-item svg{
+    width:16px !important;
+    height:16px !important;
+    min-width:16px;
+    max-width:16px;
+    flex-shrink:0;
+    opacity:.75;
+    display:block;
+  }
+  .nav-item.active svg{ opacity:1; }
+  .nav-item{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border-radius:9px;
+    font-size:13.5px;
+    color:var(--text-dim, #a7bdae);
+    cursor:pointer;
+    margin-bottom:2px;
+    text-decoration:none;
+  }
+  .nav-group{ margin-bottom:18px; }
+  .nav-label{
+    font-size:10.5px;
+    color:var(--text-faint, #6d8577);
+    padding:0 10px 8px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .nav-item:hover{ background:var(--surface-2, #16201a); color:var(--text, #eef3ef); }
+  .nav-item.active{
+    background:var(--teal-glow, rgba(61,220,151,.16));
+    color:var(--teal, #3ddc97);
+    box-shadow:inset 0 0 0 1px rgba(61,220,151,.18);
+  }
+  .sidebar{
+    display:flex !important;
+    flex-direction:column;
+    width:226px;
+    flex-shrink:0;
+  }
+  .sidebar-foot{ margin-top:auto; padding:12px 10px; border-top:1px solid var(--line-soft, #182219); }
+  .avatar-sm{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--surface-2,#16201a);border:1px solid var(--line,#1e2b23);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--teal,#3ddc97);
+  }
+
+
+  /* Sticky static sidebar */
+  .shell{ display:flex; min-height:100vh; align-items:stretch; }
+  .sidebar{
+    width:226px !important;
+    flex-shrink:0 !important;
+    position:sticky !important;
+    top:0 !important;
+    height:100vh !important;
+    max-height:100vh !important;
+    overflow-y:auto;
+    display:flex !important;
+    flex-direction:column !important;
+    border-right:1px solid var(--line-soft, #182219);
+    padding:22px 14px !important;
+    align-self:flex-start;
+    background:var(--bg, #0c1310);
+    z-index:20;
+  }
+  .sidebar-foot{
+    margin-top:auto !important;
+    padding:14px 10px 8px !important;
+    border-top:1px solid var(--line-soft, #182219);
+    flex-shrink:0;
+  }
+  .sidebar-foot .user-row{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+  }
+  .sidebar-foot .user-meta{ flex:1; min-width:0; }
+  .sidebar-foot .foot-name{
+    font-size:13px; font-weight:500;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sidebar-foot .foot-role{ font-size:11px; color:var(--text-faint, #6d8577); }
+  .sidebar-foot .avatar-sm{
+    width:32px; height:32px; border-radius:50%;
+    background:var(--surface-2, #16201a);
+    border:1px solid var(--line, #1e2b23);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-size:12px;
+    color:var(--teal, #3ddc97); flex-shrink:0;
+  }
+  .signout-btn{
+    width:34px; height:34px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-faint, #6d8577);
+    background:var(--surface-2, #16201a);
+    border:1px solid var(--line, #1e2b23);
+    text-decoration:none; flex-shrink:0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .signout-btn:hover{
+    color:var(--teal, #3ddc97);
+    border-color:rgba(61,220,151,.35);
+    background:var(--teal-glow, rgba(61,220,151,.12));
+  }
+  .main{ flex:1; min-width:0; }
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">OCR</div>
+      <div class="brand-name">Open Clinical Record</div>
+    </div>
+    <div id="ocr-nav"></div>
+    <div class="sidebar-foot" id="ocr-foot"></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="greeting">
+        <h1 id="greet">Good morning, Dr. Samuel</h1>
+        <div class="date">Tuesday, September 8, 2026</div>
+      </div>
+      <div class="top-actions">
+        <div class="search-box" id="global-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <span id="search-ph">Search patients…</span>
+        </div>
+        <div class="icon-btn" title="Notifications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <div class="dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="role-switch">
+      <div class="role-pill active" data-role="doctor">Clinician</div>
+      <div class="role-pill" data-role="nurse">Nurse</div>
+      <div class="role-pill" data-role="receptionist">Receptionist</div>
+      <div class="role-pill" data-role="admin">Admin</div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <div class="hero-eyebrow" id="hero-eyebrow">Today's clinical focus</div>
+        <div class="hero-title" id="hero-title"><b>12 appointments</b> on your schedule, <b>3 patients</b> checked in and waiting. <b>2 chart alerts</b> need review.</div>
+      </div>
+      <a class="hero-cta" id="hero-cta" href="ocr-appointment-create.html">+ New appointment</a>
+    </div>
+
+    <div class="stat-row" id="stat-row">
+      <!-- filled by JS -->
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title" id="panel-sched">My schedule today</div>
+          <a class="panel-link" id="sched-link" href="ocr-appointments.html">View all →</a>
+        </div>
+        <div class="timeline-scale"><span>8am</span><span>10am</span><span>12pm</span><span>2pm</span><span>4pm</span><span>6pm</span></div>
+        <div class="timeline-track" id="timeline">
+          <div class="timeline-block" style="left:4%;width:9%;background:#3ddc97;"></div>
+          <div class="timeline-block" style="left:15%;width:9%;background:#eab35a;"></div>
+          <div class="timeline-block" style="left:26%;width:9%;background:#eab35a;"></div>
+          <div class="timeline-block" style="left:37%;width:9%;background:#3a4740;"></div>
+          <div class="timeline-block" style="left:48%;width:9%;background:#3a4740;"></div>
+        </div>
+        <div id="appt-list"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title" id="panel-act">Clinical activity</div>
+        </div>
+        <div id="feed"></div>
+      </div>
+    </div>
+
+    <div class="grid-bottom">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title" id="panel-attn">Needs attention</div>
+        </div>
+        <div id="attn-list"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Quick actions</div>
+        </div>
+        <div class="quick-grid" id="quick-grid"></div>
+        <div class="perm-bar" id="perm-bar"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* Icons */
+const ico = {
+  dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  patients: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4 20c0-3.5 3.5-6 8-6s8 2.5 8 6"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 12h6M9 16h4"/></svg>',
+  records: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5a1 1 0 0 1 1-1h10l4 4v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/><path d="M8 11h6M8 15h4"/></svg>',
+  appt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
+  reports: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 15v4M12 11v8M16 8v11"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+  reg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  audit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>'
+};
+
+function navGroup(label, items) {
+  return `<div class="nav-group"><div class="nav-label">${label}</div>${items.map(([href,icon,text,active]) =>
+    `<a class="nav-item${active?' active':''}" href="${href}">${icon}${text}</a>`).join('')}</div>`;
+}
+
+const navs = {
+  doctor: () => navGroup('Overview', [['ocr-dashboard.html',ico.dash,'Dashboard',1]]) +
+    navGroup('Patient care', [
+      ['ocr-patients.html',ico.patients,'Patients',0],
+      ['ocr-patient-chart.html',ico.chart,'Medical Chart',0],
+      ['ocr-consultation.html',ico.records,'Medical Records',0],
+      ['ocr-appointments.html',ico.appt,'Appointments',0]
+    ]) +
+    navGroup('Insights', [
+      ['ocr-reports.html',ico.reports,'Reports',0],
+      ['#',ico.bell,'Notifications',0]
+    ]),
+  nurse: () => navGroup('Overview', [['ocr-dashboard.html',ico.dash,'Dashboard',1]]) +
+    navGroup('Patient care', [
+      ['ocr-patients.html',ico.patients,'Patients',0],
+      ['ocr-patient-chart.html',ico.chart,'Medical Chart',0],
+      ['ocr-consultation.html',ico.records,'Medical Records',0],
+      ['ocr-appointments.html',ico.appt,'Appointments',0]
+    ]) +
+    navGroup('Alerts', [['#',ico.bell,'Notifications',0]]),
+  receptionist: () => navGroup('Overview', [['ocr-dashboard.html',ico.dash,'Dashboard',1]]) +
+    navGroup('Front desk', [
+      ['ocr-patients.html',ico.patients,'Patients',0],
+      ['ocr-appointments.html',ico.appt,'Appointments',0],
+      ['ocr-patient-register.html',ico.reg,'Registration',0],
+      ['ocr-checkin.html',ico.check,'Check-in / Queue',0]
+    ]) +
+    navGroup('Alerts', [['#',ico.bell,'Notifications',0]]),
+  admin: () => navGroup('Overview', [['ocr-dashboard.html',ico.dash,'Dashboard',1]]) +
+    navGroup('Administration', [
+      ['ocr-admin-users.html',ico.users,'Users',0],
+      ['ocr-admin-roles.html',ico.shield,'Roles & Permissions',0],
+      ['ocr-patients.html',ico.patients,'Patients',0],
+      ['ocr-admin-audit.html',ico.audit,'Audit Logs',0],
+      ['ocr-reports.html',ico.reports,'Reports',0],
+      ['#',ico.gear,'System Settings',0]
+    ]) +
+    navGroup('Alerts', [['#',ico.bell,'Notifications',0]])
+};
+
+function ring(stroke, offset) {
+  return `<div class="ring"><svg width="56" height="56" viewBox="0 0 56 56">
+    <circle class="ring-bg" cx="28" cy="28" r="24"/>
+    <circle class="ring-fg" cx="28" cy="28" r="24" stroke="${stroke}" stroke-dasharray="151" stroke-dashoffset="${offset}"/>
+  </svg></div>`;
+}
+
+const roles = {
+  doctor: {
+    greet:'Good morning, Dr. Samuel', name:'Dr. Samuel', roleLabel:'Clinician', av:'DS',
+    search:'Search patients…',
+    eyebrow:"Today's clinical focus",
+    hero:'<b>12 appointments</b> on your schedule, <b>3 patients</b> checked in and waiting. <b>2 chart alerts</b> need review.',
+    cta:'Open chart', ctaHref:'ocr-patient-chart.html',
+    stats:[
+      [ring('#3ddc97',18),'12','Today\'s appointments','on your schedule','var(--teal)'],
+      [ring('#eab35a',60),'3','Checked in / waiting','need attention','var(--amber)'],
+      [ring('#3ddc97',100),'4','Completed visits','this morning','var(--text-faint)'],
+      [ring('#e8778a',110),'2','Pending clinical work','alerts to review','var(--red)']
+    ],
+    schedTitle:'My schedule today',
+    actTitle:'Clinical activity',
+    appts:[
+      ['08:30','Marta Bekele','OCR-10482 · Follow-up','status-checked','Checked in','Chart'],
+      ['09:00','Dawit Tesfaye','OCR-10391 · New complaint','status-waiting','Waiting','Chart'],
+      ['09:30','Selamawit Kassa','OCR-10255 · Follow-up','status-waiting','Waiting','Chart'],
+      ['10:00','Yonas Abebe','OCR-10112 · Routine','status-scheduled','Scheduled','Chart'],
+      ['10:30','Sara Mekonnen','OCR-10098 · New patient','status-scheduled','Scheduled','Chart']
+    ],
+    feed:[
+      ['Chart updated for <b>Dawit Tesfaye</b>','18 min ago',0],
+      ['<b>Marta Bekele</b> checked in — ready','25 min ago',0],
+      ['Allergy alert — <b>Selamawit Kassa</b>','1 hr ago',1],
+      ['Appointment confirmed — <b>Yonas Abebe</b>','2 hr ago',1]
+    ],
+    attn:[
+      [1,'2 chart alerts need review','Allergy / flagged findings'],
+      [0,'Draft note open','Dawit Tesfaye — complete documentation'],
+      [0,'High BP acknowledged?','Nurse vitals pending clinician review']
+    ],
+    qa:[
+      ['📋','Open Chart','ocr-patient-chart.html'],
+      ['🔍','Find patient','ocr-patients.html'],
+      ['📅','Appointments','ocr-appointments.html'],
+      ['📊','Reports','ocr-reports.html']
+    ],
+    perm:'<b>Clinician:</b> full chart review, authorized clinical edits, open chart from schedule. Not: users, roles, system config, deleting history.'
+  },
+  nurse: {
+    greet:'Good morning, Hana', name:'Hana Mekonnen', roleLabel:'Nurse', av:'HM',
+    search:'Search patients…',
+    eyebrow:"Today's care support",
+    hero:'<b>5 patients</b> need clinical support. <b>4</b> checked in. Focus on observations, vitals, and visit support — not diagnoses.',
+    cta:'Record vitals', ctaHref:'ocr-vitals.html',
+    stats:[
+      [ring('#3ddc97',40),'4','Checked in','ready for support','var(--teal)'],
+      [ring('#eab35a',50),'5','Awaiting support','vitals / prep','var(--amber)'],
+      [ring('#3ddc97',80),'12','Today\'s appointments','on clinic list','var(--text-faint)'],
+      [ring('#3ddc97',90),'6','Handled','vitals completed','var(--teal)']
+    ],
+    schedTitle:'Work queue — need support',
+    actTitle:'Care activity',
+    appts:[
+      ['08:30','Marta Bekele','Vitals done','status-checked','Recorded','Chart'],
+      ['09:00','Dawit Tesfaye','New complaint','status-waiting','Vitals due','Vitals'],
+      ['09:30','Selamawit Kassa','Follow-up','status-waiting','Vitals due','Vitals'],
+      ['10:00','Yonas Abebe','Routine','status-scheduled','Scheduled','Chart'],
+      ['10:30','Sara Mekonnen','Walk-in','status-scheduled','Scheduled','Chart']
+    ],
+    feed:[
+      ['Vitals recorded — <b>Marta Bekele</b>','12 min ago',0],
+      ['Observation note — <b>Dawit</b>','22 min ago',0],
+      ['Queue: 3 waiting','35 min ago',1],
+      ['Allergy visible on chart — <b>Selamawit</b>','50 min ago',1]
+    ],
+    attn:[
+      [0,'2 patients still need vitals','Dawit & Selamawit'],
+      [1,'Elevated BP on last reading','Flag for clinician'],
+      [0,'Incomplete observation','Add notes for walk-in']
+    ],
+    qa:[
+      ['❤️','Record vitals','ocr-vitals.html'],
+      ['📋','Open chart','ocr-patient-chart.html'],
+      ['🔍','Find patient','ocr-patients.html'],
+      ['📅','Appointments','ocr-appointments.html']
+    ],
+    perm:'<b>Nurse:</b> vitals/observations, chart context, visit support. Not: overwrite doctor decisions, delete history, manage users.'
+  },
+  receptionist: {
+    greet:'Good morning, Sara', name:'Sara Bekele', roleLabel:'Receptionist', av:'SB',
+    search:'Search patients…',
+    eyebrow:"Today's front desk",
+    hero:'<b>12 appointments</b> today. <b>3</b> waiting at check-in. Register, book, and check in — without clinical chart noise.',
+    cta:'Register patient', ctaHref:'ocr-patient-register.html',
+    stats:[
+      [ring('#eab35a',40),'12','Today\'s appointments','scheduled','var(--amber)'],
+      [ring('#3ddc97',90),'3','Checked in','waiting now','var(--teal)'],
+      [ring('#eab35a',100),'3','Waiting','need check-in action','var(--amber)'],
+      [ring('#3ddc97',70),'4','Open slots','afternoon','var(--text-faint)']
+    ],
+    schedTitle:"Today's schedule",
+    actTitle:'Front desk activity',
+    appts:[
+      ['08:30','Marta Bekele','OCR-10482 · Follow-up','status-checked','Checked in','—'],
+      ['09:00','Dawit Tesfaye','OCR-10391 · New complaint','status-waiting','Waiting','Check in'],
+      ['09:30','Selamawit Kassa','OCR-10255 · Follow-up','status-waiting','Waiting','Check in'],
+      ['10:00','Yonas Abebe','OCR-10112 · Routine','status-scheduled','Scheduled','Check in'],
+      ['10:30','Sara Mekonnen','OCR-10098 · Walk-in','status-scheduled','Scheduled','Check in']
+    ],
+    feed:[
+      ['Checked in <b>Marta Bekele</b>','10 min ago',0],
+      ['Booked appointment — <b>Hana Alemu</b>','28 min ago',0],
+      ['Registered new patient','45 min ago',1],
+      ['Rescheduled — <b>Yonas Abebe</b>','1 hr ago',1]
+    ],
+    attn:[
+      [0,'2 appointments need confirmation','No SMS reply'],
+      [0,'Incomplete registration','Missing phone'],
+      [1,'Walk-in needs slot','After 11:00']
+    ],
+    qa:[
+      ['➕','Register patient','ocr-patient-register.html'],
+      ['📅','Book appointment','ocr-appointment-create.html'],
+      ['✅','Check in','ocr-appointments.html'],
+      ['🔍','Find patient','ocr-patients.html']
+    ],
+    perm:'<b>Reception:</b> register, demographics, schedule, check-in/queue. Not: clinical notes, diagnoses, nursing observations, system admin.'
+  },
+  admin: {
+    greet:'Good morning, Admin', name:'Admin User', roleLabel:'Administrator', av:'AU',
+    search:'Search users…',
+    eyebrow:'System health',
+    hero:'<b>24 active users</b>. <b>142 audit events</b> in 24h. <b>0</b> open incidents. Admin manages the system — not clinical care.',
+    cta:'Manage users', ctaHref:'ocr-admin-users.html',
+    stats:[
+      [ring('#3ddc97',30),'24','Active users','3 roles in use','var(--teal)'],
+      [ring('#eab35a',100),'2','Inactive users','review access','var(--amber)'],
+      [ring('#3ddc97',40),'142','Audit events','last 24 hours','var(--text-faint)'],
+      [ring('#3ddc97',5),'0','System alerts','all clear','var(--teal)']
+    ],
+    schedTitle:'Recent admin activity',
+    actTitle:'Audit feed',
+    appts:[
+      ['09:12','Role change','Nurse → elevated','status-waiting','Review','—'],
+      ['08:40','Password reset','reception account','status-checked','Done','—'],
+      ['Yest.','User created','Dr. Lemma','status-scheduled','Created','—'],
+      ['Yest.','Audit export','permissions report','status-scheduled','Export','—'],
+      ['Mon','Account deactivated','dormant >90d','status-checked','Done','—']
+    ],
+    feed:[
+      ['Chart open · Marta — <b>Dr. Samuel</b>','18 min ago',0],
+      ['Vitals write · Dawit — <b>Nurse</b>','25 min ago',0],
+      ['Appointment cancel — <b>Reception</b>','40 min ago',1],
+      ['Failed login blocked','2 hr ago',1]
+    ],
+    attn:[
+      [1,'Permission change pending review','Nurse elevated yesterday'],
+      [0,'2 dormant accounts','> 90 days inactive'],
+      [0,'Audit archive due','in 12 days']
+    ],
+    qa:[
+      ['👤','Users','ocr-admin-users.html'],
+      ['🔐','Roles & perms','ocr-admin-roles.html'],
+      ['📜','Audit logs','ocr-admin-audit.html'],
+      ['⚙️','Settings','#']
+    ],
+    perm:'<b>Admin:</b> users, roles, audit, settings. Principle: Admin ≠ doctor — clinical write paths stay with clinical roles and remain audited.'
+  }
+};
+
+function apply(role) {
+  const r = roles[role] || roles.doctor;
+  localStorage.setItem('ocr_role', role);
+  document.getElementById('greet').textContent = r.greet;
+  document.getElementById('search-ph').textContent = r.search;
+  document.getElementById('hero-eyebrow').textContent = r.eyebrow;
+  document.getElementById('hero-title').innerHTML = r.hero;
+  const cta = document.getElementById('hero-cta');
+  cta.textContent = r.cta;
+  cta.href = r.ctaHref + (r.ctaHref.includes('?') ? '&' : '?') + 'role=' + role;
+  document.getElementById('panel-sched').textContent = r.schedTitle;
+  document.getElementById('panel-act').textContent = r.actTitle;
+
+  document.getElementById('stat-row').innerHTML = r.stats.map(([rg,num,label,sub,col]) =>
+    `<div class="stat-card">${rg}<div><div class="stat-num">${num}</div><div class="stat-label">${label}</div><div class="stat-sub" style="color:${col}">${sub}</div></div></div>`
+  ).join('');
+
+  document.getElementById('appt-list').innerHTML = r.appts.map(([t,name,sub,cls,st,act]) =>
+    `<div class="appt-row">
+      <div class="appt-time">${t}</div>
+      <div class="appt-name">${name}<span class="muted">${sub}</span></div>
+      <div class="status-pill ${cls}"><div class="dot"></div>${st}</div>
+      ${act && act !== '—' ? `<div class="appt-actions"><a href="ocr-patient-chart.html">${act}</a></div>` : ''}
+    </div>`
+  ).join('');
+
+  document.getElementById('feed').innerHTML = r.feed.map(([txt,time,dim]) =>
+    `<div class="feed-item${dim?' dim':''}"><div class="feed-dot"></div><div class="feed-text">${txt}</div><div class="feed-time">${time}</div></div>`
+  ).join('');
+
+  document.getElementById('attn-list').innerHTML = r.attn.map(([crit,t,s]) =>
+    `<div class="attn-item${crit?' crit':''}"><div class="attn-icon">!</div><div class="attn-text">${t}<span>${s}</span></div></div>`
+  ).join('');
+
+  document.getElementById('quick-grid').innerHTML = r.qa.map(([ico,label,href],i) =>
+    `<a class="quick-btn${r.qa.length%2 && i===r.qa.length-1?' wide':''}" href="${href}"><div class="quick-ico">${ico}</div><div class="quick-label">${label}</div></a>`
+  ).join('');
+
+  document.getElementById('perm-bar').innerHTML = r.perm;
+
+  const url = new URL(location.href);
+  url.searchParams.set('role', role);
+  history.replaceState(null,'',url);
+}
+
+document.querySelectorAll('.role-pill').forEach(p => {
+  p.addEventListener('click', () => {
+    const role = p.dataset.role;
+    localStorage.setItem('ocr_role', role);
+    location.href = 'ocr-dashboard.html?role=' + role;
+  });
+});
+
+const q = new URLSearchParams(location.search).get('role') || localStorage.getItem('ocr_role') || 'doctor';
+const pill = document.querySelector(`.role-pill[data-role="${q}"]`);
+if (pill) {
+  document.querySelectorAll('.role-pill').forEach(x => x.classList.remove('active'));
+  pill.classList.add('active');
+}
+apply(q);
+</script>
+<script src="ocr-shell.js"></script>
+</body>
+</html>

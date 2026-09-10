@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCR — Patient Chart · Marta Bekele</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0c1310; --surface: #121a15; --surface-2: #16201a;
+    --line: #1e2b23; --line-soft: #182219;
+    --text: #eef3ef; --text-dim: #a7bdae; --text-faint: #6d8577;
+    --teal: #3ddc97; --teal-dim: #29a874; --teal-glow: rgba(61, 220, 151, 0.16);
+    --amber: #eab35a; --amber-glow: rgba(234, 179, 90, 0.14);
+    --red: #e8778a; --red-glow: rgba(232, 119, 138, 0.13);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(61,220,151,0.07), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(61,220,151,0.04), transparent 55%);
+    color: var(--text); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh;
+  }
+  .shell{ display:flex; min-height:100vh; }
+  .sidebar{
+    width: 226px; flex-shrink:0; border-right: 1px solid var(--line-soft);
+    display:flex; flex-direction:column; padding: 22px 14px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; padding: 4px 10px 26px 10px; }
+  .brand-mark{
+    width:28px; height:28px; border-radius:8px;
+    background: linear-gradient(150deg, var(--teal), var(--teal-dim));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; color:#04140c;
+  }
+  .brand-name{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px; }
+  .nav-group{ margin-bottom: 22px; }
+  .nav-label{ font-size:10.5px; color: var(--text-faint); padding: 0 10px 8px 10px; letter-spacing: 0.06em; text-transform:uppercase; }
+  .nav-item{
+    display:flex; align-items:center; gap:10px; padding: 8px 10px; border-radius: 9px;
+    font-size: 13.5px; color: var(--text-dim); cursor:pointer; margin-bottom: 2px; text-decoration:none;
+  }
+  .nav-item svg{ width:16px; height:16px; flex-shrink:0; opacity:0.75; }
+  .nav-item:hover{ background: var(--surface-2); color: var(--text); }
+  .nav-item.active{ background: var(--teal-glow); color: var(--teal); box-shadow: inset 0 0 0 1px rgba(61,220,151,0.18); }
+  .nav-item.active svg{ opacity:1; }
+  .sidebar-foot{ margin-top:auto; padding: 12px 10px; border-top: 1px solid var(--line-soft); display:flex; align-items:center; gap:10px; }
+  .avatar-sm{ width:30px; height:30px; border-radius:50%; background: var(--surface-2); border: 1px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-size:12px; color:var(--teal); }
+  .foot-name{ font-size:13px; font-weight:500; }
+  .foot-role{ font-size:11px; color:var(--text-faint); }
+
+  .main{ flex:1; padding: 26px 34px 40px; max-width:1180px; }
+  .breadcrumb{ font-size:12.5px; color:var(--text-faint); margin-bottom:14px; }
+  .breadcrumb a{ color:var(--teal); text-decoration:none; }
+
+  .patient-header{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap;
+  }
+  .patient-identity{ display:flex; align-items:center; gap:16px; }
+  .avatar-lg{
+    width:56px; height:56px; border-radius:14px;
+    background: linear-gradient(150deg, var(--teal-glow), var(--surface-2));
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; color:var(--teal);
+  }
+  .p-name{ font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:600; }
+  .p-meta{ font-size:13px; color:var(--text-faint); margin-top:4px; display:flex; gap:12px; flex-wrap:wrap; }
+  .header-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  .btn-primary{
+    background: var(--teal); color:#04140c; border:none;
+    padding: 10px 16px; border-radius: 9px; font-weight:600; font-size:13.5px;
+    cursor:pointer; font-family:inherit; text-decoration:none;
+  }
+  .btn-ghost{
+    background: var(--surface); border:1px solid var(--line); color:var(--text-dim);
+    padding: 10px 14px; border-radius: 9px; font-size:13px; cursor:pointer; font-family:inherit; text-decoration:none;
+  }
+
+  .alert-bar{
+    background: var(--red-glow); border:1px solid rgba(232,119,138,0.25);
+    border-radius:10px; padding:12px 16px; margin-bottom:18px;
+    display:flex; align-items:center; gap:12px; font-size:13.5px;
+  }
+  .alert-bar .ico{ color:var(--red); font-weight:700; }
+
+  .tabs{
+    display:flex; gap:4px; margin-bottom:18px; border-bottom:1px solid var(--line); flex-wrap:wrap;
+  }
+  .tab{
+    padding: 10px 16px; font-size:13.5px; color:var(--text-dim);
+    cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; background:none; border-top:none; border-left:none; border-right:none; font-family:inherit;
+  }
+  .tab.active{ color:var(--teal); border-bottom-color:var(--teal); font-weight:500; }
+
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px; }
+
+  .panel{
+    background: var(--surface); border:1px solid var(--line);
+    border-radius: 14px; padding: 18px 20px; margin-bottom:16px;
+  }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .panel-title{ font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; }
+  .panel-link{ font-size:12px; color:var(--teal); cursor:pointer; text-decoration:none; background:none; border:none; font-family:inherit; }
+
+  .info-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px 20px; }
+  .info-item label{ display:block; font-size:11px; color:var(--text-faint); margin-bottom:3px; text-transform:uppercase; letter-spacing:0.04em; }
+  .info-item .val{ font-size:13.5px; }
+
+  .tag-list{ display:flex; flex-wrap:wrap; gap:8px; }
+  .tag{
+    font-size:12px; padding:5px 10px; border-radius:6px;
+    background: var(--surface-2); border:1px solid var(--line-soft);
+  }
+  .tag.allergy{ background: var(--red-glow); color: var(--red); border-color: transparent; }
+  .tag.med{ background: var(--teal-glow); color: var(--teal); border-color: transparent; }
+  .tag.dx{ background: rgba(234,179,90,0.15); color: var(--amber); border-color: transparent; }
+
+  .list-rows{ display:flex; flex-direction:column; gap:2px; }
+  .list-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 10px 6px; border-radius:8px; font-size:13.5px; gap:12px;
+  }
+  .list-row:hover{ background: var(--surface-2); }
+  .list-row .muted{ font-size:12px; color:var(--text-faint); }
+
+  .status-pill{
+    font-size:10.5px; padding:3px 9px; border-radius:20px; font-weight:500;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+  }
+  .status-checked{ background: var(--teal-glow); color: var(--teal); }
+  .status-scheduled{ background: var(--surface-2); color: var(--text-faint); }
+  .status-cancelled{ background: var(--red-glow); color: var(--red); }
+
+  table.vitals{ width:100%; border-collapse:collapse; font-size:13px; }
+  table.vitals th{
+    text-align:left; font-size:11px; color:var(--text-faint); font-weight:500;
+    padding:8px 10px; border-bottom:1px solid var(--line); text-transform:uppercase;
+  }
+  table.vitals td{ padding:10px; border-bottom:1px solid var(--line-soft); }
+  table.vitals tr:last-child td{ border-bottom:none; }
+
+  .note-card{
+    background: var(--surface-2); border:1px solid var(--line-soft);
+    border-radius:10px; padding:14px; margin-bottom:10px;
+  }
+  .note-meta{ font-size:11.5px; color:var(--text-faint); margin-bottom:6px; }
+  .note-body{ font-size:13.5px; line-height:1.5; }
+
+  .form-inline{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:14px; }
+  .form-inline .field label{ font-size:11px; color:var(--text-faint); display:block; margin-bottom:4px; }
+  .form-inline input, .form-inline select{
+    width:100%; background: var(--bg); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; color:var(--text); font-size:13px; font-family:inherit;
+  }
+
+
+  .deceased-banner{
+    background: rgba(107, 114, 128, 0.2); border: 1px solid rgba(156, 163, 175, 0.35);
+    border-radius:10px; padding:12px 16px; margin-bottom:18px;
+    display:flex; align-items:flex-start; gap:12px; font-size:13.5px;
+  }
+  .deceased-banner .ico{ color:#9ca3af; font-weight:700; font-size:16px; }
+  .deceased-banner b{ color:#d1d5db; }
+  .status-deceased{
+    background: rgba(107, 114, 128, 0.25); color: #9ca3af;
+    font-size:11px; padding:3px 9px; border-radius:20px; font-weight:500;
+  }
+  .btn-disabled{
+    opacity: 0.45; pointer-events: none; cursor: not-allowed;
+  }
+
+  @media (max-width: 980px){
+    .sidebar{ display:none; }
+    .grid-2, .form-inline{ grid-template-columns: 1fr; }
+  }
+
+  /* Nav icons — force small size (SVG defaults can blow up) */
+  .nav-item svg{
+    width:16px !important;
+    height:16px !important;
+    min-width:16px;
+    max-width:16px;
+    flex-shrink:0;
+    opacity:.75;
+    display:block;
+  }
+  .nav-item.active svg{ opacity:1; }
+  .nav-item{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border-radius:9px;
+    font-size:13.5px;
+    color:var(--text-dim, #a7bdae);
+    cursor:pointer;
+    margin-bottom:2px;
+    text-decoration:none;
+  }
+  .nav-group{ margin-bottom:18px; }
+  .nav-label{
+    font-size:10.5px;
+    color:var(--text-faint, #6d8577);
+    padding:0 10px 8px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .nav-item:hover{ background:var(--surface-2, #16201a); color:var(--text, #eef3ef); }
+  .nav-item.active{
+    background:var(--teal-glow, rgba(61,220,151,.16));
+    color:var(--teal, #3ddc97);
+    box-shadow:inset 0 0 0 1px rgba(61,220,151,.18);
+  }
+  .sidebar{
+    display:flex !important;
+    flex-direction:column;
+    width:226px;
+    flex-shrink:0;
+  }
+  .sidebar-foot{ margin-top:auto; padding:12px 10px; border-top:1px solid var(--line-soft, #182219); }
+  .avatar-sm{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--surface-2,#16201a);border:1px solid var(--line,#1e2b23);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--teal,#3ddc97);
+  }
+
+
+  /* Sticky static sidebar */
+  .shell{ display:flex; min-height:100vh; align-items:stretch; }
+  .sidebar{
+    width:226px !important;
+    flex-shrink:0 !important;
+    position:sticky !important;
+    top:0 !important;
+    height:100vh !important;
+    max-height:100vh !important;
+    overflow-y:auto;
+    display:flex !important;
+    flex-direction:column !important;
+    border-right:1px solid var(--line-soft, #182219);
+    padding:22px 14px !important;
+    align-self:flex-start;
+    background:var(--bg, #0c1310);
+    z-index:20;
+  }
+  .sidebar-foot{
+    margin-top:auto !important;
+    padding:14px 10px 8px !important;
+    border-top:1px solid var(--line-soft, #182219);
+    flex-shrink:0;
+  }
+  .sidebar-foot .user-row{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+  }
+  .sidebar-foot .user-meta{ flex:1; min-width:0; }
+  .sidebar-foot .foot-name{
+    font-size:13px; font-weight:500;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sidebar-foot .foot-role{ font-size:11px; color:var(--text-faint, #6d8577); }
+  .sidebar-foot .avatar-sm{
+    width:32px; height:32px; border-radius:50%;
+    background:var(--surface-2, #16201a);
+    border:1px solid var(--line, #1e2b23);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-size:12px;
+    color:var(--teal, #3ddc97); flex-shrink:0;
+  }
+  .signout-btn{
+    width:34px; height:34px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-faint, #6d8577);
+    background:var(--surface-2, #16201a);
+    border:1px solid var(--line, #1e2b23);
+    text-decoration:none; flex-shrink:0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .signout-btn:hover{
+    color:var(--teal, #3ddc97);
+    border-color:rgba(61,220,151,.35);
+    background:var(--teal-glow, rgba(61,220,151,.12));
+  }
+  .main{ flex:1; min-width:0; }
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">OCR</div>
+      <div class="brand-name">Open Clinical Record</div>
+    </div>
+    <div id="ocr-nav"></div>
+    <div class="sidebar-foot" id="ocr-foot"></div>
+  </aside>
+
+  <main class="main">
+    <div class="breadcrumb"><a href="ocr-patients.html">Patients</a> · Chart</div>
+
+    <div class="patient-header">
+      <div class="patient-identity">
+        <div class="avatar-lg">MB</div>
+        <div>
+          <div class="p-name">Marta Bekele</div>
+          <div class="p-meta">
+            <span>OCR-10482</span>
+            <span>F · 34 yrs</span>
+            <span>DOB 12 Mar 1992</span>
+            <span>+251 911 234 567</span>
+            <span class="status-deceased" id="status-badge" style="display:none;">Deceased</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a class="btn-ghost" href="ocr-patient-register.html">Edit demographics</a>
+        <button class="btn-ghost" id="btn-mark-deceased" type="button">Mark deceased</button>
+        <a class="btn-primary" id="btn-new-appt" href="ocr-appointment-create.html">+ New appointment</a>
+      </div>
+    </div>
+
+    <div class="deceased-banner" id="deceased-banner" style="display:none;">
+      <span class="ico">†</span>
+      <div>
+        <b>Patient is marked deceased</b> — Date of death: <span id="dod-display">12 Jan 2025</span>.
+        Historical chart, visits, and appointments are preserved. New appointments and clinical activity are not allowed under clinic policy.
+        <div style="margin-top:6px; font-size:12px; color:var(--text-faint);">Recorded by: Dr. Samuel · 13 Jan 2025</div>
+      </div>
+    </div>
+
+    <div class="alert-bar" id="alert-bar">
+      <span class="ico">!</span>
+      <div><b>2 chart alerts</b> — Penicillin allergy · Hypertension flagged on last visit</div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="history">Medical history</button>
+      <button class="tab" data-tab="vitals">Vital signs</button>
+      <button class="tab" data-tab="visits">Visits & diagnosis</button>
+      <button class="tab" data-tab="notes">Clinical notes</button>
+      <button class="tab" data-tab="appointments">Appointments</button>
+      <button class="tab" data-tab="deceased" id="tab-btn-deceased">Deceased</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-overview">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Demographics</div>
+            <a class="panel-link" href="ocr-patient-register.html">Edit</a>
+          </div>
+          <div class="info-grid">
+            <div class="info-item"><label>Full name</label><div class="val">Marta Bekele</div></div>
+            <div class="info-item"><label>Patient ID</label><div class="val">OCR-10482</div></div>
+            <div class="info-item"><label>Sex</label><div class="val">Female</div></div>
+            <div class="info-item"><label>Date of birth</label><div class="val">12 Mar 1992 (34)</div></div>
+            <div class="info-item"><label>Phone</label><div class="val">+251 911 234 567</div></div>
+            <div class="info-item"><label>Email</label><div class="val">marta.bekele@email.com</div></div>
+            <div class="info-item"><label>Address</label><div class="val">Bole, Addis Ababa</div></div>
+            <div class="info-item"><label>Status</label><div class="val" id="demo-status">Active</div></div>
+            <div class="info-item" id="dod-row" style="display:none;"><label>Date of death</label><div class="val" id="dod-val">12 Jan 2025</div></div>
+            <div class="info-item" id="dod-note-row" style="display:none;"><label>Death record note</label><div class="val">Recorded for clinic records; cause not required in MVP</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Allergies & alerts</div>
+            <button class="panel-link">+ Add</button>
+          </div>
+          <div class="tag-list">
+            <span class="tag allergy">Penicillin — Severe (anaphylaxis)</span>
+            <span class="tag allergy">Sulfa drugs — Moderate (rash)</span>
+          </div>
+          <div style="margin-top:16px;">
+            <div class="panel-title" style="margin-bottom:10px;">Alerts</div>
+            <div class="tag-list">
+              <span class="tag">Hypertension — monitored</span>
+              <span class="tag">Needs insurance update</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Current medications</div>
+            <button class="panel-link">+ Add</button>
+          </div>
+          <div class="list-rows">
+            <div class="list-row">
+              <div><div>Amlodipine 5 mg daily</div><div class="muted">Started 2024 · Hypertension</div></div>
+              <span class="tag med">Active</span>
+            </div>
+            <div class="list-row">
+              <div><div>Metformin 500 mg BID</div><div class="muted">Started 2023 · Type 2 DM (history)</div></div>
+              <span class="tag med">Active</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Recent visits</div>
+            <button class="panel-link" data-goto="visits">View all</button>
+          </div>
+          <div class="list-rows">
+            <div class="list-row">
+              <div><div>Today · 08:30 — Follow-up</div><div class="muted">Dr. Samuel · Checked in</div></div>
+              <span class="status-pill status-checked">Checked in</span>
+            </div>
+            <div class="list-row">
+              <div><div>12 Aug 2026 · Routine</div><div class="muted">Dr. Samuel · Completed</div></div>
+              <span class="status-pill status-scheduled">Completed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-history">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Past medical history</div>
+            <button class="panel-link">+ Add</button>
+          </div>
+          <div class="list-rows">
+            <div class="list-row">
+              <div><div>Hypertension</div><div class="muted">Diagnosed 2022 · Controlled on amlodipine</div></div>
+              <span class="tag dx">Chronic</span>
+            </div>
+            <div class="list-row">
+              <div><div>Type 2 diabetes mellitus</div><div class="muted">Diagnosed 2023 · On metformin</div></div>
+              <span class="tag dx">Chronic</span>
+            </div>
+            <div class="list-row">
+              <div><div>Appendectomy</div><div class="muted">2015 · Surgical history</div></div>
+              <span class="tag">Resolved</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Family & social</div>
+            <button class="panel-link">Edit</button>
+          </div>
+          <div class="info-grid">
+            <div class="info-item"><label>Family history</label><div class="val">Mother: HTN; Father: DM</div></div>
+            <div class="info-item"><label>Smoking</label><div class="val">Never</div></div>
+            <div class="info-item"><label>Alcohol</label><div class="val">Occasional</div></div>
+            <div class="info-item"><label>Occupation</label><div class="val">Teacher</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Allergies (detailed)</div>
+          <button class="panel-link">+ Add allergy</button>
+        </div>
+        <table class="vitals">
+          <thead><tr><th>Substance</th><th>Reaction</th><th>Severity</th><th>Recorded</th></tr></thead>
+          <tbody>
+            <tr><td>Penicillin</td><td>Anaphylaxis</td><td style="color:var(--red)">Severe</td><td>2020</td></tr>
+            <tr><td>Sulfa drugs</td><td>Rash</td><td>Moderate</td><td>2021</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-vitals">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Record vitals (today)</div>
+        </div>
+        <div class="form-inline">
+          <div class="field"><label>BP (mmHg)</label><input placeholder="120/80" value="128/82"></div>
+          <div class="field"><label>Pulse (bpm)</label><input placeholder="72" value="78"></div>
+          <div class="field"><label>Temp (°C)</label><input placeholder="36.6" value="36.8"></div>
+          <div class="field"><label>SpO₂ (%)</label><input placeholder="98" value="98"></div>
+          <div class="field"><label>Weight (kg)</label><input placeholder="65" value="68"></div>
+          <div class="field"><label>Height (cm)</label><input placeholder="165" value="162"></div>
+          <div class="field"><label>BMI</label><input value="25.9" disabled></div>
+          <div class="field"><label>Resp. rate</label><input placeholder="16" value="16"></div>
+        </div>
+        <button class="btn-primary" style="margin-top:4px">Save vitals</button>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Vitals history</div>
+        </div>
+        <table class="vitals">
+          <thead>
+            <tr><th>Date</th><th>BP</th><th>Pulse</th><th>Temp</th><th>SpO₂</th><th>Weight</th><th>Recorded by</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Today 08:40</td><td>128/82</td><td>78</td><td>36.8</td><td>98%</td><td>68 kg</td><td>Nurse Amina</td></tr>
+            <tr><td>12 Aug 2026</td><td>134/86</td><td>82</td><td>36.7</td><td>97%</td><td>69 kg</td><td>Nurse Amina</td></tr>
+            <tr><td>3 Jun 2026</td><td>130/84</td><td>76</td><td>36.5</td><td>98%</td><td>67 kg</td><td>Nurse Sara</td></tr>
+            <tr><td>15 Mar 2026</td><td>142/90</td><td>88</td><td>37.1</td><td>96%</td><td>70 kg</td><td>Nurse Amina</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-visits">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Visit records</div>
+          <a class="panel-link" href="ocr-consultation.html">+ New consultation</a>
+        </div>
+        <div class="list-rows">
+          <div class="list-row" style="flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div><b>Today · 08:30</b> — Follow-up</div>
+              <div class="muted">Provider: Dr. Samuel · Status: In progress</div>
+              <div class="muted" style="margin-top:4px;">Dx: Essential hypertension (I10) · Review meds</div>
+            </div>
+            <a class="btn-ghost" href="ocr-consultation.html" style="padding:6px 12px; font-size:12px;">Open</a>
+          </div>
+          <div class="list-row" style="flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div><b>12 Aug 2026</b> — Routine check</div>
+              <div class="muted">Provider: Dr. Samuel · Completed</div>
+              <div class="muted" style="margin-top:4px;">Dx: HTN, Type 2 DM · BP elevated, continue current regimen</div>
+            </div>
+            <a class="btn-ghost" href="ocr-consultation.html" style="padding:6px 12px; font-size:12px;">Open</a>
+          </div>
+          <div class="list-row" style="flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div><b>3 Jun 2026</b> — BP check</div>
+              <div class="muted">Provider: Nurse · Completed</div>
+              <div class="muted" style="margin-top:4px;">Vitals only · No new diagnosis</div>
+            </div>
+            <button class="btn-ghost" style="padding:6px 12px; font-size:12px;">Open</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Problem list / diagnoses</div>
+          <button class="panel-link">+ Add diagnosis</button>
+        </div>
+        <div class="tag-list" style="margin-bottom:12px;">
+          <span class="tag dx">I10 — Essential (primary) hypertension</span>
+          <span class="tag dx">E11 — Type 2 diabetes mellitus</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-faint);">Active problems appear on overview and alerts. Past diagnoses remain in history.</div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-notes">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Clinical notes (doctor notes)</div>
+          <a class="panel-link" href="ocr-consultation.html">+ New note</a>
+        </div>
+        <div class="note-card">
+          <div class="note-meta">Today 08:45 · Dr. Samuel · Follow-up visit</div>
+          <div class="note-body">
+            Patient reports good adherence to amlodipine. Occasional headache. BP today 128/82. Continue current dose. Discussed lifestyle — reduce salt, continue walking. Return in 3 months or sooner if symptoms worsen. Allergy to penicillin reconfirmed.
+          </div>
+        </div>
+        <div class="note-card">
+          <div class="note-meta">12 Aug 2026 · Dr. Samuel · Routine</div>
+          <div class="note-body">
+            BP 134/86. Metformin tolerated. No hypoglycaemia. Plan: continue both meds, lab review next visit (FBS, lipids). Patient educated on foot care.
+          </div>
+        </div>
+        <div class="note-card">
+          <div class="note-meta">15 Mar 2026 · Dr. Samuel · Elevated BP</div>
+          <div class="note-body">
+            BP 142/90. Increased amlodipine from 2.5 to 5 mg. Recheck in 4 weeks. No chest pain or dyspnoea.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-appointments">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Appointment history</div>
+          <a class="panel-link" href="ocr-appointment-create.html">+ New</a>
+        </div>
+        <div class="list-rows">
+          <div class="list-row">
+            <div><div>Today · 08:30 — Follow-up</div><div class="muted">Dr. Samuel</div></div>
+            <span class="status-pill status-checked">Checked in</span>
+          </div>
+          <div class="list-row">
+            <div><div>12 Aug 2026 · Routine</div><div class="muted">Dr. Samuel</div></div>
+            <span class="status-pill status-scheduled">Completed</span>
+          </div>
+          <div class="list-row">
+            <div><div>3 Jun 2026 · BP check</div><div class="muted">Nurse</div></div>
+            <span class="status-pill status-scheduled">Completed</span>
+          </div>
+          <div class="list-row">
+            <div><div>15 Mar 2026</div><div class="muted">Cancelled — patient request</div></div>
+            <span class="status-pill status-cancelled">Cancelled</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DECEASED RECORD -->
+    <div class="tab-panel" id="tab-deceased">
+      <div class="panel" id="deceased-empty" style="display:none;">
+        <div class="panel-title" style="margin-bottom:8px;">Not marked deceased</div>
+        <div style="font-size:13.5px; color:var(--text-faint); line-height:1.5;">
+          This patient is currently <b style="color:var(--text-dim);">Active</b> (or Inactive). 
+          Use <b style="color:var(--text-dim);">Mark deceased</b> in the header to record death. 
+          Historical chart data is never deleted.
+        </div>
+      </div>
+
+      <div id="deceased-content">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Death record</div>
+            <button class="panel-link" type="button" id="btn-edit-death">Edit record</button>
+          </div>
+          <div class="info-grid">
+            <div class="info-item"><label>Status</label><div class="val">Deceased</div></div>
+            <div class="info-item"><label>Date of death</label><div class="val" id="tab-dod">12 Jan 2025</div></div>
+            <div class="info-item"><label>Time of death (if known)</label><div class="val" id="tab-tod">14:30</div></div>
+            <div class="info-item"><label>Place of death</label><div class="val" id="tab-place">Home / Community</div></div>
+            <div class="info-item"><label>Recorded by</label><div class="val" id="tab-recorded-by">Dr. Samuel</div></div>
+            <div class="info-item"><label>Recorded at</label><div class="val" id="tab-recorded-at">13 Jan 2025 · 09:12</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Doctor's deceased note</div>
+          </div>
+          <div class="note-card" style="margin-bottom:0;">
+            <div class="note-meta" id="tab-note-meta">13 Jan 2025 · Dr. Samuel · Clinician</div>
+            <div class="note-body" id="tab-note-body">
+              Patient passed away at home on 12 Jan 2025 (approx. 14:30) according to family report. 
+              Last clinic visit was 22 Jun 2025 for routine follow-up. No outstanding acute issues at last contact. 
+              Chart closed for new appointments per clinic policy. Family informed; death certificate process handled externally. 
+              Full visit history and allergies remain available for reference.
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Related clinic actions</div>
+            </div>
+            <div class="list-rows">
+              <div class="list-row">
+                <div>
+                  <div>Future appointments cancelled</div>
+                  <div class="muted">Policy: no new booking for deceased patients</div>
+                </div>
+                <span class="status-pill status-cancelled">Applied</span>
+              </div>
+              <div class="list-row">
+                <div>
+                  <div>Chart history preserved</div>
+                  <div class="muted">Demographics, visits, notes, allergies retained</div>
+                </div>
+                <span class="status-pill status-checked">Yes</span>
+              </div>
+              <div class="list-row">
+                <div>
+                  <div>Reminders stopped</div>
+                  <div class="muted">No further SMS / call reminders</div>
+                </div>
+                <span class="status-pill status-checked">Yes</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Audit trail (death status)</div>
+            </div>
+            <div class="list-rows">
+              <div class="list-row">
+                <div>
+                  <div>Status set to Deceased</div>
+                  <div class="muted">Dr. Samuel · 13 Jan 2025 09:12</div>
+                </div>
+              </div>
+              <div class="list-row">
+                <div>
+                  <div>Deceased note added</div>
+                  <div class="muted">Dr. Samuel · 13 Jan 2025 09:15</div>
+                </div>
+              </div>
+              <div class="list-row">
+                <div>
+                  <div>Open appointments cancelled (2)</div>
+                  <div class="muted">System · 13 Jan 2025 09:12</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Record death (form)</div>
+          </div>
+          <div class="form-inline" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+            <div class="field"><label>Date of death</label><input type="date" id="input-dod" value="2025-01-12"></div>
+            <div class="field"><label>Time (optional)</label><input type="time" id="input-tod" value="14:30"></div>
+            <div class="field"><label>Place</label>
+              <select id="input-place">
+                <option>Home / Community</option>
+                <option>This clinic</option>
+                <option>Hospital</option>
+                <option>Other</option>
+                <option>Unknown</option>
+              </select>
+            </div>
+            <div class="field"><label>Recorded by</label><input value="Dr. Samuel" disabled></div>
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label style="font-size:11px; color:var(--text-faint); display:block; margin-bottom:4px;">Doctor's deceased note</label>
+            <textarea id="input-death-note" style="width:100%; min-height:90px; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px; color:var(--text); font-size:13.5px; font-family:inherit;" placeholder="Circumstances, last contact, family notification, certificate process…">Patient passed away at home on 12 Jan 2025 (approx. 14:30) according to family report. Last clinic visit was 22 Jun 2025 for routine follow-up. No outstanding acute issues at last contact. Chart closed for new appointments per clinic policy. Family informed; death certificate process handled externally. Full visit history and allergies remain available for reference.</textarea>
+          </div>
+          <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-primary" type="button" id="btn-save-death">Save death record</button>
+            <button class="btn-ghost" type="button" id="btn-clear-death">Clear deceased status</button>
+          </div>
+          <div style="margin-top:10px; font-size:12px; color:var(--text-faint);">
+            Per clinical domain rules: deceased ≠ deletion. All prior history remains readable. New appointments are blocked.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(t => {
+    t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+    });
+  });
+  document.querySelectorAll('[data-goto]').forEach(el => {
+    el.addEventListener('click', () => {
+      const tab = el.dataset.goto;
+      document.querySelector('.tab[data-tab="' + tab + '"]')?.click();
+    });
+  });
+</script>
+
+<script>
+  // Demo: toggle deceased status on chart (history preserved; new activity blocked)
+  let isDeceased = false;
+  function setDeceased(on) {
+    isDeceased = on;
+    const banner = document.getElementById('deceased-banner');
+    const badge = document.getElementById('status-badge');
+    const status = document.getElementById('demo-status');
+    const dodRow = document.getElementById('dod-row');
+    const noteRow = document.getElementById('dod-note-row');
+    const apptBtn = document.getElementById('btn-new-appt');
+    const markBtn = document.getElementById('btn-mark-deceased');
+    const empty = document.getElementById('deceased-empty');
+    const content = document.getElementById('deceased-content');
+    const tabBtn = document.getElementById('tab-btn-deceased');
+    if (banner) banner.style.display = on ? 'flex' : 'none';
+    if (badge) badge.style.display = on ? 'inline-flex' : 'none';
+    if (status) status.textContent = on ? 'Deceased' : 'Active';
+    if (dodRow) dodRow.style.display = on ? 'block' : 'none';
+    if (noteRow) noteRow.style.display = on ? 'block' : 'none';
+    if (empty) empty.style.display = on ? 'none' : 'block';
+    if (content) content.style.display = on ? 'block' : 'none';
+    if (tabBtn) tabBtn.style.opacity = on ? '1' : '0.7';
+    if (apptBtn) {
+      if (on) {
+        apptBtn.classList.add('btn-disabled');
+        apptBtn.removeAttribute('href');
+        apptBtn.title = 'Cannot schedule for deceased patient';
+      } else {
+        apptBtn.classList.remove('btn-disabled');
+        apptBtn.setAttribute('href', 'ocr-appointment-create.html');
+        apptBtn.title = '';
+      }
+    }
+    if (markBtn) markBtn.textContent = on ? 'Clear deceased status' : 'Mark deceased';
+  }
+  document.getElementById('btn-mark-deceased')?.addEventListener('click', () => {
+    setDeceased(!isDeceased);
+    if (isDeceased) document.querySelector('.tab[data-tab="deceased"]')?.click();
+  });
+  document.getElementById('btn-clear-death')?.addEventListener('click', () => setDeceased(false));
+  document.getElementById('btn-save-death')?.addEventListener('click', () => {
+    const dod = document.getElementById('input-dod')?.value;
+    const tod = document.getElementById('input-tod')?.value;
+    const place = document.getElementById('input-place')?.value;
+    const note = document.getElementById('input-death-note')?.value;
+    if (dod) {
+      const d = new Date(dod + 'T12:00:00');
+      const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      document.getElementById('tab-dod').textContent = label;
+      document.getElementById('dod-display').textContent = label;
+      document.getElementById('dod-val').textContent = label;
+    }
+    if (tod) document.getElementById('tab-tod').textContent = tod;
+    if (place) document.getElementById('tab-place').textContent = place;
+    if (note) document.getElementById('tab-note-body').textContent = note;
+    setDeceased(true);
+    alert('Death record saved (demo). History preserved; new appointments blocked.');
+  });
+  document.getElementById('btn-edit-death')?.addEventListener('click', () => {
+    document.getElementById('input-death-note')?.focus();
+  });
+  // Optional: open with ?deceased=1
+  if (new URLSearchParams(location.search).get('deceased') === '1') {
+    setDeceased(true);
+    setTimeout(() => document.querySelector('.tab[data-tab="deceased"]')?.click(), 50);
+  } else {
+    setDeceased(false);
+  }
+</script>
+
+<script src="ocr-shell.js"></script>
+</body>
+</html>

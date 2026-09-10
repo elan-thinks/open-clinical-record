@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCR — Patient profile (Front desk)</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0c1310;--surface:#121a15;--surface-2:#16201a;--line:#1e2b23;--line-soft:#182219;--text:#eef3ef;--text-dim:#a7bdae;--text-faint:#6d8577;--teal:#3ddc97;--teal-dim:#29a874;--teal-glow:rgba(61,220,151,.16);--amber:#eab35a;--amber-glow:rgba(234,179,90,.14);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:Inter,sans-serif;min-height:100vh;
+    background-image:radial-gradient(ellipse 900px 500px at 15% -10%,rgba(61,220,151,.07),transparent 60%);}
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{width:226px;flex-shrink:0;border-right:1px solid var(--line-soft);display:flex;flex-direction:column;padding:22px 14px;}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 10px 26px;}
+  .brand-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(150deg,var(--teal),var(--teal-dim));display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#04140c;}
+  .brand-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;}
+  .nav-label{font-size:10.5px;color:var(--text-faint);padding:0 10px 8px;letter-spacing:.06em;text-transform:uppercase;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;font-size:13.5px;color:var(--text-dim);text-decoration:none;margin-bottom:2px;}
+  .nav-item:hover{background:var(--surface-2);color:var(--text);}
+  .nav-item.active{background:var(--teal-glow);color:var(--teal);}
+  .nav-item svg{width:16px;height:16px;opacity:.75;}
+  .sidebar-foot{margin-top:auto;padding:12px 10px;border-top:1px solid var(--line-soft);display:flex;align-items:center;gap:10px;}
+  .avatar-sm{width:30px;height:30px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--teal);font-family:'Space Grotesk',sans-serif;}
+  .main{flex:1;padding:26px 32px 40px;max-width:900px;}
+  .back{font-size:13px;color:var(--teal);text-decoration:none;display:inline-block;margin-bottom:14px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;flex-wrap:wrap;}
+  .name{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;}
+  .meta{font-size:13px;color:var(--text-faint);margin-top:4px;}
+  .badge{display:inline-flex;padding:4px 10px;border-radius:20px;font-size:11px;background:var(--teal-glow);color:var(--teal);font-weight:500;margin-left:8px;}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn{padding:9px 14px;border-radius:9px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;}
+  .btn-primary{background:var(--teal);color:#04140c;border:none;}
+  .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--text-dim);}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px;}
+  .panel-title{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;margin-bottom:14px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:700px){.grid{grid-template-columns:1fr;}}
+  .field label{display:block;font-size:11px;color:var(--text-faint);margin-bottom:4px;}
+  .field .val{font-size:14px;}
+  .list-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;}
+  .list-row:last-child{border-bottom:none;}
+  .muted{font-size:12px;color:var(--text-faint);}
+  .lock-note{padding:12px 14px;border-radius:10px;background:rgba(234,179,90,.1);border:1px solid rgba(234,179,90,.25);font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:14px;}
+  .lock-note b{color:var(--amber);}
+  @media(max-width:900px){.sidebar{display:none;}}
+
+  /* Nav icons — force small size (SVG defaults can blow up) */
+  .nav-item svg{
+    width:16px !important;
+    height:16px !important;
+    min-width:16px;
+    max-width:16px;
+    flex-shrink:0;
+    opacity:.75;
+    display:block;
+  }
+  .nav-item.active svg{ opacity:1; }
+  .nav-item{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border-radius:9px;
+    font-size:13.5px;
+    color:var(--text-dim, #a7bdae);
+    cursor:pointer;
+    margin-bottom:2px;
+    text-decoration:none;
+  }
+  .nav-group{ margin-bottom:18px; }
+  .nav-label{
+    font-size:10.5px;
+    color:var(--text-faint, #6d8577);
+    padding:0 10px 8px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .nav-item:hover{ background:var(--surface-2, #16201a); color:var(--text, #eef3ef); }
+  .nav-item.active{
+    background:var(--teal-glow, rgba(61,220,151,.16));
+    color:var(--teal, #3ddc97);
+    box-shadow:inset 0 0 0 1px rgba(61,220,151,.18);
+  }
+  .sidebar{
+    display:flex !important;
+    flex-direction:column;
+    width:226px;
+    flex-shrink:0;
+  }
+  .sidebar-foot{ margin-top:auto; padding:12px 10px; border-top:1px solid var(--line-soft, #182219); }
+  .avatar-sm{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--surface-2,#16201a);border:1px solid var(--line,#1e2b23);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--teal,#3ddc97);
+  }
+
+
+  /* Sticky static sidebar */
+  .shell{ display:flex; min-height:100vh; align-items:stretch; }
+  .sidebar{
+    width:226px !important;
+    flex-shrink:0 !important;
+    position:sticky !important;
+    top:0 !important;
+    height:100vh !important;
+    max-height:100vh !important;
+    overflow-y:auto;
+    display:flex !important;
+    flex-direction:column !important;
+    border-right:1px solid var(--line-soft, #182219);
+    padding:22px 14px !important;
+    align-self:flex-start;
+    background:var(--bg, #0c1310);
+    z-index:20;
+  }
+  .sidebar-foot{
+    margin-top:auto !important;
+    padding:14px 10px 8px !important;
+    border-top:1px solid var(--line-soft, #182219);
+    flex-shrink:0;
+  }
+  .sidebar-foot .user-row{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+  }
+  .sidebar-foot .user-meta{ flex:1; min-width:0; }
+  .sidebar-foot .foot-name{
+    font-size:13px; font-weight:500;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sidebar-foot .foot-role{ font-size:11px; color:var(--text-faint, #6d8577); }
+  .sidebar-foot .avatar-sm{
+    width:32px; height:32px; border-radius:50%;
+    background:var(--surface-2, #16201a);
+    border:1px solid var(--line, #1e2b23);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-size:12px;
+    color:var(--teal, #3ddc97); flex-shrink:0;
+  }
+  .signout-btn{
+    width:34px; height:34px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-faint, #6d8577);
+    background:var(--surface-2, #16201a);
+    border:1px solid var(--line, #1e2b23);
+    text-decoration:none; flex-shrink:0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .signout-btn:hover{
+    color:var(--teal, #3ddc97);
+    border-color:rgba(61,220,151,.35);
+    background:var(--teal-glow, rgba(61,220,151,.12));
+  }
+  .main{ flex:1; min-width:0; }
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">OCR</div>
+      <div class="brand-name">Open Clinical Record</div>
+    </div>
+    <div id="ocr-nav"></div>
+    <div class="sidebar-foot" id="ocr-foot"></div>
+  </aside>
+  <main class="main">
+    <a class="back" href="ocr-patients.html">← Patient list</a>
+    <div class="header">
+      <div>
+        <div class="name">Marta Bekele <span class="badge">Active</span></div>
+        <div class="meta">OCR-10482 · Female · 42 yrs · Registered 12 Mar 2024</div>
+      </div>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="ocr-appointment-create.html">Book appointment</a>
+        <a class="btn btn-ghost" href="ocr-checkin.html">Check in</a>
+        <a class="btn btn-ghost" href="#">Edit contact</a>
+      </div>
+    </div>
+
+    <div class="lock-note">
+      <b>Front desk profile</b> — Demographics, contact, status, and appointments only.
+      Clinical notes, diagnoses, vitals, and medical history are not shown to reception (role-based system guide §5.5).
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Identity & contact</div>
+      <div class="grid">
+        <div class="field"><label>Full name</label><div class="val">Marta Bekele</div></div>
+        <div class="field"><label>Patient ID</label><div class="val">OCR-10482</div></div>
+        <div class="field"><label>Date of birth</label><div class="val">14 Apr 1984</div></div>
+        <div class="field"><label>Sex</label><div class="val">Female</div></div>
+        <div class="field"><label>Phone</label><div class="val">+251 911 234 567</div></div>
+        <div class="field"><label>Address</label><div class="val">Bole, Addis Ababa</div></div>
+        <div class="field"><label>Emergency contact</label><div class="val">Abebe Bekele · +251 922 111 222</div></div>
+        <div class="field"><label>Status</label><div class="val">Active</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Appointments</div>
+      <div class="list-row"><div><div>Today 08:30 — Follow-up</div><div class="muted">Dr. Samuel</div></div><span style="color:var(--teal);font-size:12px;">Checked in</span></div>
+      <div class="list-row"><div><div>12 Aug 2026 — Routine</div><div class="muted">Dr. Samuel</div></div><span class="muted">Completed</span></div>
+      <div class="list-row"><div><div>3 Jun 2026 — BP check</div><div class="muted">Nurse</div></div><span class="muted">Completed</span></div>
+    </div>
+  </main>
+</div>
+<script src="ocr-shell.js"></script>
+</body>
+</html>

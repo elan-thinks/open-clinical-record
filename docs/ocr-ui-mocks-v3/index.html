@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCR — UI Mock Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0c1310;--surface:#121a15;--line:#1e2b23;--text:#eef3ef;--dim:#a7bdae;--faint:#6d8577;--teal:#3ddc97;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:Inter,sans-serif;padding:40px 24px;min-height:100vh;
+    background-image:radial-gradient(ellipse 800px 400px at 20% 0%,rgba(61,220,151,.1),transparent 55%);}
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:28px;margin-bottom:8px;}
+  .sub{color:var(--faint);font-size:14px;margin-bottom:28px;line-height:1.5;}
+  .start{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;}
+  .start a{
+    background:var(--teal);color:#04140c;padding:12px 18px;border-radius:10px;
+    font-weight:600;text-decoration:none;font-size:14px;
+  }
+  .start a.ghost{background:var(--surface);color:var(--text);border:1px solid var(--line);}
+  h2{font-family:'Space Grotesk',sans-serif;font-size:15px;margin:24px 0 12px;color:var(--teal);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+  a.card{
+    display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;text-decoration:none;color:var(--text);font-size:13.5px;
+  }
+  a.card:hover{border-color:var(--teal);color:var(--teal);}
+  a.card span{display:block;font-size:11.5px;color:var(--faint);margin-top:4px;}
+  .note{margin-top:28px;font-size:12.5px;color:var(--faint);line-height:1.6;padding:14px;border:1px solid var(--line);border-radius:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Open Clinical Record</h1>
+  <p class="sub">Role-aware UI mock suite · Wired navigation · Switch role from any page footer or login</p>
+
+  <div class="start">
+    <a href="ocr-login.html">Start at Login →</a>
+    <a class="ghost" href="ocr-dashboard.html?role=doctor">Clinician dashboard</a>
+    <a class="ghost" href="ocr-dashboard.html?role=nurse">Nurse dashboard</a>
+    <a class="ghost" href="ocr-dashboard.html?role=receptionist">Reception dashboard</a>
+    <a class="ghost" href="ocr-dashboard.html?role=admin">Admin dashboard</a>
+  </div>
+
+  <h2>Core</h2>
+  <div class="grid">
+    <a class="card" href="ocr-login.html">Login<span>Role picker</span></a>
+    <a class="card" href="ocr-dashboard.html">Dashboard<span>Role workspaces</span></a>
+    <a class="card" href="ocr-patients.html">Patients<span>List / search</span></a>
+    <a class="card" href="ocr-profile.html">Profile<span>User account</span></a>
+  </div>
+
+  <h2>Patient care</h2>
+  <div class="grid">
+    <a class="card" href="ocr-patient-chart.html">Medical Chart<span>Full clinical chart</span></a>
+    <a class="card" href="ocr-patient-basic.html">Patient profile (desk)<span>Reception · no clinical</span></a>
+    <a class="card" href="ocr-patient-register.html">Registration<span>New patient</span></a>
+    <a class="card" href="ocr-vitals.html">Record vitals<span>Nurse entry</span></a>
+    <a class="card" href="ocr-consultation.html">Medical Records / Consult<span>Notes & visit</span></a>
+  </div>
+
+  <h2>Appointments</h2>
+  <div class="grid">
+    <a class="card" href="ocr-appointments.html">Appointments<span>List + calendar</span></a>
+    <a class="card" href="ocr-appointment-create.html">New appointment<span>Booking form</span></a>
+    <a class="card" href="ocr-checkin.html">Check-in / Queue<span>Front desk flow</span></a>
+  </div>
+
+  <h2>Admin</h2>
+  <div class="grid">
+    <a class="card" href="ocr-admin-users.html">Users<span>Create / deactivate</span></a>
+    <a class="card" href="ocr-admin-roles.html">Roles & Permissions<span>Matrix</span></a>
+    <a class="card" href="ocr-admin-audit.html">Audit logs<span>Access / write / security</span></a>
+    <a class="card" href="ocr-reports.html">Reports<span>Clinical / ops</span></a>
+  </div>
+
+  <div class="note">
+    <b style="color:var(--dim)">How role wiring works:</b> Login or the footer role switcher sets <code>role</code> in the URL and localStorage.
+    Every page loads <code>ocr-shell.js</code>, which builds the correct sidebar for Clinician / Nurse / Receptionist / Admin and keeps <code>?role=</code> on internal links.
+    Download the whole <code>artifacts</code> folder so <code>ocr-shell.js</code> sits next to the HTML files.
+  </div>
+</div>
+</body>
+</html>

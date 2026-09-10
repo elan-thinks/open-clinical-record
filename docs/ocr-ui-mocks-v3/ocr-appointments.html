@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCR — Appointments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0c1310;
+    --surface: #121a15;
+    --surface-2: #16201a;
+    --line: #1e2b23;
+    --line-soft: #182219;
+    --text: #eef3ef;
+    --text-dim: #a7bdae;
+    --text-faint: #6d8577;
+    --teal: #3ddc97;
+    --teal-dim: #29a874;
+    --teal-glow: rgba(61, 220, 151, 0.18);
+    --amber: #eab35a;
+    --amber-glow: rgba(234, 179, 90, 0.16);
+    --red: #e8778a;
+    --red-glow: rgba(232, 119, 138, 0.14);
+    --blue: #5b9fd4;
+    --blue-glow: rgba(91, 159, 212, 0.16);
+    --purple: #9b7ed9;
+    --purple-glow: rgba(155, 126, 217, 0.16);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(61,220,151,0.07), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(61,220,151,0.04), transparent 55%);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .shell{ display:flex; min-height:100vh; }
+
+  .sidebar{
+    width: 226px; flex-shrink:0;
+    border-right: 1px solid var(--line-soft);
+    display:flex; flex-direction:column; padding: 22px 14px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; padding: 4px 10px 26px 10px; }
+  .brand-mark{
+    width:28px; height:28px; border-radius:8px;
+    background: linear-gradient(150deg, var(--teal), var(--teal-dim));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; color:#04140c;
+  }
+  .brand-name{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px; }
+  .nav-group{ margin-bottom: 22px; }
+  .nav-label{ font-size:10.5px; color: var(--text-faint); padding: 0 10px 8px 10px; letter-spacing: 0.06em; text-transform:uppercase; }
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding: 8px 10px; border-radius: 9px;
+    font-size: 13.5px; color: var(--text-dim);
+    cursor:pointer; margin-bottom: 2px; text-decoration:none;
+  }
+  .nav-item svg{ width:16px; height:16px; flex-shrink:0; opacity:0.75; }
+  .nav-item:hover{ background: var(--surface-2); color: var(--text); }
+  .nav-item.active{ background: var(--teal-glow); color: var(--teal); box-shadow: inset 0 0 0 1px rgba(61,220,151,0.18); }
+  .nav-item.active svg{ opacity:1; }
+  .sidebar-foot{ margin-top:auto; padding: 12px 10px; border-top: 1px solid var(--line-soft); display:flex; align-items:center; gap:10px; }
+  .avatar-sm{ width:30px; height:30px; border-radius:50%; background: var(--surface-2); border: 1px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-size:12px; color:var(--teal); }
+  .foot-name{ font-size:13px; font-weight:500; }
+  .foot-role{ font-size:11px; color:var(--text-faint); }
+
+  .main{ flex:1; padding: 26px 28px 40px; max-width:1320px; min-width:0; }
+
+  .page-head{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    margin-bottom: 16px; gap:16px; flex-wrap:wrap;
+  }
+  .page-title{ font-family:'Space Grotesk', sans-serif; font-size:22px; font-weight:600; }
+  .page-sub{ font-size:13px; color:var(--text-faint); margin-top:4px; }
+  .btn-primary{
+    background: var(--teal); color:#04140c; border:none;
+    padding: 10px 16px; border-radius: 9px; font-weight:600; font-size:13.5px;
+    cursor:pointer; font-family:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+  }
+
+  .toolbar{
+    display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;
+  }
+  .search-box{
+    display:flex; align-items:center; gap:8px;
+    background: var(--surface); border:1px solid var(--line);
+    padding: 8px 12px; border-radius: 9px; flex:1; min-width:160px; max-width:220px;
+    color: var(--text-faint); font-size:13px;
+  }
+  .search-box input{
+    background:transparent; border:none; outline:none; color:var(--text);
+    font-size:13px; font-family:inherit; width:100%;
+  }
+  .filter-pills{ display:flex; gap:6px; flex-wrap:wrap; }
+  .filter-pill{
+    padding: 7px 12px; border-radius:20px; font-size:12.5px;
+    background: var(--surface); border:1px solid var(--line);
+    color: var(--text-dim); cursor:pointer; font-family:inherit;
+  }
+  .filter-pill.active{ background: var(--teal-glow); color: var(--teal); border-color: transparent; }
+  .date-chip{
+    background: var(--surface); border:1px solid var(--line);
+    padding: 8px 12px; border-radius:9px; font-size:13px; color:var(--text-dim);
+  }
+
+  .view-toggle{
+    display:flex; gap:4px; background: var(--surface); border:1px solid var(--line);
+    padding:4px; border-radius:10px; margin-left:auto;
+  }
+  .view-btn{
+    padding: 7px 14px; border-radius:7px; font-size:12.5px; font-weight:500;
+    color: var(--text-dim); cursor:pointer; border:none; background:transparent;
+    font-family:inherit; display:flex; align-items:center; gap:6px;
+  }
+  .view-btn.active{ background: var(--teal-glow); color: var(--teal); }
+  .view-btn svg{ width:14px; height:14px; }
+
+  .view-panel{ display:none; }
+  .view-panel.active{ display:block; }
+
+  /* LIST */
+  .panel{
+    background: var(--surface); border:1px solid var(--line);
+    border-radius: 14px; overflow:hidden;
+  }
+  table{ width:100%; border-collapse:collapse; }
+  th{
+    text-align:left; font-size:11.5px; font-weight:500; color:var(--text-faint);
+    padding: 12px 16px; border-bottom:1px solid var(--line);
+    letter-spacing:0.03em; text-transform:uppercase;
+  }
+  td{ padding: 14px 16px; border-bottom:1px solid var(--line-soft); font-size:13.5px; }
+  tr:last-child td{ border-bottom:none; }
+  tr:hover td{ background: var(--surface-2); }
+  .status-pill{
+    font-size:10.5px; padding:3px 9px; border-radius:20px; font-weight:500;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .status-pill .dot{ width:5px; height:5px; border-radius:50%; }
+  .status-checked{ background: var(--teal-glow); color: var(--teal); }
+  .status-checked .dot{ background: var(--teal); }
+  .status-waiting{ background: var(--amber-glow); color: var(--amber); }
+  .status-waiting .dot{ background: var(--amber); }
+  .status-scheduled{ background: var(--surface-2); color: var(--text-faint); }
+  .status-scheduled .dot{ background: var(--text-faint); }
+  .status-cancelled{ background: var(--red-glow); color: var(--red); }
+  .status-cancelled .dot{ background: var(--red); }
+  .actions{ display:flex; gap:10px; }
+  .action-link{ font-size:12.5px; color:var(--teal); text-decoration:none; font-weight:500; cursor:pointer; }
+  .action-link.muted{ color:var(--text-faint); }
+  .table-foot{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 16px; border-top:1px solid var(--line); font-size:12.5px; color:var(--text-faint);
+  }
+  .pager{ display:flex; gap:6px; }
+  .pager button{
+    background: var(--surface-2); border:1px solid var(--line);
+    color: var(--text-dim); padding: 5px 10px; border-radius:6px;
+    font-size:12px; cursor:pointer; font-family:inherit;
+  }
+  .pager button.active{ background: var(--teal-glow); color: var(--teal); border-color:transparent; }
+
+  /* CALENDAR */
+  .cal-layout{
+    display:grid; grid-template-columns: 220px 1fr; gap:14px; align-items:start;
+  }
+  .cal-sidebar{
+    background: var(--surface); border:1px solid var(--line);
+    border-radius: 14px; padding: 16px; position:sticky; top:16px;
+  }
+  .mini-cal-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;
+  }
+  .mini-cal-title{ font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; }
+  .mini-nav{ display:flex; gap:4px; }
+  .mini-nav button{
+    width:28px; height:28px; border-radius:7px; border:1px solid var(--line);
+    background: var(--surface-2); color: var(--text-dim); cursor:pointer; font-size:14px;
+  }
+  .mini-grid{
+    display:grid; grid-template-columns: repeat(7, 1fr); gap:2px; text-align:center; font-size:12px;
+  }
+  .mini-dow{ color: var(--text-faint); padding:6px 0; font-size:10px; font-weight:500; }
+  .mini-day{
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:8px; cursor:pointer; color: var(--text-dim); position:relative; font-size:12px;
+  }
+  .mini-day:hover{ background: var(--surface-2); }
+  .mini-day.today{ background: var(--teal-glow); color: var(--teal); font-weight:600; }
+  .mini-day.selected{ outline: 1.5px solid var(--teal); color: var(--teal); }
+  .mini-day.muted{ color: var(--text-faint); opacity:0.45; }
+  .mini-day .dot{
+    width:4px; height:4px; border-radius:50%; background: var(--teal); margin-top:2px;
+  }
+
+  .upcoming-box{ margin-top:18px; border-top:1px solid var(--line-soft); padding-top:14px; }
+  .upcoming-title{ font-size:11px; color:var(--text-faint); margin-bottom:10px; font-weight:500; letter-spacing:0.05em; text-transform:uppercase; }
+  .upcoming-item{
+    display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:13px;
+  }
+  .upcoming-item:last-child{ border-bottom:none; }
+  .up-time{ color:var(--text-faint); font-size:11.5px; width:40px; flex-shrink:0; font-variant-numeric:tabular-nums; }
+  .up-name{ font-weight:500; font-size:13px; }
+  .up-type{ font-size:11px; color:var(--text-faint); margin-top:1px; }
+  .up-dot{
+    width:6px; height:6px; border-radius:50%; margin-top:5px; flex-shrink:0;
+  }
+  .up-dot.checked{ background: var(--teal); }
+  .up-dot.waiting{ background: var(--amber); }
+  .up-dot.scheduled{ background: var(--blue); }
+  .up-dot.nurse{ background: var(--purple); }
+
+  .cal-main{
+    background: var(--surface); border:1px solid var(--line);
+    border-radius: 14px; overflow:hidden; display:flex; flex-direction:column;
+    min-height: 620px;
+  }
+  .cal-toolbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 16px; border-bottom:1px solid var(--line); gap:10px; flex-wrap:wrap;
+  }
+  .cal-nav-group{ display:flex; align-items:center; gap:10px; }
+  .cal-nav-btn{
+    width:32px; height:32px; border-radius:8px; border:1px solid var(--line);
+    background: var(--surface-2); color: var(--text-dim); cursor:pointer; font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cal-date-label{ font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; }
+  .cal-mode{
+    display:flex; gap:3px; background: var(--surface-2); border:1px solid var(--line);
+    padding:3px; border-radius:8px;
+  }
+  .cal-mode button{
+    padding: 5px 12px; border-radius:6px; font-size:12px; font-weight:500;
+    border:none; background:transparent; color:var(--text-dim); cursor:pointer; font-family:inherit;
+  }
+  .cal-mode button.active{ background: var(--teal-glow); color: var(--teal); }
+
+  .cal-scroll{
+    overflow:auto; flex:1; max-height: calc(100vh - 240px); position:relative;
+    scrollbar-width: thin;
+    scrollbar-color: #1e2b23 transparent;
+  }
+  .cal-scroll::-webkit-scrollbar{ width: 8px; height: 8px; }
+  .cal-scroll::-webkit-scrollbar-track{
+    background: transparent; border-radius: 8px;
+  }
+  .cal-scroll::-webkit-scrollbar-thumb{
+    background: #1e2b23;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .cal-scroll::-webkit-scrollbar-thumb:hover{
+    background: #6d8577;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .cal-scroll::-webkit-scrollbar-corner{ background: transparent; }
+
+  /* Page-level scrollbar (dark, not white) */
+  html, body{
+    scrollbar-width: thin;
+    scrollbar-color: #1e2b23 #0c1310;
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar{ width: 10px; height: 10px; }
+  html::-webkit-scrollbar-track, body::-webkit-scrollbar-track{ background: #0c1310; }
+  html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb{
+    background: #1e2b23;
+    border-radius: 10px;
+    border: 2px solid #0c1310;
+  }
+  html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover{ background: #6d8577; }
+  *{
+    scrollbar-width: thin;
+    scrollbar-color: #1e2b23 transparent;
+  }
+  *::-webkit-scrollbar{ width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track{ background: transparent; }
+  *::-webkit-scrollbar-thumb{
+    background: #1e2b23;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover{ background: #6d8577; background-clip: padding-box; border: 2px solid transparent; }
+  *::-webkit-scrollbar-corner{ background: transparent; }
+
+  /* ---- DAY VIEW ---- */
+  .day-timeline{
+    display:grid; grid-template-columns: 64px 1fr; min-height: 640px;
+    position:relative;
+  }
+  .day-hours{ /* labels */ }
+  .day-track{
+    position:relative; border-left:1px solid var(--line);
+  }
+  .hour-row{
+    height: 72px; border-bottom:1px solid var(--line-soft);
+    display:flex;
+  }
+  .hour-lbl{
+    height:72px; font-size:11px; color:var(--text-faint);
+    text-align:right; padding-right:12px; padding-top:0;
+    transform: translateY(-7px); font-variant-numeric:tabular-nums;
+  }
+  .hour-line{ height:72px; border-bottom:1px solid var(--line-soft); }
+
+  .now-line{
+    position:absolute; left:0; right:0; height:2px;
+    background: var(--red); z-index:4; pointer-events:none;
+  }
+  .now-line::before{
+    content:''; position:absolute; left:-5px; top:-4px;
+    width:10px; height:10px; border-radius:50%; background: var(--red);
+  }
+
+  .appt-block{
+    position:absolute; left:10px; right:14px;
+    border-radius:10px; padding: 8px 11px;
+    font-size:12px; cursor:pointer; overflow:hidden;
+    border-left: 3px solid; z-index:2;
+    transition: box-shadow 0.15s, transform 0.12s;
+  }
+  .appt-block:hover{
+    z-index:5; transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  }
+  .appt-block .ab-time{ font-size:11px; opacity:0.9; font-weight:500; margin-bottom:2px; }
+  .appt-block .ab-name{ font-weight:600; font-size:13px; line-height:1.25; }
+  .appt-block .ab-type{ font-size:11px; opacity:0.8; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .appt-block.checked{ background: rgba(61,220,151,0.14); border-color: var(--teal); color: #6eebb5; }
+  .appt-block.waiting{ background: rgba(234,179,90,0.14); border-color: var(--amber); color: #f0c574; }
+  .appt-block.scheduled{ background: rgba(91,159,212,0.14); border-color: var(--blue); color: #8ec4e8; }
+  .appt-block.nurse{ background: rgba(155,126,217,0.14); border-color: var(--purple); color: #c4a8f0; }
+  .appt-block.cancelled{ background: rgba(232,119,138,0.1); border-color: var(--red); color: #e899a6; opacity:0.65; text-decoration: line-through; }
+
+  /* ---- WEEK VIEW ---- */
+  .week-wrap{ min-width: 700px; }
+  .week-header{
+    display:grid; grid-template-columns: 64px repeat(5, 1fr);
+    border-bottom:1px solid var(--line); background: var(--surface);
+    position:sticky; top:0; z-index:6;
+  }
+  .week-header .wh{
+    padding: 12px 6px; text-align:center; border-left:1px solid var(--line-soft);
+  }
+  .week-header .wh .dow{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; }
+  .week-header .wh .dom{
+    font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; margin-top:2px;
+  }
+  .week-header .wh.today .dom{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:32px; height:32px; border-radius:50%; background: var(--teal); color:#04140c;
+  }
+  .week-header .wh.today .dow{ color: var(--teal); }
+
+  .week-body{
+    display:grid; grid-template-columns: 64px repeat(5, 1fr);
+    position:relative;
+  }
+  .week-labels .hour-lbl{ height:72px; }
+  .week-col{
+    border-left:1px solid var(--line-soft); position:relative;
+  }
+  .week-col .hour-line{ height:72px; }
+  .week-col.today-col{ background: rgba(61,220,151,0.03); }
+  .week-col .appt-block{ left:4px; right:4px; padding:6px 8px; }
+  .week-col .appt-block .ab-type{ display:none; }
+  .week-col .appt-block .ab-name{ font-size:12px; }
+
+  /* Legend */
+  .cal-legend{
+    display:flex; gap:14px; padding: 10px 16px; border-top:1px solid var(--line);
+    font-size:11.5px; color:var(--text-faint); flex-wrap:wrap;
+  }
+  .leg{ display:flex; align-items:center; gap:6px; }
+  .leg i{ width:8px; height:8px; border-radius:3px; display:inline-block; }
+
+  /* Popover */
+  .popover{
+    display:none; position:fixed; z-index:50;
+    background: var(--surface); border:1px solid var(--line);
+    border-radius:14px; padding:16px 18px; width:280px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  }
+  .popover.show{ display:block; }
+  .pop-title{ font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; margin-bottom:2px; }
+  .pop-meta{ font-size:12.5px; color:var(--text-faint); margin-bottom:12px; }
+  .pop-row{ font-size:13px; margin-bottom:7px; display:flex; gap:8px; }
+  .pop-row span{ color:var(--text-faint); min-width:64px; }
+  .pop-actions{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .pop-actions a{
+    padding:6px 11px; border-radius:7px; background: var(--surface-2);
+    border:1px solid var(--line); font-size:12.5px; text-decoration:none; color:var(--teal);
+  }
+  .pop-actions a.muted{ color:var(--text-faint); }
+
+  @media (max-width: 1100px){
+    .cal-layout{ grid-template-columns: 1fr; }
+    .cal-sidebar{ display:none; }
+  }
+  @media (max-width: 980px){ .sidebar{ display:none; } }
+
+  /* Nav icons — force small size (SVG defaults can blow up) */
+  .nav-item svg{
+    width:16px !important;
+    height:16px !important;
+    min-width:16px;
+    max-width:16px;
+    flex-shrink:0;
+    opacity:.75;
+    display:block;
+  }
+  .nav-item.active svg{ opacity:1; }
+  .nav-item{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border-radius:9px;
+    font-size:13.5px;
+    color:var(--text-dim, #a7bdae);
+    cursor:pointer;
+    margin-bottom:2px;
+    text-decoration:none;
+  }
+  .nav-group{ margin-bottom:18px; }
+  .nav-label{
+    font-size:10.5px;
+    color:var(--text-faint, #6d8577);
+    padding:0 10px 8px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .nav-item:hover{ background:var(--surface-2, #16201a); color:var(--text, #eef3ef); }
+  .nav-item.active{
+    background:var(--teal-glow, rgba(61,220,151,.16));
+    color:var(--teal, #3ddc97);
+    box-shadow:inset 0 0 0 1px rgba(61,220,151,.18);
+  }
+  .sidebar{
+    display:flex !important;
+    flex-direction:column;
+    width:226px;
+    flex-shrink:0;
+  }
+  .sidebar-foot{ margin-top:auto; padding:12px 10px; border-top:1px solid var(--line-soft, #182219); }
+  .avatar-sm{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--surface-2,#16201a);border:1px solid var(--line,#1e2b23);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--teal,#3ddc97);
+  }
+
+
+  /* Sticky static sidebar */
+  .shell{ display:flex; min-height:100vh; align-items:stretch; }
+  .sidebar{
+    width:226px !important;
+    flex-shrink:0 !important;
+    position:sticky !important;
+    top:0 !important;
+    height:100vh !important;
+    max-height:100vh !important;
+    overflow-y:auto;
+    display:flex !important;
+    flex-direction:column !important;
+    border-right:1px solid var(--line-soft, #182219);
+    padding:22px 14px !important;
+    align-self:flex-start;
+    background:var(--bg, #0c1310);
+    z-index:20;
+  }
+  .sidebar-foot{
+    margin-top:auto !important;
+    padding:14px 10px 8px !important;
+    border-top:1px solid var(--line-soft, #182219);
+    flex-shrink:0;
+  }
+  .sidebar-foot .user-row{
+    display:flex !important;
+    align-items:center;
+    gap:10px;
+  }
+  .sidebar-foot .user-meta{ flex:1; min-width:0; }
+  .sidebar-foot .foot-name{
+    font-size:13px; font-weight:500;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sidebar-foot .foot-role{ font-size:11px; color:var(--text-faint, #6d8577); }
+  .sidebar-foot .avatar-sm{
+    width:32px; height:32px; border-radius:50%;
+    background:var(--surface-2, #16201a);
+    border:1px solid var(--line, #1e2b23);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-size:12px;
+    color:var(--teal, #3ddc97); flex-shrink:0;
+  }
+  .signout-btn{
+    width:34px; height:34px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-faint, #6d8577);
+    background:var(--surface-2, #16201a);
+    border:1px solid var(--line, #1e2b23);
+    text-decoration:none; flex-shrink:0;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .signout-btn:hover{
+    color:var(--teal, #3ddc97);
+    border-color:rgba(61,220,151,.35);
+    background:var(--teal-glow, rgba(61,220,151,.12));
+  }
+  .main{ flex:1; min-width:0; }
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">OCR</div>
+      <div class="brand-name">Open Clinical Record</div>
+    </div>
+    <div id="ocr-nav"></div>
+    <div class="sidebar-foot" id="ocr-foot"></div>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Appointments</div>
+        <div class="page-sub">Today · 12 scheduled · List or calendar view</div>
+      </div>
+      <a class="btn-primary" href="ocr-appointment-create.html">＋ New appointment</a>
+    </div>
+
+    <div class="toolbar">
+      <div class="date-chip">📅 Tuesday, 8 Sep 2026</div>
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Search patient…">
+      </div>
+      <div class="filter-pills">
+        <button class="filter-pill active" type="button">All</button>
+        <button class="filter-pill" type="button">Checked in</button>
+        <button class="filter-pill" type="button">Waiting</button>
+        <button class="filter-pill" type="button">Scheduled</button>
+        <button class="filter-pill" type="button">Cancelled</button>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn" data-view="list" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          List
+        </button>
+        <button class="view-btn active" data-view="calendar" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+          Calendar
+        </button>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="view-panel" id="view-list">
+      <div class="panel">
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Patient</th><th>Type</th><th>Provider</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>08:30</td>
+              <td><div style="font-weight:500">Marta Bekele</div><div style="font-size:11.5px;color:var(--text-faint)">OCR-10482</div></td>
+              <td>Follow-up</td><td>Dr. Samuel</td>
+              <td><span class="status-pill status-checked"><span class="dot"></span>Checked in</span></td>
+              <td class="actions"><a class="action-link" href="ocr-patient-chart.html">Chart</a><a class="action-link muted">Reschedule</a></td>
+            </tr>
+            <tr>
+              <td>09:00</td>
+              <td><div style="font-weight:500">Dawit Tesfaye</div><div style="font-size:11.5px;color:var(--text-faint)">OCR-10391</div></td>
+              <td>New complaint</td><td>Dr. Samuel</td>
+              <td><span class="status-pill status-waiting"><span class="dot"></span>Waiting</span></td>
+              <td class="actions"><a class="action-link">Check in</a><a class="action-link" href="ocr-patient-chart.html">Chart</a></td>
+            </tr>
+            <tr>
+              <td>09:30</td>
+              <td><div style="font-weight:500">Selamawit Kassa</div><div style="font-size:11.5px;color:var(--text-faint)">OCR-10255</div></td>
+              <td>Follow-up</td><td>Dr. Samuel</td>
+              <td><span class="status-pill status-waiting"><span class="dot"></span>Waiting</span></td>
+              <td class="actions"><a class="action-link">Check in</a><a class="action-link" href="ocr-patient-chart.html">Chart</a></td>
+            </tr>
+            <tr>
+              <td>10:00</td>
+              <td><div style="font-weight:500">Yonas Abebe</div><div style="font-size:11.5px;color:var(--text-faint)">OCR-10112</div></td>
+              <td>Routine</td><td>Dr. Samuel</td>
+              <td><span class="status-pill status-scheduled"><span class="dot"></span>Scheduled</span></td>
+              <td class="actions"><a class="action-link">Check in</a><a class="action-link muted">Reschedule</a></td>
+            </tr>
+            <tr>
+              <td>10:30</td>
+              <td><div style="font-weight:500">Sara Mekonnen</div><div style="font-size:11.5px;color:var(--text-faint)">OCR-10098</div></td>
+              <td>Walk-in</td><td>Nurse</td>
+              <td><span class="status-pill status-scheduled"><span class="dot"></span>Scheduled</span></td>
+              <td class="actions"><a class="action-link">Check in</a><a class="action-link muted">Cancel</a></td>
+            </tr>
+            <tr>
+              <td>11:00</td>
+              <td><div style="font-weight:500">Hana Alemu</div><div style="font-size:11.5px;color:var(--text-faint)">OCR-10501</div></td>
+              <td>New patient</td><td>Dr. Samuel</td>
+              <td><span class="status-pill status-scheduled"><span class="dot"></span>Scheduled</span></td>
+              <td class="actions"><a class="action-link">Check in</a><a class="action-link muted">Reschedule</a></td>
+            </tr>
+            <tr>
+              <td>14:00</td>
+              <td><div style="font-weight:500">Tadesse Girma</div><div style="font-size:11.5px;color:var(--text-faint)">OCR-09844</div></td>
+              <td>Follow-up</td><td>Dr. Samuel</td>
+              <td><span class="status-pill status-cancelled"><span class="dot"></span>Cancelled</span></td>
+              <td class="actions"><a class="action-link muted">Restore</a></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="table-foot">
+          <span>Showing 7 of 12 for today</span>
+          <div class="pager">
+            <button type="button">Prev</button>
+            <button class="active" type="button">1</button>
+            <button type="button">2</button>
+            <button type="button">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="view-panel active" id="view-calendar">
+      <div class="cal-layout">
+        <div class="cal-sidebar">
+          <div class="mini-cal-head">
+            <div class="mini-cal-title">September 2026</div>
+            <div class="mini-nav">
+              <button type="button">‹</button>
+              <button type="button">›</button>
+            </div>
+          </div>
+          <div class="mini-grid">
+            <div class="mini-dow">M</div><div class="mini-dow">T</div><div class="mini-dow">W</div><div class="mini-dow">T</div><div class="mini-dow">F</div><div class="mini-dow">S</div><div class="mini-dow">S</div>
+            <div class="mini-day muted">31</div>
+            <div class="mini-day">1</div><div class="mini-day">2</div><div class="mini-day">3</div><div class="mini-day">4</div><div class="mini-day">5</div><div class="mini-day">6</div>
+            <div class="mini-day">7</div>
+            <div class="mini-day today selected">8<span class="dot"></span></div>
+            <div class="mini-day">9<span class="dot"></span></div>
+            <div class="mini-day">10</div>
+            <div class="mini-day">11<span class="dot"></span></div>
+            <div class="mini-day">12</div><div class="mini-day">13</div>
+            <div class="mini-day">14</div><div class="mini-day">15</div>
+            <div class="mini-day">16<span class="dot"></span></div>
+            <div class="mini-day">17</div><div class="mini-day">18</div><div class="mini-day">19</div><div class="mini-day">20</div><div class="mini-day">21</div>
+            <div class="mini-day">22</div><div class="mini-day">23</div><div class="mini-day">24</div><div class="mini-day">25</div><div class="mini-day">26</div><div class="mini-day">27</div><div class="mini-day">28</div>
+            <div class="mini-day">29</div><div class="mini-day">30</div>
+            <div class="mini-day muted">1</div><div class="mini-day muted">2</div><div class="mini-day muted">3</div><div class="mini-day muted">4</div><div class="mini-day muted">5</div>
+          </div>
+
+          <div class="upcoming-box">
+            <div class="upcoming-title">Today's queue</div>
+            <div class="upcoming-item">
+              <div class="up-dot checked"></div>
+              <div class="up-time">08:30</div>
+              <div><div class="up-name">Marta Bekele</div><div class="up-type">Follow-up · Checked in</div></div>
+            </div>
+            <div class="upcoming-item">
+              <div class="up-dot waiting"></div>
+              <div class="up-time">09:00</div>
+              <div><div class="up-name">Dawit Tesfaye</div><div class="up-type">New complaint · Waiting</div></div>
+            </div>
+            <div class="upcoming-item">
+              <div class="up-dot waiting"></div>
+              <div class="up-time">09:30</div>
+              <div><div class="up-name">Selamawit Kassa</div><div class="up-type">Follow-up · Waiting</div></div>
+            </div>
+            <div class="upcoming-item">
+              <div class="up-dot scheduled"></div>
+              <div class="up-time">10:00</div>
+              <div><div class="up-name">Yonas Abebe</div><div class="up-type">Routine</div></div>
+            </div>
+            <div class="upcoming-item">
+              <div class="up-dot nurse"></div>
+              <div class="up-time">10:30</div>
+              <div><div class="up-name">Sara Mekonnen</div><div class="up-type">Walk-in · Nurse</div></div>
+            </div>
+            <div class="upcoming-item">
+              <div class="up-dot scheduled"></div>
+              <div class="up-time">11:00</div>
+              <div><div class="up-name">Hana Alemu</div><div class="up-type">New patient</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cal-main">
+          <div class="cal-toolbar">
+            <div class="cal-nav-group">
+              <button class="cal-nav-btn" type="button">‹</button>
+              <div class="cal-date-label" id="cal-label">Tuesday, 8 September 2026</div>
+              <button class="cal-nav-btn" type="button">›</button>
+              <button class="filter-pill" type="button" style="margin-left:4px;" id="btn-today">Today</button>
+            </div>
+            <div class="cal-mode">
+              <button type="button" class="active" data-mode="day">Day</button>
+              <button type="button" data-mode="week">Week</button>
+            </div>
+          </div>
+
+          <div class="cal-scroll">
+            <!-- DAY -->
+            <div id="mode-day">
+              <div class="day-timeline">
+                <div class="day-hours" id="day-hours"></div>
+                <div class="day-track" id="day-track">
+                  <div class="now-line" id="now-line" style="top: 200px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WEEK -->
+            <div id="mode-week" style="display:none;">
+              <div class="week-wrap">
+                <div class="week-header">
+                  <div></div>
+                  <div class="wh"><div class="dow">Mon</div><div class="dom">7</div></div>
+                  <div class="wh today"><div class="dow">Tue</div><div class="dom">8</div></div>
+                  <div class="wh"><div class="dow">Wed</div><div class="dom">9</div></div>
+                  <div class="wh"><div class="dow">Thu</div><div class="dom">10</div></div>
+                  <div class="wh"><div class="dow">Fri</div><div class="dom">11</div></div>
+                </div>
+                <div class="week-body">
+                  <div class="week-labels" id="week-labels"></div>
+                  <div class="week-col" data-day="0" id="col-0"></div>
+                  <div class="week-col today-col" data-day="1" id="col-1"></div>
+                  <div class="week-col" data-day="2" id="col-2"></div>
+                  <div class="week-col" data-day="3" id="col-3"></div>
+                  <div class="week-col" data-day="4" id="col-4"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cal-legend">
+            <div class="leg"><i style="background:var(--teal)"></i> Checked in</div>
+            <div class="leg"><i style="background:var(--amber)"></i> Waiting</div>
+            <div class="leg"><i style="background:var(--blue)"></i> Scheduled</div>
+            <div class="leg"><i style="background:var(--purple)"></i> Nurse / walk-in</div>
+            <div class="leg"><i style="background:var(--red)"></i> Cancelled</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="popover" id="popover">
+  <div class="pop-title" id="pop-title">—</div>
+  <div class="pop-meta" id="pop-meta">—</div>
+  <div class="pop-row"><span>ID</span><div id="pop-id">—</div></div>
+  <div class="pop-row"><span>Provider</span><div id="pop-provider">—</div></div>
+  <div class="pop-row"><span>Status</span><div id="pop-status">—</div></div>
+  <div class="pop-actions">
+    <a href="ocr-patient-chart.html">Open chart</a>
+    <a class="muted" href="#">Reschedule</a>
+    <a class="muted" href="#">Cancel</a>
+  </div>
+</div>
+
+<script>
+  const HOUR_H = 72;
+  const START = 8; // 8 AM
+  const END = 18;  // 6 PM
+
+  // Today = Tuesday Sep 8, 2026 → week Mon 7 … Fri 11
+  // dayIndex: 0=Mon … 1=Tue(today) …
+  const appts = [
+    { day: 1, time: '08:30', dur: 30, name: 'Marta Bekele', type: 'Follow-up', status: 'checked', provider: 'Dr. Samuel', id: 'OCR-10482' },
+    { day: 1, time: '09:00', dur: 30, name: 'Dawit Tesfaye', type: 'New complaint', status: 'waiting', provider: 'Dr. Samuel', id: 'OCR-10391' },
+    { day: 1, time: '09:30', dur: 30, name: 'Selamawit Kassa', type: 'Follow-up', status: 'waiting', provider: 'Dr. Samuel', id: 'OCR-10255' },
+    { day: 1, time: '10:00', dur: 30, name: 'Yonas Abebe', type: 'Routine', status: 'scheduled', provider: 'Dr. Samuel', id: 'OCR-10112' },
+    { day: 1, time: '10:30', dur: 30, name: 'Sara Mekonnen', type: 'Walk-in', status: 'nurse', provider: 'Nurse', id: 'OCR-10098' },
+    { day: 1, time: '11:00', dur: 30, name: 'Hana Alemu', type: 'New patient', status: 'scheduled', provider: 'Dr. Samuel', id: 'OCR-10501' },
+    { day: 1, time: '14:00', dur: 30, name: 'Tadesse Girma', type: 'Follow-up', status: 'cancelled', provider: 'Dr. Samuel', id: 'OCR-09844' },
+    // other week days sample
+    { day: 2, time: '09:00', dur: 45, name: 'Yonas Abebe', type: 'Routine', status: 'scheduled', provider: 'Dr. Samuel', id: 'OCR-10112' },
+    { day: 3, time: '10:00', dur: 30, name: 'Hana Alemu', type: 'New patient', status: 'scheduled', provider: 'Dr. Samuel', id: 'OCR-10501' },
+    { day: 0, time: '11:00', dur: 30, name: 'Dawit Tesfaye', type: 'Follow-up', status: 'scheduled', provider: 'Dr. Samuel', id: 'OCR-10391' },
+  ];
+
+  function parseTime(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h + m / 60;
+  }
+  function topPx(t) {
+    return (parseTime(t) - START) * HOUR_H;
+  }
+  function heightPx(dur) {
+    return Math.max((dur / 60) * HOUR_H - 3, 36);
+  }
+
+  // Build hour labels + track lines
+  function buildHours(labelEl, trackEl, isWeekCol) {
+    labelEl.innerHTML = '';
+    if (trackEl && !isWeekCol) trackEl.querySelectorAll('.hour-line').forEach(n => n.remove());
+    for (let h = START; h < END; h++) {
+      const lbl = document.createElement('div');
+      lbl.className = 'hour-lbl';
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const hr = h > 12 ? h - 12 : h;
+      lbl.textContent = hr + ' ' + ampm;
+      labelEl.appendChild(lbl);
+
+      if (trackEl) {
+        const line = document.createElement('div');
+        line.className = 'hour-line';
+        trackEl.appendChild(line);
+      }
+    }
+  }
+
+  function makeBlock(a) {
+    const el = document.createElement('div');
+    el.className = 'appt-block ' + a.status;
+    el.style.top = topPx(a.time) + 'px';
+    el.style.height = heightPx(a.dur) + 'px';
+    el.innerHTML = `<div class="ab-time">${a.time}</div><div class="ab-name">${a.name}</div><div class="ab-type">${a.type} · ${a.provider}</div>`;
+    el.dataset.name = a.name;
+    el.dataset.meta = `${a.time} · ${a.dur} min · ${a.type}`;
+    el.dataset.provider = a.provider;
+    el.dataset.id = a.id;
+    const statusMap = { checked:'Checked in', waiting:'Waiting', scheduled:'Scheduled', nurse:'Scheduled (Nurse)', cancelled:'Cancelled' };
+    el.dataset.status = statusMap[a.status] || a.status;
+    return el;
+  }
+
+  // Day view
+  const dayHours = document.getElementById('day-hours');
+  const dayTrack = document.getElementById('day-track');
+  buildHours(dayHours, dayTrack, false);
+  appts.filter(a => a.day === 1).forEach(a => dayTrack.appendChild(makeBlock(a)));
+
+  // Now line ~ 10:50 demo position
+  const nowLine = document.getElementById('now-line');
+  nowLine.style.top = topPx('10:50') + 'px';
+
+  // Week view
+  const weekLabels = document.getElementById('week-labels');
+  buildHours(weekLabels, null, true);
+  for (let d = 0; d < 5; d++) {
+    const col = document.getElementById('col-' + d);
+    for (let h = START; h < END; h++) {
+      const line = document.createElement('div');
+      line.className = 'hour-line';
+      col.appendChild(line);
+    }
+    appts.filter(a => a.day === d).forEach(a => col.appendChild(makeBlock(a)));
+  }
+
+  // View toggles
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.cal-mode button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cal-mode button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const day = document.getElementById('mode-day');
+      const week = document.getElementById('mode-week');
+      if (btn.dataset.mode === 'day') {
+        day.style.display = 'block';
+        week.style.display = 'none';
+        document.getElementById('cal-label').textContent = 'Tuesday, 8 September 2026';
+      } else {
+        day.style.display = 'none';
+        week.style.display = 'block';
+        document.getElementById('cal-label').textContent = '7 – 11 September 2026';
+      }
+    });
+  });
+
+  document.querySelectorAll('.filter-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.filter-pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+    });
+  });
+
+  // Popover
+  const pop = document.getElementById('popover');
+  document.addEventListener('click', e => {
+    const block = e.target.closest('.appt-block');
+    if (block) {
+      e.stopPropagation();
+      document.getElementById('pop-title').textContent = block.dataset.name;
+      document.getElementById('pop-meta').textContent = block.dataset.meta;
+      document.getElementById('pop-id').textContent = block.dataset.id;
+      document.getElementById('pop-provider').textContent = block.dataset.provider;
+      document.getElementById('pop-status').textContent = block.dataset.status;
+      const r = block.getBoundingClientRect();
+      let left = r.right + 10;
+      let top = r.top;
+      if (left + 290 > innerWidth) left = r.left - 290;
+      if (top + 180 > innerHeight) top = innerHeight - 200;
+      pop.style.left = Math.max(8, left) + 'px';
+      pop.style.top = Math.max(8, top) + 'px';
+      pop.classList.add('show');
+    } else if (!e.target.closest('.popover')) {
+      pop.classList.remove('show');
+    }
+  });
+</script>
+<script src="ocr-shell.js"></script>
+</body>
+</html>

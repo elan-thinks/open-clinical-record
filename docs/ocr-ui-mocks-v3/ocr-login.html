@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCR — Sign in</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1310; --surface:#121a15; --surface-2:#16201a; --line:#1e2b23;
+    --text:#eef3ef; --text-dim:#a7bdae; --text-faint:#6d8577;
+    --teal:#3ddc97; --teal-dim:#29a874; --teal-glow:rgba(61,220,151,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); color:var(--text); font-family:Inter,sans-serif;
+    background-image:
+      radial-gradient(ellipse 800px 500px at 20% 0%, rgba(61,220,151,.1), transparent 55%),
+      radial-gradient(ellipse 600px 400px at 90% 80%, rgba(61,220,151,.05), transparent 50%);
+  }
+  .card{
+    width:100%; max-width:420px; background:var(--surface);
+    border:1px solid var(--line); border-radius:18px; padding:36px 32px;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+  .mark{
+    width:40px; height:40px; border-radius:11px;
+    background:linear-gradient(150deg,var(--teal),var(--teal-dim));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; color:#04140c; font-size:16px;
+  }
+  h1{ font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:600; }
+  .sub{ font-size:13px; color:var(--text-faint); margin-top:4px; margin-bottom:24px; }
+  label{ display:block; font-size:12px; color:var(--text-faint); margin-bottom:6px; }
+  input, select{
+    width:100%; background:var(--bg); border:1px solid var(--line);
+    border-radius:10px; padding:11px 14px; color:var(--text);
+    font-size:14px; font-family:inherit; margin-bottom:14px; outline:none;
+  }
+  input:focus, select:focus{ border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-glow); }
+  .btn{
+    width:100%; margin-top:8px; padding:12px;
+    background:var(--teal); color:#04140c; border:none; border-radius:10px;
+    font-weight:600; font-size:14px; cursor:pointer; font-family:inherit;
+  }
+  .btn:hover{ filter:brightness(1.05); }
+  .hint{ margin-top:20px; padding-top:16px; border-top:1px solid var(--line); }
+  .hint-title{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; }
+  .role-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .role-chip{
+    padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface-2); cursor:pointer; font-size:12.5px; text-align:left;
+    color:var(--text-dim); transition:all .15s;
+  }
+  .role-chip:hover, .role-chip.on{
+    border-color:transparent; background:var(--teal-glow); color:var(--teal);
+  }
+  .role-chip b{ display:block; font-size:13px; margin-bottom:2px; color:inherit; }
+  .role-chip span{ font-size:11px; opacity:.85; }
+  .foot{ margin-top:18px; font-size:12px; color:var(--text-faint); text-align:center; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="mark">OCR</div>
+      <div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;">Open Clinical Record</div>
+        <div style="font-size:12px;color:var(--text-faint);">Sign in to your workspace</div>
+      </div>
+    </div>
+    <h1>Welcome back</h1>
+    <p class="sub">Role determines your dashboard, navigation, and permissions.</p>
+
+    <label>Email or username</label>
+    <input type="text" id="email" value="samuel@clinic.et" placeholder="you@clinic.et">
+
+    <label>Password</label>
+    <input type="password" id="pass" value="••••••••">
+
+    <label>Sign in as (demo)</label>
+    <select id="role">
+      <option value="doctor">Doctor / Clinician</option>
+      <option value="nurse">Nurse / Clinical Staff</option>
+      <option value="receptionist">Receptionist / Front Desk</option>
+      <option value="admin">System Administrator</option>
+    </select>
+
+    <button class="btn" type="button" id="btn-login">Sign in →</button>
+
+    <div class="hint">
+      <div class="hint-title">Quick role preview</div>
+      <div class="role-grid">
+        <div class="role-chip on" data-r="doctor"><b>🩺 Doctor</b><span>Clinical chart & notes</span></div>
+        <div class="role-chip" data-r="nurse"><b>👩‍⚕️ Nurse</b><span>Vitals & observations</span></div>
+        <div class="role-chip" data-r="receptionist"><b>🧑‍💼 Reception</b><span>Register & appointments</span></div>
+        <div class="role-chip" data-r="admin"><b>🔐 Admin</b><span>Users & system</span></div>
+      </div>
+    </div>
+    <p class="foot">Demo only · API must enforce permissions server-side</p>
+  </div>
+<script>
+  const role = document.getElementById('role');
+  const chips = document.querySelectorAll('.role-chip');
+  chips.forEach(c => c.addEventListener('click', () => {
+    chips.forEach(x => x.classList.remove('on'));
+    c.classList.add('on');
+    role.value = c.dataset.r;
+  }));
+  role.addEventListener('change', () => {
+    chips.forEach(x => x.classList.toggle('on', x.dataset.r === role.value));
+  });
+  document.getElementById('btn-login').addEventListener('click', () => {
+    localStorage.setItem('ocr_role', role.value);
+    location.href = 'ocr-dashboard.html?role=' + role.value;
+  });
+</script>
+</body>
+</html>
