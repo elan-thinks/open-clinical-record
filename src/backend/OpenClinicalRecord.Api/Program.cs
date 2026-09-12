@@ -1,9 +1,14 @@
+using OpenClinicalRecord.Api.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// PostgreSQL + EF Core
+builder.Services.AddApplicationDatabase(builder.Configuration);
 
 // CORS for local React development (Vite default port 5173)
 const string CorsPolicyName = "LocalDevCors";
@@ -29,11 +34,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Use CORS before other middleware that might short-circuit
 app.UseCors(CorsPolicyName);
 
-// Optional HTTPS redirection — keep off in pure local HTTP if needed;
-// development cert is available but frontend calls http by default.
 // app.UseHttpsRedirection();
 
 app.UseAuthorization();
