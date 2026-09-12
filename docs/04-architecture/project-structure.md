@@ -28,7 +28,7 @@ docs/                               # Existing documentation (unchanged)
 | Folder / file | Responsibility |
 |---|---|
 | `Controllers/` | HTTP endpoints (Milestone 1: `HealthController` only) |
-| `Data/` | Reserved for EF Core `DbContext` and data access (not used yet) |
+| `Data/` | EF Core `DbContext` and data access |
 | `Models/Entities/` | Domain entities (not used yet) |
 | `Models/Enums/` | Shared enumerations (not used yet) |
 | `DTOs/` | Request/response contracts (not used yet) |
@@ -48,6 +48,7 @@ docs/                               # Existing documentation (unchanged)
 ### Health endpoint
 
 - `GET /api/health` → `{ "status": "ok" }` (HTTP 200)
+- `GET /api/health/ready` → API + database connectivity
 
 ### CORS
 
@@ -87,10 +88,21 @@ Do not use a permanent wildcard origin.
 
 - `tests/backend/OpenClinicalRecord.Api.Tests` — xUnit + `WebApplicationFactory` integration test for the health endpoint.
 
-## Intentionally NOT implemented in Milestone 1
+## Database (configured)
+
+- PostgreSQL via **Npgsql + Entity Framework Core**
+- `AppDbContext` registered in DI (`Data/AppDbContext.cs`)
+- Connection string: `ConnectionStrings:DefaultConnection`
+- Development default: `Host=localhost;Port=5432;Database=open_clinical_record;Username=postgres;Password=postgres`
+- Override with environment variable `ConnectionStrings__DefaultConnection` (never commit real secrets)
+- Health endpoints:
+  - `GET /api/health` — API liveness
+  - `GET /api/health/ready` — API + database connectivity
+
+## Intentionally NOT implemented yet
 
 - Authentication / authorization
-- Database connection, EF Core entities, migrations
+- EF Core entities and migrations (context is empty until User/Role models)
 - Patient, appointment, or medical-record controllers/services
 - Login UI or role-based dashboards
 - Production CORS or secret management beyond development defaults
