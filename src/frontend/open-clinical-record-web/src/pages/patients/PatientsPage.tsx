@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   createPatient,
   listPatients,
   type Patient,
+  type PatientStatusFilter,
 } from '../../services/patientsApi';
 import './PatientsPage.css';
 
@@ -46,13 +48,14 @@ function formatPhone(raw?: string | null): string {
 }
 
 export function PatientsPage() {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('active');
+  const [filter, setFilter] = useState<PatientStatusFilter>('active');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -62,35 +65,32 @@ export function PatientsPage() {
   const [phoneLocal, setPhoneLocal] = useState('');
   const [email, setEmail] = useState('');
 
-  const load = useCallback(async (search?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      setPatients(await listPatients(search));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load patients');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (search?: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        setPatients(await listPatients(search, filter));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load patients');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filter],
+  );
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const filtered = useMemo(() => {
-    if (filter === 'active') return patients.filter((p) => p.isActive);
-    if (filter === 'inactive') return patients.filter((p) => !p.isActive);
-    return patients;
-  }, [patients, filter]);
-
   const computedAge = useMemo(() => ageFromDob(dateOfBirth || null), [dateOfBirth]);
 
   const countLabel = useMemo(() => {
     if (loading) return 'Loading...';
-    const n = filtered.length;
+    const n = patients.length;
     return n === 1 ? '1 patient' : `${n} patients`;
-  }, [loading, filtered.length]);
+  }, [loading, patients.length]);
 
   function buildPhone(): string | undefined {
     const local = phoneLocal.trim().replace(/^0+/, '');
@@ -292,7 +292,7 @@ export function PatientsPage() {
       <div className="panel">
         {loading ? (
           <div className="empty">Loading patients...</div>
-        ) : filtered.length === 0 ? (
+        ) : patients.length === 0 ? (
           <div className="empty">No patients found. Register a patient to get started.</div>
         ) : (
           <table>
@@ -307,7 +307,7 @@ export function PatientsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
+              {patients.map((p) => (
                 <tr key={p.id}>
                   <td>
                     <div className="patient-cell">
@@ -341,8 +341,12 @@ export function PatientsPage() {
                     </span>
                   </td>
                   <td>
-                    <button type="button" className="action-link" disabled title="Coming soon">
-                      Open chart
+                    <button
+                      type="button"
+                      className="action-link"
+                      onClick={() => navigate(`/patients/${p.id}`)}
+                    >
+                      View
                     </button>
                   </td>
                 </tr>

@@ -10,6 +10,19 @@
 3. Keep secrets out of source control (env vars / user secrets).
 4. Ship small, reviewable commits (`feat:`, `fix:`, `docs:`, `ci:`).
 
+## UI mocks (source of truth)
+
+**Always** treat `docs/ocr-ui-mocks-v3/` (and the approved HTML mock package) as the visual source of truth.
+
+Before implementing or restyling any screen:
+
+1. Open the matching mock file (e.g. `ocr-patients.html`, `ocr-dashboard.html`, `ocr-login.html`).
+2. Match layout structure, spacing, tokens (teal/surfaces), typography, and component patterns.
+3. Do not invent alternate layouts when a mock already exists.
+4. Placeholder data is fine when the API is not ready; the **chrome** must still match the mock.
+
+Role-aware navigation comes from `ocr-shell.js`.
+
 ## Backend (C# / ASP.NET Core)
 
 - Target **.NET 8**.

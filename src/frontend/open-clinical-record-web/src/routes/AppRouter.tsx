@@ -7,6 +7,7 @@ import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { RolesPage } from '../pages/admin/RolesPage';
 import { PatientsPage } from '../pages/patients/PatientsPage';
+import { PatientDetailPage } from '../pages/patients/PatientDetailPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 function Placeholder({ title, description }: { title: string; description: string }) {
@@ -25,6 +26,7 @@ export function AppRouter() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="patients" element={<PatientsPage />} />
+              <Route path="patients/:id" element={<PatientDetailPage />} />
               <Route
                 path="chart"
                 element={
@@ -58,12 +60,7 @@ export function AppRouter() {
                   <Placeholder title="Record vitals" description="Capture vital signs for the current visit." />
                 }
               />
-              <Route
-                path="register"
-                element={
-                  <Placeholder title="Registration" description="Register a new patient at the front desk." />
-                }
-              />
+              <Route path="register" element={<PatientsPage />} />
               <Route
                 path="checkin"
                 element={
