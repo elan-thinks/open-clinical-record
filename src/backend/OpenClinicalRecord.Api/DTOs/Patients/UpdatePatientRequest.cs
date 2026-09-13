@@ -2,13 +2,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace OpenClinicalRecord.Api.DTOs.Patients;
 
-public class CreatePatientRequest
+public class UpdatePatientRequest
 {
-    [Required(ErrorMessage = "First name is required.")]
+    [Required]
     [MaxLength(100)]
     public string FirstName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Last name is required.")]
+    [Required]
     [MaxLength(100)]
     public string LastName { get; set; } = string.Empty;
 
@@ -20,7 +20,9 @@ public class CreatePatientRequest
     [MaxLength(40)]
     public string? Phone { get; set; }
 
-    [EmailAddress(ErrorMessage = "Email is not valid.")]
+    [EmailAddress]
     [MaxLength(256)]
     public string? Email { get; set; }
+
+    public bool IsActive { get; set; } = true;
 }
