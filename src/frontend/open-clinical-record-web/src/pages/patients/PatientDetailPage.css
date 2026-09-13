@@ -1,0 +1,177 @@
+.patient-detail .back {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--teal);
+  text-decoration: none;
+  margin-bottom: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.patient-detail .header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.patient-detail .name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.patient-detail .badge {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-weight: 500;
+  background: var(--teal-glow);
+  color: var(--teal);
+}
+
+.patient-detail .badge.off {
+  background: var(--surface-2);
+  color: var(--text-faint);
+}
+
+.patient-detail .meta {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
+.patient-detail .btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.patient-detail .btn {
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+.patient-detail .btn-primary {
+  background: var(--teal);
+  color: #04140c;
+}
+
+.patient-detail .btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.patient-detail .lock-note {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+.patient-detail .panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+
+.patient-detail .panel-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.patient-detail .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+
+@media (max-width: 720px) {
+  .patient-detail .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.patient-detail .field label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.patient-detail .val {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.patient-detail .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+
+.patient-detail .input,
+.patient-detail .select {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.patient-detail .input:focus,
+.patient-detail .select:focus {
+  border-color: var(--teal-dim);
+}
+
+.patient-detail .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.patient-detail .error-banner {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(232, 119, 138, 0.12);
+  border: 1px solid rgba(232, 119, 138, 0.25);
+  color: var(--red);
+  font-size: 13px;
+}
+
+.patient-detail .empty {
+  color: var(--text-dim);
+  padding: 24px 0;
+}
