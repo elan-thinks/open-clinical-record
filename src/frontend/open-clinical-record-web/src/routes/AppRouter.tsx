@@ -6,6 +6,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { RolesPage } from '../pages/admin/RolesPage';
+import { PatientsPage } from '../pages/patients/PatientsPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 function Placeholder({ title, description }: { title: string; description: string }) {
@@ -23,12 +24,7 @@ export function AppRouter() {
             <Route element={<AppLayout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
-              <Route
-                path="patients"
-                element={
-                  <Placeholder title="Patients" description="Search, register, and open patient records." />
-                }
-              />
+              <Route path="patients" element={<PatientsPage />} />
               <Route
                 path="chart"
                 element={
