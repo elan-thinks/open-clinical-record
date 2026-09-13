@@ -4,6 +4,8 @@ import { AppLayout } from '../layouts/AppLayout';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
+import { UsersPage } from '../pages/admin/UsersPage';
+import { RolesPage } from '../pages/admin/RolesPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 function Placeholder({ title, description }: { title: string; description: string }) {
@@ -87,21 +89,8 @@ export function AppRouter() {
                   <Placeholder title="Profile" description="Your account details and preferences." />
                 }
               />
-              <Route
-                path="admin/users"
-                element={
-                  <Placeholder title="Users" description="Manage application users and access." />
-                }
-              />
-              <Route
-                path="admin/roles"
-                element={
-                  <Placeholder
-                    title="Roles & Permissions"
-                    description="Configure role-based access for the clinic."
-                  />
-                }
-              />
+              <Route path="admin/users" element={<UsersPage />} />
+              <Route path="admin/roles" element={<RolesPage />} />
               <Route
                 path="admin/audit"
                 element={
