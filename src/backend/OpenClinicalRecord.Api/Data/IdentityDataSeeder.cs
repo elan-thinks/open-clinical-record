@@ -7,13 +7,13 @@ namespace OpenClinicalRecord.Api.Data;
 
 public static class IdentityDataSeeder
 {
-    public static async Task SeedAsync(IServiceProvider services)
+    public static async Task SeedAsync(IServiceProvider services, ILogger? logger = null)
     {
         using var scope = services.CreateScope();
         var sp = scope.ServiceProvider;
-
         var db = sp.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
+
+        await EnsureSchemaAsync(db, logger);
 
         var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
@@ -26,13 +26,57 @@ public static class IdentityDataSeeder
             }
         }
 
-        // Dev-only seed users (password from env OCR_SEED_PASSWORD or default Dev@12345)
         var seedPassword = Environment.GetEnvironmentVariable("OCR_SEED_PASSWORD") ?? "Dev@12345";
 
         await EnsureUserAsync(userManager, "admin@clinic.local", "System Administrator", AppRoles.Admin, seedPassword);
         await EnsureUserAsync(userManager, "doctor@clinic.local", "Dr. Samuel Clinician", AppRoles.Doctor, seedPassword);
         await EnsureUserAsync(userManager, "nurse@clinic.local", "Nurse Ayana", AppRoles.Nurse, seedPassword);
         await EnsureUserAsync(userManager, "desk@clinic.local", "Front Desk", AppRoles.Receptionist, seedPassword);
+
+        logger?.LogInformation("Identity roles and seed users are ready.");
+    }
+
+    private static async Task EnsureSchemaAsync(AppDbContext db, ILogger? logger)
+    {
+        var definedMigrations = db.Database.GetMigrations().ToList();
+        var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
+
+        if (definedMigrations.Count > 0)
+        {
+            if (pending.Count > 0)
+            {
+                logger?.LogInformation(
+                    "Applying {Count} pending migration(s): {Migrations}",
+                    pending.Count,
+                    string.Join(", ", pending));
+            }
+
+            await db.Database.MigrateAsync();
+        }
+        else
+        {
+            // No migration classes in the assembly (e.g. not pulled yet).
+            // Create schema from the current model so the app is still runnable.
+            logger?.LogWarning(
+                "No EF migrations found in the assembly. Using EnsureCreated for Identity schema. " +
+                "Add/pull Data/Migrations and use Migrate for production-style updates.");
+
+            await db.Database.EnsureCreatedAsync();
+        }
+
+        // Final check
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("""SELECT 1 FROM "AspNetRoles" LIMIT 1""");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                "Identity tables are still missing. " +
+                "Try: drop the database (or DROP TABLE \"__EFMigrationsHistory\"), " +
+                "ensure Data/Migrations is present, then run: dotnet ef database update",
+                ex);
+        }
     }
 
     private static async Task EnsureUserAsync(
