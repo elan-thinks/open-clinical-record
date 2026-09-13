@@ -6,25 +6,43 @@ import {
 } from '../../services/patientsApi';
 import './PatientsPage.css';
 
+const PHONE_COUNTRIES = [
+  { code: 'ET', dial: '+251', label: 'Ethiopia (+251)' },
+  { code: 'US', dial: '+1', label: 'United States (+1)' },
+  { code: 'GB', dial: '+44', label: 'United Kingdom (+44)' },
+  { code: 'KE', dial: '+254', label: 'Kenya (+254)' },
+  { code: 'UG', dial: '+256', label: 'Uganda (+256)' },
+  { code: 'TZ', dial: '+255', label: 'Tanzania (+255)' },
+  { code: 'SO', dial: '+252', label: 'Somalia (+252)' },
+  { code: 'DJ', dial: '+253', label: 'Djibouti (+253)' },
+  { code: 'ER', dial: '+291', label: 'Eritrea (+291)' },
+  { code: 'OTHER', dial: '', label: 'Other (enter full number)' },
+] as const;
+
 function initials(first: string, last: string): string {
   return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
 }
 
-function ageFromDob(dob?: string | null): string {
-  if (!dob) return '\u2014';
+function ageFromDob(dob?: string | null): number | null {
+  if (!dob) return null;
   const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return '\u2014';
+  if (Number.isNaN(d.getTime())) return null;
   const now = new Date();
   let age = now.getFullYear() - d.getFullYear();
   const m = now.getMonth() - d.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
-  return String(age);
+  return age >= 0 ? age : null;
 }
 
 function sexAge(p: Patient): string {
-  const sex = p.sex ? p.sex[0]?.toUpperCase() : '\u2014';
+  const sex = p.sex ? p.sex[0]?.toUpperCase() : '-';
   const age = ageFromDob(p.dateOfBirth);
-  return `${sex} \u00b7 ${age}`;
+  return age === null ? `${sex} / -` : `${sex} / ${age}`;
+}
+
+function formatPhone(raw?: string | null): string {
+  if (!raw) return '-';
+  return raw;
 }
 
 export function PatientsPage() {
@@ -34,12 +52,14 @@ export function PatientsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('active');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [sex, setSex] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState('ET');
+  const [phoneLocal, setPhoneLocal] = useState('');
   const [email, setEmail] = useState('');
 
   const load = useCallback(async (search?: string) => {
@@ -58,11 +78,29 @@ export function PatientsPage() {
     void load();
   }, [load]);
 
+  const filtered = useMemo(() => {
+    if (filter === 'active') return patients.filter((p) => p.isActive);
+    if (filter === 'inactive') return patients.filter((p) => !p.isActive);
+    return patients;
+  }, [patients, filter]);
+
+  const computedAge = useMemo(() => ageFromDob(dateOfBirth || null), [dateOfBirth]);
+
   const countLabel = useMemo(() => {
-    if (loading) return 'Loading\u2026';
-    const n = patients.length;
+    if (loading) return 'Loading...';
+    const n = filtered.length;
     return n === 1 ? '1 patient' : `${n} patients`;
-  }, [loading, patients.length]);
+  }, [loading, filtered.length]);
+
+  function buildPhone(): string | undefined {
+    const local = phoneLocal.trim().replace(/^0+/, '');
+    if (!local && !phoneLocal.trim()) return undefined;
+    const country = PHONE_COUNTRIES.find((c) => c.code === phoneCountry);
+    if (!country || country.code === 'OTHER' || !country.dial) {
+      return phoneLocal.trim() || undefined;
+    }
+    return `${country.dial} ${local || phoneLocal.trim()}`;
+  }
 
   async function onSearch(e: FormEvent) {
     e.preventDefault();
@@ -79,7 +117,7 @@ export function PatientsPage() {
         lastName,
         dateOfBirth: dateOfBirth || undefined,
         sex: sex || undefined,
-        phone: phone || undefined,
+        phone: buildPhone(),
         email: email || undefined,
       });
       setShowForm(false);
@@ -87,7 +125,8 @@ export function PatientsPage() {
       setLastName('');
       setDateOfBirth('');
       setSex('');
-      setPhone('');
+      setPhoneCountry('ET');
+      setPhoneLocal('');
       setEmail('');
       await load(q);
     } catch (err) {
@@ -103,7 +142,7 @@ export function PatientsPage() {
         <div>
           <h1 className="page-title">Patients</h1>
           <p className="page-sub">
-            Search, register, and open patient records \u00b7 {countLabel}
+            Search, register, and open patient records - {countLabel}
           </p>
         </div>
         <button type="button" className="btn-primary" onClick={() => setShowForm((v) => !v)}>
@@ -147,28 +186,57 @@ export function PatientsPage() {
                   type="date"
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
+                  max={new Date().toISOString().slice(0, 10)}
+                />
+              </div>
+              <div className="field">
+                <label className="label">Age (from DOB)</label>
+                <input
+                  className="input"
+                  value={
+                    computedAge === null
+                      ? 'Enter date of birth'
+                      : `${computedAge} years`
+                  }
+                  readOnly
+                  tabIndex={-1}
                 />
               </div>
               <div className="field">
                 <label className="label">Sex</label>
                 <select className="select" value={sex} onChange={(e) => setSex(e.target.value)}>
-                  <option value="">Select\u2026</option>
+                  <option value="">Select...</option>
                   <option value="Female">Female</option>
                   <option value="Male">Male</option>
                   <option value="Other">Other</option>
                   <option value="Unknown">Unknown</option>
                 </select>
               </div>
-              <div className="field">
+              <div className="field span-2">
                 <label className="label">Phone</label>
-                <input
-                  className="input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+251 \u2026"
-                />
+                <div className="phone-row">
+                  <select
+                    className="select phone-country"
+                    value={phoneCountry}
+                    onChange={(e) => setPhoneCountry(e.target.value)}
+                    aria-label="Country code"
+                  >
+                    {PHONE_COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className="input phone-local"
+                    value={phoneLocal}
+                    onChange={(e) => setPhoneLocal(e.target.value)}
+                    placeholder={phoneCountry === 'ET' ? '9xx xxx xxx' : 'Local number'}
+                    inputMode="tel"
+                  />
+                </div>
               </div>
-              <div className="field">
+              <div className="field span-2">
                 <label className="label">Email</label>
                 <input
                   className="input"
@@ -183,7 +251,7 @@ export function PatientsPage() {
                 Cancel
               </button>
               <button type="submit" className="btn-primary" disabled={saving}>
-                {saving ? 'Saving\u2026' : 'Create patient'}
+                {saving ? 'Saving...' : 'Create patient'}
               </button>
             </div>
           </form>
@@ -192,17 +260,29 @@ export function PatientsPage() {
 
       <form className="toolbar" onSubmit={onSearch}>
         <div className="search-box">
-          <span aria-hidden="true">\u2315</span>
           <input
-            placeholder="Search name, MRN, phone, email\u2026"
+            placeholder="Search by name, ID, phone..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
         <div className="filter-pills">
-          <button type="button" className="filter-pill active">
-            Active
-          </button>
+          {(
+            [
+              ['all', 'All'],
+              ['active', 'Active'],
+              ['inactive', 'Inactive'],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              className={`filter-pill${filter === key ? ' active' : ''}`}
+              onClick={() => setFilter(key)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         <button type="submit" className="btn-ghost">
           Search
@@ -211,15 +291,15 @@ export function PatientsPage() {
 
       <div className="panel">
         {loading ? (
-          <div className="empty">Loading patients\u2026</div>
-        ) : patients.length === 0 ? (
+          <div className="empty">Loading patients...</div>
+        ) : filtered.length === 0 ? (
           <div className="empty">No patients found. Register a patient to get started.</div>
         ) : (
           <table>
             <thead>
               <tr>
                 <th>Patient</th>
-                <th>Sex \u00b7 Age</th>
+                <th>Sex / Age</th>
                 <th>Phone</th>
                 <th>Registered</th>
                 <th>Status</th>
@@ -227,7 +307,7 @@ export function PatientsPage() {
               </tr>
             </thead>
             <tbody>
-              {patients.map((p) => (
+              {filtered.map((p) => (
                 <tr key={p.id}>
                   <td>
                     <div className="patient-cell">
@@ -241,7 +321,7 @@ export function PatientsPage() {
                     </div>
                   </td>
                   <td>{sexAge(p)}</td>
-                  <td>{p.phone ?? '\u2014'}</td>
+                  <td>{formatPhone(p.phone)}</td>
                   <td>
                     {p.createdAt
                       ? new Date(p.createdAt).toLocaleDateString(undefined, {
@@ -249,7 +329,7 @@ export function PatientsPage() {
                           month: 'short',
                           year: 'numeric',
                         })
-                      : '\u2014'}
+                      : '-'}
                   </td>
                   <td>
                     <span
