@@ -1,11 +1,13 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using OpenClinicalRecord.Api.Models.Entities;
 
 namespace OpenClinicalRecord.Api.Data;
 
 /// <summary>
-/// Application database context. Entities will be added in later milestones.
+/// Application database context including ASP.NET Core Identity tables.
 /// </summary>
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -15,6 +17,11 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        // Entity configurations will be registered here when models are introduced.
+
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(u => u.FullName).HasMaxLength(200).IsRequired();
+            entity.Property(u => u.IsActive).HasDefaultValue(true);
+        });
     }
 }
