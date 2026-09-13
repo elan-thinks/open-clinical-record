@@ -1,16 +1,16 @@
+using OpenClinicalRecord.Api.Data;
 using OpenClinicalRecord.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// PostgreSQL + EF Core
 builder.Services.AddApplicationDatabase(builder.Configuration);
+builder.Services.AddApplicationIdentity();
+builder.Services.AddApplicationJwtAuth(builder.Configuration);
 
-// CORS for local React development (Vite default port 5173)
 const string CorsPolicyName = "LocalDevCors";
 builder.Services.AddCors(options =>
 {
@@ -27,22 +27,22 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // Apply migrations + seed roles/users in development
+    await IdentityDataSeeder.SeedAsync(app.Services);
 }
 
 app.UseCors(CorsPolicyName);
 
-// app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
 
-// Make the Program class accessible for integration tests
 public partial class Program { }
