@@ -9,7 +9,7 @@ interface AppShellProps {
   userEmail?: string;
   currentPath: string;
   onNavigate: (path: string) => void;
-  onRoleChange?: (role: AppRole) => void;
+  onLogout?: () => void;
   backendOnline?: boolean;
   children: ReactNode;
 }
@@ -42,14 +42,12 @@ function titleFromPath(path: string): string {
   return map[path] ?? 'Open Clinical Record';
 }
 
-const DEMO_ROLES: AppRole[] = ['Doctor', 'Nurse', 'Receptionist', 'Admin'];
-
 export function AppShell({
   role,
   userName,
   currentPath,
   onNavigate,
-  onRoleChange,
+  onLogout,
   backendOnline = true,
   children,
 }: AppShellProps) {
@@ -92,6 +90,11 @@ export function AppShell({
               <div className="user-role">{role}</div>
             </div>
           </div>
+          {onLogout && (
+            <button type="button" className="logout-btn" onClick={onLogout}>
+              Sign out
+            </button>
+          )}
         </div>
       </aside>
 
@@ -99,17 +102,6 @@ export function AppShell({
         <header className="topbar">
           <h1 className="topbar-title">{titleFromPath(currentPath)}</h1>
           <div className="topbar-actions">
-            {onRoleChange &&
-              DEMO_ROLES.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`role-pill${role === r ? ' active' : ''}`}
-                  onClick={() => onRoleChange(r)}
-                >
-                  {r}
-                </button>
-              ))}
             <span className="status-chip">
               <span className={`status-dot${backendOnline ? '' : ' off'}`} />
               {backendOnline ? 'API online' : 'API offline'}
