@@ -1,12 +1,14 @@
-interface DashboardPageProps {
-  role: string;
-  userName: string;
-}
+import { useAuth } from '../context/AuthContext';
+import { primaryRole } from '../utils/navigation';
 
-export function DashboardPage({ role, userName }: DashboardPageProps) {
+export function DashboardPage() {
+  const { user } = useAuth();
+  const role = user ? primaryRole(user.roles) : 'Doctor';
+  const name = user?.fullName ?? 'User';
+
   return (
     <div className="placeholder-card">
-      <h2>Welcome, {userName}</h2>
+      <h2>Welcome, {name}</h2>
       <p>
         You are signed in with the <strong style={{ color: 'var(--teal)' }}>{role}</strong> workspace.
         Use the sidebar to open Patients, Chart, Appointments, and other areas for this role.
