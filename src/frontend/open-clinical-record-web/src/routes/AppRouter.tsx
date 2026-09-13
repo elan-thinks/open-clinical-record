@@ -9,6 +9,7 @@ import { RolesPage } from '../pages/admin/RolesPage';
 import { PatientsPage } from '../pages/patients/PatientsPage';
 import { PatientDetailPage } from '../pages/patients/PatientDetailPage';
 import { PatientRegisterPage } from '../pages/patients/PatientRegisterPage';
+import { PatientChartPage } from '../pages/clinical/PatientChartPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 function Placeholder({ title, description }: { title: string; description: string }) {
@@ -29,12 +30,13 @@ export function AppRouter() {
               <Route path="patients" element={<PatientsPage />} />
               <Route path="patients/new" element={<PatientRegisterPage />} />
               <Route path="patients/:id" element={<PatientDetailPage />} />
+              <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
               <Route
                 path="chart"
                 element={
                   <Placeholder
                     title="Medical Chart"
-                    description="Allergies, medications, alerts, and visit history."
+                    description="Open a patient from Patients, then use Open chart."
                   />
                 }
               />
@@ -43,7 +45,7 @@ export function AppRouter() {
                 element={
                   <Placeholder
                     title="Medical Records"
-                    description="Clinical documentation and encounter notes."
+                    description="Open a patient chart for visits, vitals, and notes."
                   />
                 }
               />
@@ -59,7 +61,10 @@ export function AppRouter() {
               <Route
                 path="vitals"
                 element={
-                  <Placeholder title="Record vitals" description="Capture vital signs for the current visit." />
+                  <Placeholder
+                    title="Record vitals"
+                    description="Open a patient chart and use New consultation to capture vitals."
+                  />
                 }
               />
               <Route path="register" element={<PatientRegisterPage />} />

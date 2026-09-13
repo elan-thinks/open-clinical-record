@@ -73,8 +73,8 @@ export function PatientRegisterPage() {
       <div className="breadcrumb">
         <button type="button" onClick={() => navigate('/patients')}>
           Patients
-        </button>{' '}
-        / Register
+        </button>
+        {' \u00b7 '}Register
       </div>
       <h1 className="page-title">Register patient</h1>
       <p className="page-sub">
@@ -138,7 +138,9 @@ export function PatientRegisterPage() {
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => setDateOfBirth(e.target.value)}
               />
-              {fieldErrors.dateOfBirth && <div className="error-msg">{fieldErrors.dateOfBirth}</div>}
+              {fieldErrors.dateOfBirth && (
+                <div className="error-msg">{fieldErrors.dateOfBirth}</div>
+              )}
             </div>
             <div className="field">
               <label className="label">National ID / Passport (optional)</label>
@@ -258,10 +260,11 @@ export function PatientRegisterPage() {
               />
             </div>
           </div>
-          <div className="hint" style={{ marginTop: 12 }}>
-            Patient ID (OCR-xxxxx) is assigned automatically on save. Status <b>Deceased</b> preserves
-            history and blocks new appointments.
-          </div>
+          <p className="section-hint">
+            Patient ID (OCR-xxxxx) is assigned automatically on save. Duplicate detection runs on name
+            + DOB + phone. Status <b>Deceased</b> preserves history and blocks new appointments (see
+            clinical domain rules).
+          </p>
         </div>
 
         <div className="form-actions">

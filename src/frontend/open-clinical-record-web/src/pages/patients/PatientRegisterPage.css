@@ -23,12 +23,14 @@
   font-size: 22px;
   font-weight: 600;
   margin: 0 0 6px;
+  color: var(--text);
 }
 
 .register-page .page-sub {
   font-size: 13px;
   color: var(--text-faint);
-  margin-bottom: 24px;
+  margin: 0 0 24px;
+  line-height: 1.45;
 }
 
 .register-page .panel {
@@ -46,6 +48,7 @@
   margin: 0 0 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line-soft);
+  color: var(--text);
 }
 
 .register-page .form-grid {
@@ -88,19 +91,45 @@
   box-sizing: border-box;
 }
 
+.register-page .select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236d8577' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
 .register-page .input:focus,
 .register-page .select:focus {
   border-color: var(--teal-dim);
 }
 
-.register-page .input.error {
+.register-page .input.error,
+.register-page .select.error {
   border-color: var(--red);
+}
+
+.register-page .input::placeholder {
+  color: var(--text-faint);
 }
 
 .register-page .hint {
   font-size: 12px;
   color: var(--text-faint);
-  margin-top: 4px;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.register-page .section-hint {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+.register-page .section-hint b {
+  color: var(--text-dim);
+  font-weight: 600;
 }
 
 .register-page .error-msg {
@@ -109,8 +138,8 @@
 }
 
 .register-page .error-banner {
-  margin-bottom: 14px;
-  padding: 12px 14px;
+  margin-bottom: 18px;
+  padding: 12px 16px;
   border-radius: 10px;
   background: rgba(232, 119, 138, 0.12);
   border: 1px solid rgba(232, 119, 138, 0.25);
@@ -123,6 +152,7 @@
   justify-content: flex-end;
   gap: 12px;
   margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 .register-page .btn-primary {
@@ -151,6 +181,10 @@
   font-size: 13.5px;
   cursor: pointer;
   font-family: inherit;
+}
+
+.register-page .btn-secondary:hover {
+  color: var(--text);
 }
 
 @media (max-width: 720px) {
