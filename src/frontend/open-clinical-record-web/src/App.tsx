@@ -1,97 +1,132 @@
-import { useCallback, useEffect, useState } from 'react';
-import { fetchHealth, getApiBaseUrl, type HealthStatus } from './services/api';
-import './App.css';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AppShell } from './layouts/AppShell';
+import { DashboardPage } from './pages/DashboardPage';
+import { PlaceholderPage } from './pages/PlaceholderPage';
+import { fetchHealth } from './services/api';
+import { demoUser, getStoredUser } from './services/authStorage';
+import type { AppRole } from './types/auth';
+import { primaryRole } from './utils/navigation';
+
+function pathFromLocation(): string {
+  const path = window.location.pathname.replace(/\/$/, '') || '/dashboard';
+  return path === '/' ? '/dashboard' : path;
+}
+
+function pageMeta(path: string): { title: string; description: string } {
+  const pages: Record<string, { title: string; description: string }> = {
+    '/patients': {
+      title: 'Patients',
+      description: 'Search, register, and open patient records.',
+    },
+    '/chart': {
+      title: 'Medical Chart',
+      description: 'Allergies, medications, alerts, and visit history.',
+    },
+    '/records': {
+      title: 'Medical Records',
+      description: 'Clinical documentation and encounter notes.',
+    },
+    '/appointments': {
+      title: 'Appointments',
+      description: 'Schedule, reschedule, cancel, and view appointment status.',
+    },
+    '/vitals': {
+      title: 'Record vitals',
+      description: 'Capture vital signs for the current visit.',
+    },
+    '/register': {
+      title: 'Registration',
+      description: 'Register a new patient at the front desk.',
+    },
+    '/checkin': {
+      title: 'Check-in / Queue',
+      description: 'Check in arrivals and manage the walk-in queue.',
+    },
+    '/reports': {
+      title: 'Reports',
+      description: 'Operational and clinical summary reports.',
+    },
+    '/profile': {
+      title: 'Profile',
+      description: 'Your account details and preferences.',
+    },
+    '/admin/users': {
+      title: 'Users',
+      description: 'Manage application users and access.',
+    },
+    '/admin/roles': {
+      title: 'Roles & Permissions',
+      description: 'Configure role-based access for the clinic.',
+    },
+    '/admin/audit': {
+      title: 'Audit Logs',
+      description: 'Review security and clinical audit events.',
+    },
+  };
+  return (
+    pages[path] ?? {
+      title: 'Page',
+      description: 'This area will be implemented in a later milestone.',
+    }
+  );
+}
 
 function App() {
-  const [status, setStatus] = useState<HealthStatus>('checking');
-  const [lastChecked, setLastChecked] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const stored = getStoredUser();
+  const [role, setRole] = useState<AppRole>(
+    stored ? primaryRole(stored.roles) : 'Doctor',
+  );
+  const [path, setPath] = useState(pathFromLocation);
+  const [backendOnline, setBackendOnline] = useState(false);
+
+  const user = useMemo(() => stored ?? demoUser(role), [stored, role]);
 
   const checkBackend = useCallback(async () => {
-    setStatus('checking');
-    setErrorMessage(null);
-
     try {
       const data = await fetchHealth();
-      if (data?.status === 'ok') {
-        setStatus('online');
-      } else {
-        setStatus('unavailable');
-        setErrorMessage('Unexpected response from health endpoint');
-      }
-    } catch (err) {
-      setStatus('unavailable');
-      setErrorMessage(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLastChecked(new Date().toLocaleTimeString());
+      setBackendOnline(data?.status === 'ok');
+    } catch {
+      setBackendOnline(false);
     }
   }, []);
 
   useEffect(() => {
     void checkBackend();
+    const onPop = () => setPath(pathFromLocation());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, [checkBackend]);
 
-  const statusLabel =
-    status === 'online'
-      ? 'Backend Online'
-      : status === 'unavailable'
-        ? 'Backend Unavailable'
-        : 'Checking backend…';
+  const navigate = (next: string) => {
+    window.history.pushState({}, '', next);
+    setPath(next);
+  };
 
-  const statusKey =
-    status === 'online' ? 'online' : status === 'unavailable' ? 'offline' : 'checking';
+  const handleRoleChange = (next: AppRole) => {
+    setRole(next);
+    navigate('/dashboard');
+  };
+
+  let body;
+  if (path === '/dashboard') {
+    body = <DashboardPage role={role} userName={user.fullName} />;
+  } else {
+    const meta = pageMeta(path);
+    body = <PlaceholderPage title={meta.title} description={meta.description} />;
+  }
 
   return (
-    <div className="app">
-      <header className="header">
-        <div className="brand-mark" aria-hidden>
-          OCR
-        </div>
-        <div className="brand-text">
-          <h1 className="brand-name">Open Clinical Record</h1>
-          <p className="brand-sub">Project status: Foundation</p>
-        </div>
-      </header>
-
-      <main className="main">
-        <div className="hero">
-          <p className="hero-eyebrow">Milestone 1</p>
-          <h2 className="hero-title">
-            Application foundation is <b>running</b>
-          </h2>
-          <p className="hero-desc">
-            Backend API and frontend shell are connected. Authentication, database, and business
-            modules are not implemented yet.
-          </p>
-        </div>
-
-        <section className="card">
-          <h2>Backend connection</h2>
-          <div className="status-row">
-            <span className={`status-dot ${statusKey}`} aria-hidden />
-            <p className={`status-label ${statusKey}`}>{statusLabel}</p>
-          </div>
-          <p className="meta">
-            API base: <code>{getApiBaseUrl()}</code>
-          </p>
-          {lastChecked && <p className="meta">Last checked: {lastChecked}</p>}
-          {errorMessage && <p className="error">{errorMessage}</p>}
-          <button type="button" onClick={() => void checkBackend()} className="btn">
-            Refresh status
-          </button>
-        </section>
-
-        <section className="card muted">
-          <h2>What comes next</h2>
-          <p>
-            Later milestones will add the role-aware shell, login, patient management, medical
-            chart, and appointments — matching the approved UI mocks.
-          </p>
-        </section>
-
-        <p className="footer-note">Open Clinical Record · Internship MVP</p>
-      </main>
-    </div>
+    <AppShell
+      role={role}
+      userName={user.fullName}
+      userEmail={user.email}
+      currentPath={path}
+      onNavigate={navigate}
+      onRoleChange={handleRoleChange}
+      backendOnline={backendOnline}
+    >
+      {body}
+    </AppShell>
   );
 }
 
