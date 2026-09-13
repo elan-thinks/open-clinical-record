@@ -4,9 +4,6 @@ using OpenClinicalRecord.Api.Models.Entities;
 
 namespace OpenClinicalRecord.Api.Data;
 
-/// <summary>
-/// Application database context including ASP.NET Core Identity tables.
-/// </summary>
 public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options)
@@ -15,6 +12,12 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     }
 
     public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<PatientAllergy> PatientAllergies => Set<PatientAllergy>();
+    public DbSet<MedicalHistoryItem> MedicalHistoryItems => Set<MedicalHistoryItem>();
+    public DbSet<ClinicalVisit> ClinicalVisits => Set<ClinicalVisit>();
+    public DbSet<VitalSigns> VitalSigns => Set<VitalSigns>();
+    public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
+    public DbSet<ClinicalNote> ClinicalNotes => Set<ClinicalNote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,6 +51,79 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(p => p.Notes).HasMaxLength(500);
             entity.Property(p => p.IsActive).HasDefaultValue(true);
             entity.HasIndex(p => new { p.LastName, p.FirstName });
+        });
+
+        modelBuilder.Entity<PatientAllergy>(entity =>
+        {
+            entity.ToTable("PatientAllergies");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Substance).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Reaction).HasMaxLength(200);
+            entity.Property(x => x.Severity).HasMaxLength(32).IsRequired();
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.PatientId);
+        });
+
+        modelBuilder.Entity<MedicalHistoryItem>(entity =>
+        {
+            entity.ToTable("MedicalHistoryItems");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Category).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Description).HasMaxLength(500).IsRequired();
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.PatientId);
+        });
+
+        modelBuilder.Entity<ClinicalVisit>(entity =>
+        {
+            entity.ToTable("ClinicalVisits");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.VisitType).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.ChiefComplaint).HasMaxLength(500);
+            entity.Property(x => x.Plan).HasMaxLength(1000);
+            entity.Property(x => x.Instructions).HasMaxLength(500);
+            entity.Property(x => x.ClinicianUserId).HasMaxLength(450);
+            entity.Property(x => x.ClinicianName).HasMaxLength(200);
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.PatientId);
+            entity.HasIndex(x => x.VisitDate);
+        });
+
+        modelBuilder.Entity<VitalSigns>(entity =>
+        {
+            entity.ToTable("VitalSigns");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.BloodPressure).HasMaxLength(20);
+            entity.Property(x => x.TemperatureC).HasPrecision(4, 1);
+            entity.Property(x => x.WeightKg).HasPrecision(6, 2);
+            entity.Property(x => x.HeightCm).HasPrecision(5, 1);
+            entity.Property(x => x.RecordedByUserId).HasMaxLength(450);
+            entity.Property(x => x.RecordedByName).HasMaxLength(200);
+            entity.HasOne(x => x.Visit).WithOne(v => v.VitalSigns).HasForeignKey<VitalSigns>(x => x.VisitId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.VisitId).IsUnique();
+        });
+
+        modelBuilder.Entity<Diagnosis>(entity =>
+        {
+            entity.ToTable("Diagnoses");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Code).HasMaxLength(32);
+            entity.Property(x => x.Description).HasMaxLength(500).IsRequired();
+            entity.HasOne(x => x.Visit).WithMany(v => v.Diagnoses).HasForeignKey(x => x.VisitId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.VisitId);
+        });
+
+        modelBuilder.Entity<ClinicalNote>(entity =>
+        {
+            entity.ToTable("ClinicalNotes");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.NoteType).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Content).IsRequired();
+            entity.Property(x => x.AuthorUserId).HasMaxLength(450);
+            entity.Property(x => x.AuthorName).HasMaxLength(200);
+            entity.HasOne(x => x.Visit).WithMany(v => v.Notes).HasForeignKey(x => x.VisitId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.VisitId);
         });
     }
 }
