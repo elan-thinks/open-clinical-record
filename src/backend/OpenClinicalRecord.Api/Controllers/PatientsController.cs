@@ -17,6 +17,11 @@ public class PatientsController : ControllerBase
         "Female", "Male", "Other", "Unknown"
     };
 
+    private static readonly HashSet<string> AllowedStatus = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Active", "Inactive", "Deceased"
+    };
+
     private readonly AppDbContext _db;
 
     public PatientsController(AppDbContext db)
@@ -24,10 +29,6 @@ public class PatientsController : ControllerBase
         _db = db;
     }
 
-    /// <summary>
-    /// List/search patients. q matches name, MRN, phone, email.
-    /// status: active | inactive | all (default active).
-    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<PatientDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
@@ -40,9 +41,10 @@ public class PatientsController : ControllerBase
         var statusKey = (status ?? "active").Trim().ToLowerInvariant();
         query = statusKey switch
         {
-            "inactive" => query.Where(p => !p.IsActive),
+            "inactive" => query.Where(p => p.Status == "Inactive" || (!p.IsActive && p.Status != "Deceased")),
+            "deceased" => query.Where(p => p.Status == "Deceased"),
             "all" => query,
-            _ => query.Where(p => p.IsActive)
+            _ => query.Where(p => p.IsActive && p.Status != "Deceased")
         };
 
         if (!string.IsNullOrWhiteSpace(q))
@@ -93,12 +95,13 @@ public class PatientsController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        var validationError = ValidateDemographics(request.DateOfBirth, request.Sex);
+        var validationError = ValidateDemographics(request.DateOfBirth, request.Sex, request.Status);
         if (validationError is not null)
         {
             return BadRequest(new { message = validationError });
         }
 
+        var status = NormalizeStatus(request.Status);
         var mrn = await NextMrnAsync(cancellationToken);
 
         var patient = new Patient
@@ -108,9 +111,18 @@ public class PatientsController : ControllerBase
             LastName = request.LastName.Trim(),
             DateOfBirth = request.DateOfBirth,
             Sex = NormalizeSex(request.Sex),
-            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
-            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
-            IsActive = true,
+            Status = status,
+            NationalId = NullIfEmpty(request.NationalId),
+            Phone = request.Phone!.Trim(),
+            SecondaryPhone = NullIfEmpty(request.SecondaryPhone),
+            Email = NullIfEmpty(request.Email),
+            Address = NullIfEmpty(request.Address),
+            City = NullIfEmpty(request.City) ?? "Addis Ababa",
+            EmergencyContactName = NullIfEmpty(request.EmergencyContactName),
+            PreferredLanguage = NullIfEmpty(request.PreferredLanguage),
+            InsuranceScheme = NullIfEmpty(request.InsuranceScheme),
+            Notes = NullIfEmpty(request.Notes),
+            IsActive = status == "Active",
             CreatedAt = DateTimeOffset.UtcNow
         };
 
@@ -132,7 +144,7 @@ public class PatientsController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        var validationError = ValidateDemographics(request.DateOfBirth, request.Sex);
+        var validationError = ValidateDemographics(request.DateOfBirth, request.Sex, request.Status);
         if (validationError is not null)
         {
             return BadRequest(new { message = validationError });
@@ -144,13 +156,23 @@ public class PatientsController : ControllerBase
             return NotFound(new { message = "Patient not found." });
         }
 
+        var status = NormalizeStatus(request.Status);
         patient.FirstName = request.FirstName.Trim();
         patient.LastName = request.LastName.Trim();
         patient.DateOfBirth = request.DateOfBirth;
         patient.Sex = NormalizeSex(request.Sex);
-        patient.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
-        patient.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
-        patient.IsActive = request.IsActive;
+        patient.Status = status;
+        patient.NationalId = NullIfEmpty(request.NationalId);
+        patient.Phone = request.Phone!.Trim();
+        patient.SecondaryPhone = NullIfEmpty(request.SecondaryPhone);
+        patient.Email = NullIfEmpty(request.Email);
+        patient.Address = NullIfEmpty(request.Address);
+        patient.City = NullIfEmpty(request.City);
+        patient.EmergencyContactName = NullIfEmpty(request.EmergencyContactName);
+        patient.PreferredLanguage = NullIfEmpty(request.PreferredLanguage);
+        patient.InsuranceScheme = NullIfEmpty(request.InsuranceScheme);
+        patient.Notes = NullIfEmpty(request.Notes);
+        patient.IsActive = status == "Active";
         patient.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
@@ -158,19 +180,47 @@ public class PatientsController : ControllerBase
         return Ok(ToDto(patient));
     }
 
-    private static string? ValidateDemographics(DateOnly? dob, string? sex)
+    private static string? ValidateDemographics(DateOnly? dob, string? sex, string? status)
     {
-        if (dob.HasValue && dob.Value > DateOnly.FromDateTime(DateTime.UtcNow))
+        if (!dob.HasValue)
+        {
+            return "Date of birth is required.";
+        }
+
+        if (dob.Value > DateOnly.FromDateTime(DateTime.UtcNow))
         {
             return "Date of birth cannot be in the future.";
         }
 
-        if (!string.IsNullOrWhiteSpace(sex) && !AllowedSex.Contains(sex.Trim()))
+        if (string.IsNullOrWhiteSpace(sex) || !AllowedSex.Contains(sex.Trim()))
         {
             return "Sex must be Female, Male, Other, or Unknown.";
         }
 
+        if (!string.IsNullOrWhiteSpace(status) && !AllowedStatus.Contains(status.Trim()))
+        {
+            return "Status must be Active, Inactive, or Deceased.";
+        }
+
         return null;
+    }
+
+    private static string NormalizeStatus(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return "Active";
+        }
+
+        foreach (var a in AllowedStatus)
+        {
+            if (string.Equals(a, status.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return a;
+            }
+        }
+
+        return "Active";
     }
 
     private static string? NormalizeSex(string? sex)
@@ -192,6 +242,9 @@ public class PatientsController : ControllerBase
         return t;
     }
 
+    private static string? NullIfEmpty(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     private static PatientDto ToDto(Patient p) => new()
     {
         Id = p.Id,
@@ -200,8 +253,17 @@ public class PatientsController : ControllerBase
         LastName = p.LastName,
         DateOfBirth = p.DateOfBirth,
         Sex = p.Sex,
+        Status = p.Status,
+        NationalId = p.NationalId,
         Phone = p.Phone,
+        SecondaryPhone = p.SecondaryPhone,
         Email = p.Email,
+        Address = p.Address,
+        City = p.City,
+        EmergencyContactName = p.EmergencyContactName,
+        PreferredLanguage = p.PreferredLanguage,
+        InsuranceScheme = p.InsuranceScheme,
+        Notes = p.Notes,
         IsActive = p.IsActive,
         CreatedAt = p.CreatedAt
     };
