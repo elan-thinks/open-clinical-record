@@ -1,4 +1,4 @@
-import type { AppRole, AuthUser } from '../types/auth';
+import type { AuthUser } from '../types/auth';
 
 const TOKEN_KEY = 'ocr_access_token';
 const USER_KEY = 'ocr_user';
@@ -25,20 +25,4 @@ export function getStoredUser(): AuthUser | null {
   } catch {
     return null;
   }
-}
-
-/** Demo user when not logged in yet — layout still works. */
-export function demoUser(role: AppRole): AuthUser {
-  const names: Record<AppRole, string> = {
-    Doctor: 'Dr. Samuel Clinician',
-    Nurse: 'Nurse Ayana',
-    Receptionist: 'Front Desk',
-    Admin: 'System Administrator',
-  };
-  return {
-    id: 'demo',
-    email: `${role.toLowerCase()}@clinic.local`,
-    fullName: names[role],
-    roles: [role],
-  };
 }
