@@ -19,9 +19,6 @@ public class HealthController : ControllerBase
         _configuration = configuration;
     }
 
-    /// <summary>
-    /// Basic liveness: API is up.
-    /// </summary>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Get()
@@ -31,7 +28,7 @@ public class HealthController : ControllerBase
 
     /// <summary>
     /// Readiness: API + database connectivity.
-    /// In Development, includes the failure reason to aid local setup.
+    /// Opens a real connection so PostgreSQL errors are visible in Development.
     /// </summary>
     [HttpGet("ready")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -43,11 +40,16 @@ public class HealthController : ControllerBase
 
         try
         {
-            var canConnect = await _db.Database.CanConnectAsync(cancellationToken);
-            database = canConnect ? "ok" : "unavailable";
-            if (!canConnect)
+            // Force a real open so auth / missing-DB errors surface clearly
+            await _db.Database.OpenConnectionAsync(cancellationToken);
+            try
             {
-                error = "CanConnectAsync returned false (server reachable but database may be missing or auth failed).";
+                await _db.Database.ExecuteSqlRawAsync("SELECT 1", cancellationToken);
+                database = "ok";
+            }
+            finally
+            {
+                await _db.Database.CloseConnectionAsync();
             }
         }
         catch (Exception ex)
@@ -59,17 +61,14 @@ public class HealthController : ControllerBase
         object payload;
         if (_env.IsDevelopment())
         {
-            // Safe for local debugging only — shows host/db/user, never the password.
             var cs = _configuration.GetConnectionString("DefaultConnection") ?? "";
-            var redacted = RedactConnectionString(cs);
-
             payload = new
             {
                 status = database == "ok" ? "ok" : "degraded",
                 api = "ok",
                 database,
                 error,
-                connection = redacted
+                connection = RedactConnectionString(cs)
             };
         }
         else
@@ -97,7 +96,6 @@ public class HealthController : ControllerBase
             return "(empty)";
         }
 
-        // Mask Password=...
         var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         for (var i = 0; i < parts.Length; i++)
         {
