@@ -32,7 +32,6 @@ jobs:
         run: |
           dotnet restore
           dotnet test --no-restore -c Release --verbosity normal
-        continue-on-error: true
 
   frontend:
     runs-on: ubuntu-latest
@@ -50,8 +49,13 @@ jobs:
           cache: npm
           cache-dependency-path: src/frontend/open-clinical-record-web/package-lock.json
 
-      - name: Install
-        run: npm ci || npm install
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
-      - name: Build
+      - name: Typecheck and build
         run: npm run build
