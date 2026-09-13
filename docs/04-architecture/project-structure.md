@@ -93,8 +93,9 @@ Do not use a permanent wildcard origin.
 - PostgreSQL via **Npgsql + Entity Framework Core**
 - `AppDbContext` registered in DI (`Data/AppDbContext.cs`)
 - Connection string: `ConnectionStrings:DefaultConnection`
-- Development default: `Host=localhost;Port=5432;Database=open_clinical_record;Username=postgres;Password=postgres`
-- Override with environment variable `ConnectionStrings__DefaultConnection` (never commit real secrets)
+- Development default (no password in file): `Host=localhost;Port=5432;Database=open_clinical_record;Username=postgres`
+- Password from environment variable **`NOVATECH_PG_PASSWORD`** (preferred)
+- Or full override: `ConnectionStrings__DefaultConnection` (never commit real secrets)
 - Health endpoints:
   - `GET /api/health` — API liveness
   - `GET /api/health/ready` — API + database connectivity
