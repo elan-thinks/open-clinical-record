@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { AppRole } from '../types/auth';
-import { getNavForRole } from '../utils/navigation';
+import { getNavForRole, navIcon } from '../utils/navigation';
+import { NavIcon } from './NavIcon';
 import './AppShell.css';
 
 interface AppShellProps {
@@ -23,25 +24,6 @@ function initials(name: string): string {
     .join('');
 }
 
-function titleFromPath(path: string): string {
-  const map: Record<string, string> = {
-    '/dashboard': 'Dashboard',
-    '/patients': 'Patients',
-    '/chart': 'Medical Chart',
-    '/records': 'Medical Records',
-    '/appointments': 'Appointments',
-    '/vitals': 'Record vitals',
-    '/register': 'Registration',
-    '/checkin': 'Check-in / Queue',
-    '/reports': 'Reports',
-    '/profile': 'Profile',
-    '/admin/users': 'Users',
-    '/admin/roles': 'Roles & Permissions',
-    '/admin/audit': 'Audit Logs',
-  };
-  return map[path] ?? 'Open Clinical Record';
-}
-
 export function AppShell({
   role,
   userName,
@@ -56,7 +38,7 @@ export function AppShell({
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="sidebar-brand">
+        <div className="brand">
           <div className="brand-mark">OCR</div>
           <div>
             <div className="brand-name">Open Clinical Record</div>
@@ -75,6 +57,9 @@ export function AppShell({
                   className={`nav-item${currentPath === item.path ? ' active' : ''}`}
                   onClick={() => onNavigate(item.path)}
                 >
+                  <span className="nav-ico">
+                    <NavIcon name={navIcon(item.path)} />
+                  </span>
                   {item.label}
                 </button>
               ))}
@@ -85,11 +70,15 @@ export function AppShell({
         <div className="sidebar-foot">
           <div className="user-row">
             <div className="user-av">{initials(userName) || 'U'}</div>
-            <div className="user-meta">
+            <div>
               <div className="user-name">{userName}</div>
-              <div className="user-role">{role}</div>
+              <div className="user-role">{role === 'Doctor' ? 'Clinician' : role}</div>
             </div>
           </div>
+          <span className="status-chip">
+            <span className={`status-dot${backendOnline ? '' : ' off'}`} />
+            {backendOnline ? 'API online' : 'API offline'}
+          </span>
           {onLogout && (
             <button type="button" className="logout-btn" onClick={onLogout}>
               Sign out
@@ -99,16 +88,7 @@ export function AppShell({
       </aside>
 
       <div className="shell-main">
-        <header className="topbar">
-          <h1 className="topbar-title">{titleFromPath(currentPath)}</h1>
-          <div className="topbar-actions">
-            <span className="status-chip">
-              <span className={`status-dot${backendOnline ? '' : ' off'}`} />
-              {backendOnline ? 'API online' : 'API offline'}
-            </span>
-          </div>
-        </header>
-        <main className="content">{children}</main>
+        <div className="shell-content">{children}</div>
       </div>
     </div>
   );
