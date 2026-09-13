@@ -7,13 +7,47 @@ namespace OpenClinicalRecord.Api.Data;
 
 public static class IdentityDataSeeder
 {
-    public static async Task SeedAsync(IServiceProvider services)
+    public static async Task SeedAsync(IServiceProvider services, ILogger? logger = null)
     {
         using var scope = services.CreateScope();
         var sp = scope.ServiceProvider;
 
         var db = sp.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
+
+        // Apply any pending EF Core migrations (creates AspNet* tables)
+        var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
+        if (pending.Count > 0)
+        {
+            logger?.LogInformation("Applying {Count} pending migration(s): {Migrations}",
+                pending.Count, string.Join(", ", pending));
+            await db.Database.MigrateAsync();
+        }
+        else
+        {
+            // Still call Migrate to ensure history is consistent
+            await db.Database.MigrateAsync();
+        }
+
+        // Verify Identity tables exist
+        var canConnect = await db.Database.CanConnectAsync();
+        if (!canConnect)
+        {
+            throw new InvalidOperationException("Cannot connect to the database after MigrateAsync.");
+        }
+
+        try
+        {
+            // Touch a known Identity table; if missing, migration assembly was incomplete
+            await db.Database.ExecuteSqlRawAsync("""SELECT 1 FROM "AspNetRoles" LIMIT 1""");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                "Identity tables are missing after migration. " +
+                "Ensure Data/Migrations contains InitialIdentity and rebuild the project. " +
+                "You can also run: dotnet ef database update",
+                ex);
+        }
 
         var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
@@ -26,13 +60,14 @@ public static class IdentityDataSeeder
             }
         }
 
-        // Dev-only seed users (password from env OCR_SEED_PASSWORD or default Dev@12345)
         var seedPassword = Environment.GetEnvironmentVariable("OCR_SEED_PASSWORD") ?? "Dev@12345";
 
         await EnsureUserAsync(userManager, "admin@clinic.local", "System Administrator", AppRoles.Admin, seedPassword);
         await EnsureUserAsync(userManager, "doctor@clinic.local", "Dr. Samuel Clinician", AppRoles.Doctor, seedPassword);
         await EnsureUserAsync(userManager, "nurse@clinic.local", "Nurse Ayana", AppRoles.Nurse, seedPassword);
         await EnsureUserAsync(userManager, "desk@clinic.local", "Front Desk", AppRoles.Receptionist, seedPassword);
+
+        logger?.LogInformation("Identity roles and seed users are ready.");
     }
 
     private static async Task EnsureUserAsync(

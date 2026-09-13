@@ -32,8 +32,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    // Apply migrations + seed roles/users in development
-    await IdentityDataSeeder.SeedAsync(app.Services);
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    await IdentityDataSeeder.SeedAsync(app.Services, logger);
 }
 
 app.UseCors(CorsPolicyName);
