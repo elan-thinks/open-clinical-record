@@ -24,16 +24,19 @@ export function RolesPage() {
   }, [load]);
 
   return (
-    <div>
-      <div className="admin-toolbar">
-        <h2>Roles &amp; Permissions</h2>
+    <div className="admin-page">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Roles &amp; Permissions</h1>
+          <p className="page-sub">Fixed MVP roles enforced by the API</p>
+        </div>
       </div>
 
       {error && <p className="admin-error">{error}</p>}
 
       <div className="admin-panel">
         {loading ? (
-          <p style={{ padding: 16, color: 'var(--text-dim)' }}>Loading roles…</p>
+          <p style={{ padding: 16, color: 'var(--text-dim)' }}>Loading roles...</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -60,7 +63,7 @@ export function RolesPage() {
 
       <p className="admin-note">
         Roles are fixed for the MVP (Doctor, Nurse, Receptionist, Admin). Permissions are enforced
-        by API policies; fine-grained permission editing can be added later.
+        by API policies.
       </p>
     </div>
   );

@@ -73,11 +73,14 @@ export function UsersPage() {
   }
 
   return (
-    <div>
-      <div className="admin-toolbar">
-        <h2>Users</h2>
+    <div className="admin-page">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Users</h1>
+          <p className="page-sub">Manage application accounts and role assignment</p>
+        </div>
         <button type="button" className="admin-btn" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? 'Cancel' : 'Add user'}
+          {showForm ? 'Cancel' : '+ Add user'}
         </button>
       </div>
 
@@ -122,19 +125,18 @@ export function UsersPage() {
               ))}
             </div>
             <button className="admin-btn" type="submit" disabled={saving || roles.length === 0}>
-              {saving ? 'Saving\u2026' : 'Create user'}
+              {saving ? 'Saving...' : 'Create user'}
             </button>
           </form>
         )}
 
         {loading ? (
-          <p style={{ padding: 16, color: 'var(--text-dim)' }}>Loading users\u2026</p>
+          <p style={{ padding: 16, color: 'var(--text-dim)' }}>Loading users...</p>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
+                <th>User</th>
                 <th>Roles</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -143,8 +145,10 @@ export function UsersPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id}>
-                  <td>{u.fullName}</td>
-                  <td>{u.email}</td>
+                  <td>
+                    <b>{u.fullName}</b>
+                    <div style={{ fontSize: 12, color: 'var(--text-faint)' }}>{u.email}</div>
+                  </td>
                   <td>
                     {u.roles.map((r) => (
                       <span key={r} className="badge b-role">
@@ -170,8 +174,7 @@ export function UsersPage() {
       </div>
 
       <p className="admin-note">
-        Only administrators can manage users. Deactivated users cannot sign in. Password policy is
-        enforced by the API (min 8 characters, mixed case, digit).
+        Only administrators can manage users. Deactivated users cannot sign in.
       </p>
     </div>
   );
