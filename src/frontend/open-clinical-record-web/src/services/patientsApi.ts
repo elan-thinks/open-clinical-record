@@ -8,21 +8,39 @@ export interface Patient {
   lastName: string;
   dateOfBirth?: string | null;
   sex?: string | null;
+  status?: string;
+  nationalId?: string | null;
   phone?: string | null;
+  secondaryPhone?: string | null;
   email?: string | null;
+  address?: string | null;
+  city?: string | null;
+  emergencyContactName?: string | null;
+  preferredLanguage?: string | null;
+  insuranceScheme?: string | null;
+  notes?: string | null;
   isActive: boolean;
   createdAt: string;
 }
 
-export type PatientStatusFilter = 'active' | 'inactive' | 'all';
+export type PatientStatusFilter = 'active' | 'inactive' | 'all' | 'deceased';
 
 export interface PatientWritePayload {
   firstName: string;
   lastName: string;
   dateOfBirth?: string;
   sex?: string;
+  status?: string;
+  nationalId?: string;
   phone?: string;
+  secondaryPhone?: string;
   email?: string;
+  address?: string;
+  city?: string;
+  emergencyContactName?: string;
+  preferredLanguage?: string;
+  insuranceScheme?: string;
+  notes?: string;
   isActive?: boolean;
 }
 
@@ -54,6 +72,27 @@ async function parseError(response: Response): Promise<string> {
   return `Request failed (${response.status})`;
 }
 
+function writeBody(body: PatientWritePayload) {
+  return {
+    firstName: body.firstName,
+    lastName: body.lastName,
+    dateOfBirth: body.dateOfBirth || null,
+    sex: body.sex || null,
+    status: body.status || 'Active',
+    nationalId: body.nationalId || null,
+    phone: body.phone || null,
+    secondaryPhone: body.secondaryPhone || null,
+    email: body.email || null,
+    address: body.address || null,
+    city: body.city || null,
+    emergencyContactName: body.emergencyContactName || null,
+    preferredLanguage: body.preferredLanguage || null,
+    insuranceScheme: body.insuranceScheme || null,
+    notes: body.notes || null,
+    isActive: body.isActive ?? (body.status !== 'Inactive' && body.status !== 'Deceased'),
+  };
+}
+
 export async function listPatients(
   q?: string,
   status: PatientStatusFilter = 'active',
@@ -81,7 +120,7 @@ export async function createPatient(body: PatientWritePayload): Promise<Patient>
   const res = await fetch(`${base}/api/patients`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify(body),
+    body: JSON.stringify(writeBody(body)),
   });
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as Patient;
@@ -92,15 +131,7 @@ export async function updatePatient(id: string, body: PatientWritePayload): Prom
   const res = await fetch(`${base}/api/patients/${id}`, {
     method: 'PUT',
     headers: authHeaders(),
-    body: JSON.stringify({
-      firstName: body.firstName,
-      lastName: body.lastName,
-      dateOfBirth: body.dateOfBirth || null,
-      sex: body.sex || null,
-      phone: body.phone || null,
-      email: body.email || null,
-      isActive: body.isActive ?? true,
-    }),
+    body: JSON.stringify(writeBody(body)),
   });
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as Patient;
