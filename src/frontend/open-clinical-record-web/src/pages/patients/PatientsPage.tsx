@@ -1,10 +1,31 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   createPatient,
   listPatients,
   type Patient,
 } from '../../services/patientsApi';
-import '../admin/UsersPage.css';
+import './PatientsPage.css';
+
+function initials(first: string, last: string): string {
+  return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
+}
+
+function ageFromDob(dob?: string | null): string {
+  if (!dob) return '\u2014';
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return '\u2014';
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+  return String(age);
+}
+
+function sexAge(p: Patient): string {
+  const sex = p.sex ? p.sex[0]?.toUpperCase() : '\u2014';
+  const age = ageFromDob(p.dateOfBirth);
+  return `${sex} \u00b7 ${age}`;
+}
 
 export function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -36,6 +57,12 @@ export function PatientsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const countLabel = useMemo(() => {
+    if (loading) return 'Loading\u2026';
+    const n = patients.length;
+    return n === 1 ? '1 patient' : `${n} patients`;
+  }, [loading, patients.length]);
 
   async function onSearch(e: FormEvent) {
     e.preventDefault();
@@ -71,122 +98,179 @@ export function PatientsPage() {
   }
 
   return (
-    <div>
-      <div className="admin-toolbar">
-        <h2>Patients</h2>
-        <button type="button" className="admin-btn" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? 'Cancel' : 'Register patient'}
+    <div className="patients-page">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">Patients</h1>
+          <p className="page-sub">
+            Search, register, and open patient records \u00b7 {countLabel}
+          </p>
+        </div>
+        <button type="button" className="btn-primary" onClick={() => setShowForm((v) => !v)}>
+          {showForm ? 'Close form' : '+ Register patient'}
         </button>
       </div>
 
-      <form className="admin-form-row" onSubmit={onSearch} style={{ marginBottom: 14 }}>
-        <input
-          placeholder="Search name, MRN, phone, email\u2026"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          style={{
-            flex: 1,
-            background: 'var(--surface)',
-            border: '1px solid var(--line)',
-            borderRadius: 10,
-            padding: '10px 12px',
-            color: 'var(--text)',
-            fontSize: 13.5,
-          }}
-        />
-        <button type="submit" className="admin-btn secondary">
+      {error && <div className="error-banner">{error}</div>}
+
+      {showForm && (
+        <div className="panel form-panel">
+          <div className="section-title">New patient registration</div>
+          <form onSubmit={onCreate}>
+            <div className="form-grid">
+              <div className="field">
+                <label className="label">
+                  First name <span className="req">*</span>
+                </label>
+                <input
+                  className="input"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label className="label">
+                  Last name <span className="req">*</span>
+                </label>
+                <input
+                  className="input"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label className="label">Date of birth</label>
+                <input
+                  className="input"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label className="label">Sex</label>
+                <select className="select" value={sex} onChange={(e) => setSex(e.target.value)}>
+                  <option value="">Select\u2026</option>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                  <option value="Unknown">Unknown</option>
+                </select>
+              </div>
+              <div className="field">
+                <label className="label">Phone</label>
+                <input
+                  className="input"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+251 \u2026"
+                />
+              </div>
+              <div className="field">
+                <label className="label">Email</label>
+                <input
+                  className="input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="form-actions">
+              <button type="button" className="btn-ghost" onClick={() => setShowForm(false)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary" disabled={saving}>
+                {saving ? 'Saving\u2026' : 'Create patient'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <form className="toolbar" onSubmit={onSearch}>
+        <div className="search-box">
+          <span aria-hidden="true">\u2315</span>
+          <input
+            placeholder="Search name, MRN, phone, email\u2026"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+        <div className="filter-pills">
+          <button type="button" className="filter-pill active">
+            Active
+          </button>
+        </div>
+        <button type="submit" className="btn-ghost">
           Search
         </button>
       </form>
 
-      {error && <p className="admin-error">{error}</p>}
-
-      <div className="admin-panel">
-        {showForm && (
-          <form className="admin-form" onSubmit={onCreate}>
-            <div className="admin-form-row">
-              <input
-                placeholder="First name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-              />
-              <input
-                placeholder="Last name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
-              <input
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-              />
-            </div>
-            <div className="admin-form-row">
-              <select value={sex} onChange={(e) => setSex(e.target.value)}>
-                <option value="">Sex (optional)</option>
-                <option value="Female">Female</option>
-                <option value="Male">Male</option>
-                <option value="Other">Other</option>
-                <option value="Unknown">Unknown</option>
-              </select>
-              <input
-                placeholder="Phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <button className="admin-btn" type="submit" disabled={saving}>
-              {saving ? 'Saving\u2026' : 'Create patient'}
-            </button>
-          </form>
-        )}
-
+      <div className="panel">
         {loading ? (
-          <p style={{ padding: 16, color: 'var(--text-dim)' }}>Loading patients\u2026</p>
+          <div className="empty">Loading patients\u2026</div>
         ) : patients.length === 0 ? (
-          <p style={{ padding: 16, color: 'var(--text-dim)' }}>No patients found.</p>
+          <div className="empty">No patients found. Register a patient to get started.</div>
         ) : (
-          <table className="admin-table">
+          <table>
             <thead>
               <tr>
-                <th>MRN</th>
-                <th>Name</th>
-                <th>DOB</th>
-                <th>Sex</th>
+                <th>Patient</th>
+                <th>Sex \u00b7 Age</th>
                 <th>Phone</th>
+                <th>Registered</th>
+                <th>Status</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {patients.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <span className="badge b-role">{p.medicalRecordNumber}</span>
+                    <div className="patient-cell">
+                      <div className="avatar">{initials(p.firstName, p.lastName)}</div>
+                      <div>
+                        <div className="p-name">
+                          {p.firstName} {p.lastName}
+                        </div>
+                        <div className="p-id">{p.medicalRecordNumber}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{sexAge(p)}</td>
+                  <td>{p.phone ?? '\u2014'}</td>
+                  <td>
+                    {p.createdAt
+                      ? new Date(p.createdAt).toLocaleDateString(undefined, {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : '\u2014'}
                   </td>
                   <td>
-                    {p.lastName}, {p.firstName}
+                    <span
+                      className={`status-badge ${
+                        p.isActive ? 'status-active' : 'status-inactive'
+                      }`}
+                    >
+                      {p.isActive ? 'Active' : 'Inactive'}
+                    </span>
                   </td>
-                  <td>{p.dateOfBirth ?? '\u2014'}</td>
-                  <td>{p.sex ?? '\u2014'}</td>
-                  <td>{p.phone ?? '\u2014'}</td>
+                  <td>
+                    <button type="button" className="action-link" disabled title="Coming soon">
+                      Open chart
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
-
-      <p className="admin-note">
-        MRN is assigned automatically (OCR-######). Chart and clinical modules will link to these
-        records in later milestones.
-      </p>
     </div>
   );
 }
