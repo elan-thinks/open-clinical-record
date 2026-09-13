@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { AppRole } from '../types/auth';
 import { getNavForRole, navIcon } from '../utils/navigation';
 import { NavIcon } from './NavIcon';
@@ -34,16 +34,37 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const groups = getNavForRole(role);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const navigate = (path: string) => {
+    setMobileNavOpen(false);
+    onNavigate(path);
+  };
 
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <button
+        type="button"
+        className={`mobile-menu-backdrop${mobileNavOpen ? ' open' : ''}`}
+        aria-label="Close navigation"
+        onClick={() => setMobileNavOpen(false)}
+      />
+
+      <aside className={`sidebar${mobileNavOpen ? ' mobile-open' : ''}`}>
         <div className="brand">
           <div className="brand-mark">OCR</div>
           <div>
             <div className="brand-name">Open Clinical Record</div>
             <div className="brand-sub">Outpatient EMR</div>
           </div>
+          <button
+            type="button"
+            className="mobile-close"
+            aria-label="Close navigation"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            ×
+          </button>
         </div>
 
         <nav className="nav" aria-label="Main">
@@ -55,7 +76,7 @@ export function AppShell({
                   key={item.path}
                   type="button"
                   className={`nav-item${currentPath === item.path ? ' active' : ''}`}
-                  onClick={() => onNavigate(item.path)}
+                  onClick={() => navigate(item.path)}
                 >
                   <span className="nav-ico">
                     <NavIcon name={navIcon(item.path)} />
@@ -88,6 +109,28 @@ export function AppShell({
       </aside>
 
       <div className="shell-main">
+        <header className="mobile-header">
+          <button
+            type="button"
+            className="mobile-menu-btn"
+            aria-label="Open navigation"
+            aria-expanded={mobileNavOpen}
+            onClick={() => setMobileNavOpen(true)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+          <div className="mobile-brand">
+            <div className="brand-mark">OCR</div>
+            <div>
+              <div className="brand-name">Open Clinical Record</div>
+              <div className="brand-sub">Outpatient EMR</div>
+            </div>
+          </div>
+          <div className="mobile-user-av">{initials(userName) || 'U'}</div>
+        </header>
+
         <div className="shell-content">{children}</div>
       </div>
     </div>
