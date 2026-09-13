@@ -4,6 +4,23 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg: #0c1310;
+  --surface: #121a15;
+  --surface-2: #16201a;
+  --line: #1e2b23;
+  --line-soft: #182219;
+  --text: #eef3ef;
+  --text-dim: #a7bdae;
+  --text-faint: #6d8577;
+  --teal: #3ddc97;
+  --teal-dim: #29a874;
+  --teal-glow: rgba(61, 220, 151, 0.16);
+  --amber: #eab35a;
+  --red: #e8778a;
+  --sidebar-width: 240px;
+}
+
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -13,10 +30,20 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #0c1310;
-  color: #eef3ef;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
 #root {
   min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
 }
