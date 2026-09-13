@@ -35,8 +35,17 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(p => p.FirstName).HasMaxLength(100).IsRequired();
             entity.Property(p => p.LastName).HasMaxLength(100).IsRequired();
             entity.Property(p => p.Sex).HasMaxLength(32);
+            entity.Property(p => p.Status).HasMaxLength(32).IsRequired().HasDefaultValue("Active");
+            entity.Property(p => p.NationalId).HasMaxLength(64);
             entity.Property(p => p.Phone).HasMaxLength(40);
+            entity.Property(p => p.SecondaryPhone).HasMaxLength(40);
             entity.Property(p => p.Email).HasMaxLength(256);
+            entity.Property(p => p.Address).HasMaxLength(256);
+            entity.Property(p => p.City).HasMaxLength(100);
+            entity.Property(p => p.EmergencyContactName).HasMaxLength(120);
+            entity.Property(p => p.PreferredLanguage).HasMaxLength(64);
+            entity.Property(p => p.InsuranceScheme).HasMaxLength(120);
+            entity.Property(p => p.Notes).HasMaxLength(500);
             entity.Property(p => p.IsActive).HasDefaultValue(true);
             entity.HasIndex(p => new { p.LastName, p.FirstName });
         });
