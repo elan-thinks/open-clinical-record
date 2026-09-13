@@ -11,43 +11,9 @@ public static class IdentityDataSeeder
     {
         using var scope = services.CreateScope();
         var sp = scope.ServiceProvider;
-
         var db = sp.GetRequiredService<AppDbContext>();
 
-        // Apply any pending EF Core migrations (creates AspNet* tables)
-        var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
-        if (pending.Count > 0)
-        {
-            logger?.LogInformation("Applying {Count} pending migration(s): {Migrations}",
-                pending.Count, string.Join(", ", pending));
-            await db.Database.MigrateAsync();
-        }
-        else
-        {
-            // Still call Migrate to ensure history is consistent
-            await db.Database.MigrateAsync();
-        }
-
-        // Verify Identity tables exist
-        var canConnect = await db.Database.CanConnectAsync();
-        if (!canConnect)
-        {
-            throw new InvalidOperationException("Cannot connect to the database after MigrateAsync.");
-        }
-
-        try
-        {
-            // Touch a known Identity table; if missing, migration assembly was incomplete
-            await db.Database.ExecuteSqlRawAsync("""SELECT 1 FROM "AspNetRoles" LIMIT 1""");
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                "Identity tables are missing after migration. " +
-                "Ensure Data/Migrations contains InitialIdentity and rebuild the project. " +
-                "You can also run: dotnet ef database update",
-                ex);
-        }
+        await EnsureSchemaAsync(db, logger);
 
         var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
@@ -68,6 +34,49 @@ public static class IdentityDataSeeder
         await EnsureUserAsync(userManager, "desk@clinic.local", "Front Desk", AppRoles.Receptionist, seedPassword);
 
         logger?.LogInformation("Identity roles and seed users are ready.");
+    }
+
+    private static async Task EnsureSchemaAsync(AppDbContext db, ILogger? logger)
+    {
+        var definedMigrations = db.Database.GetMigrations().ToList();
+        var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
+
+        if (definedMigrations.Count > 0)
+        {
+            if (pending.Count > 0)
+            {
+                logger?.LogInformation(
+                    "Applying {Count} pending migration(s): {Migrations}",
+                    pending.Count,
+                    string.Join(", ", pending));
+            }
+
+            await db.Database.MigrateAsync();
+        }
+        else
+        {
+            // No migration classes in the assembly (e.g. not pulled yet).
+            // Create schema from the current model so the app is still runnable.
+            logger?.LogWarning(
+                "No EF migrations found in the assembly. Using EnsureCreated for Identity schema. " +
+                "Add/pull Data/Migrations and use Migrate for production-style updates.");
+
+            await db.Database.EnsureCreatedAsync();
+        }
+
+        // Final check
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("""SELECT 1 FROM "AspNetRoles" LIMIT 1""");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                "Identity tables are still missing. " +
+                "Try: drop the database (or DROP TABLE \"__EFMigrationsHistory\"), " +
+                "ensure Data/Migrations is present, then run: dotnet ef database update",
+                ex);
+        }
     }
 
     private static async Task EnsureUserAsync(
