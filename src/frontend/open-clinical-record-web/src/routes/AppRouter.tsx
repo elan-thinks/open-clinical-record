@@ -8,6 +8,7 @@ import { UsersPage } from '../pages/admin/UsersPage';
 import { RolesPage } from '../pages/admin/RolesPage';
 import { PatientsPage } from '../pages/patients/PatientsPage';
 import { PatientDetailPage } from '../pages/patients/PatientDetailPage';
+import { PatientRegisterPage } from '../pages/patients/PatientRegisterPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 function Placeholder({ title, description }: { title: string; description: string }) {
@@ -26,6 +27,7 @@ export function AppRouter() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="patients" element={<PatientsPage />} />
+              <Route path="patients/new" element={<PatientRegisterPage />} />
               <Route path="patients/:id" element={<PatientDetailPage />} />
               <Route
                 path="chart"
@@ -60,7 +62,7 @@ export function AppRouter() {
                   <Placeholder title="Record vitals" description="Capture vital signs for the current visit." />
                 }
               />
-              <Route path="register" element={<PatientsPage />} />
+              <Route path="register" element={<PatientRegisterPage />} />
               <Route
                 path="checkin"
                 element={
