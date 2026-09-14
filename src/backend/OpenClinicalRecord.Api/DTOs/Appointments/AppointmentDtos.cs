@@ -1,0 +1,63 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace OpenClinicalRecord.Api.DTOs.Appointments;
+
+public class AppointmentDto
+{
+    public Guid Id { get; set; }
+    public Guid PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string MedicalRecordNumber { get; set; } = string.Empty;
+    public DateOnly AppointmentDate { get; set; }
+    public TimeOnly StartTime { get; set; }
+    public int DurationMinutes { get; set; }
+    public string AppointmentType { get; set; } = "Consultation";
+    public string Status { get; set; } = "Scheduled";
+    public string? ProviderName { get; set; }
+    public string? Reason { get; set; }
+    public string? Notes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public class CreateAppointmentRequest
+{
+    [Required]
+    public Guid PatientId { get; set; }
+
+    [Required]
+    public DateOnly AppointmentDate { get; set; }
+
+    [Required]
+    public TimeOnly StartTime { get; set; }
+
+    public int DurationMinutes { get; set; } = 30;
+
+    [MaxLength(40)]
+    public string AppointmentType { get; set; } = "Consultation";
+
+    [MaxLength(200)]
+    public string? ProviderName { get; set; }
+
+    [MaxLength(500)]
+    public string? Reason { get; set; }
+
+    [MaxLength(500)]
+    public string? Notes { get; set; }
+}
+
+public class UpdateAppointmentStatusRequest
+{
+    [Required, MaxLength(32)]
+    public string Status { get; set; } = string.Empty;
+}
+
+public class DashboardStatsDto
+{
+    public int AppointmentsToday { get; set; }
+    public int WaitingCount { get; set; }
+    public int CheckedInCount { get; set; }
+    public int ActivePatients { get; set; }
+    public int VisitsThisWeek { get; set; }
+    public int OpenChartAlerts { get; set; }
+    public List<AppointmentDto> TodaysSchedule { get; set; } = new();
+}

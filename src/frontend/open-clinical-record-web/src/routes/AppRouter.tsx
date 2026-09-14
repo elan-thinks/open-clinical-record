@@ -12,6 +12,8 @@ import { PatientRegisterPage } from '../pages/patients/PatientRegisterPage';
 import { PatientChartPage } from '../pages/clinical/PatientChartPage';
 import { ChartIndexPage } from '../pages/clinical/ChartIndexPage';
 import { RecordVitalsPage } from '../pages/clinical/RecordVitalsPage';
+import { AppointmentsPage } from '../pages/appointments/AppointmentsPage';
+import { AppointmentCreatePage } from '../pages/appointments/AppointmentCreatePage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 function Placeholder({ title, description }: { title: string; description: string }) {
@@ -34,32 +36,17 @@ export function AppRouter() {
               <Route path="patients/:id" element={<PatientDetailPage />} />
               <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
               <Route path="chart" element={<ChartIndexPage />} />
+              <Route path="records" element={<ChartIndexPage />} />
               <Route path="vitals" element={<RecordVitalsPage />} />
-              <Route
-                path="records"
-                element={
-                  <Placeholder
-                    title="Medical Records"
-                    description="Open a patient chart for visits, vitals, and notes."
-                  />
-                }
-              />
-              <Route
-                path="appointments"
-                element={
-                  <Placeholder
-                    title="Appointments"
-                    description="Schedule, reschedule, cancel, and view appointment status."
-                  />
-                }
-              />
+              <Route path="appointments" element={<AppointmentsPage />} />
+              <Route path="appointments/new" element={<AppointmentCreatePage />} />
               <Route path="register" element={<PatientRegisterPage />} />
               <Route
                 path="checkin"
                 element={
                   <Placeholder
                     title="Check-in / Queue"
-                    description="Check in arrivals and manage the walk-in queue."
+                    description="Use Appointments to check in patients. Full queue board is planned next."
                   />
                 }
               />
