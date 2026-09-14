@@ -3,7 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient } from '../../services/patientsApi';
 import './PatientChartPage.css';
 
-export function ChartIndexPage() {
+/**
+ * Medical Records — visit history & consultation entry (Week 4).
+ * Distinct from Medical Chart (full chart workspace with all tabs).
+ */
+export function MedicalRecordsPage() {
   const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,20 +49,21 @@ export function ChartIndexPage() {
   return (
     <div className="chart-page">
       <h1 className="p-name" style={{ marginBottom: 6 }}>
-        Medical Chart
+        Medical Records
       </h1>
       <p className="muted" style={{ marginBottom: 8 }}>
-        Open a patient&apos;s full clinical chart — overview, history, vitals, visits, and notes in one place.
+        Visit records, diagnosis, clinical notes, and consultation documentation.
       </p>
       <p className="muted" style={{ marginBottom: 18, fontSize: 12.5 }}>
-        For visit-only documentation and consultation forms, use <strong>Medical Records</strong> instead.
+        This is not the full Medical Chart. Use <strong>Medical Chart</strong> for overview, history, and vitals
+        together — use this page to open visit / consultation records.
       </p>
 
       {error && <div className="error-banner">{error}</div>}
 
       <form className="form-grid" onSubmit={onSearch} style={{ marginBottom: 16, alignItems: 'end' }}>
         <div className="field span-2">
-          <label className="label">Search patients</label>
+          <label className="label">Find patient records</label>
           <input
             className="input"
             value={q}
@@ -74,6 +79,14 @@ export function ChartIndexPage() {
       </form>
 
       <div className="panel">
+        <div className="panel-head" style={{ marginBottom: 8 }}>
+          <div
+            className="panel-title"
+            style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600 }}
+          >
+            Patients with clinical records
+          </div>
+        </div>
         {loading ? (
           <div className="empty">Loading patients...</div>
         ) : patients.length === 0 ? (
@@ -87,16 +100,35 @@ export function ChartIndexPage() {
                 </div>
                 <div className="muted">
                   {p.medicalRecordNumber}
-                  {p.phone ? ` | ${p.phone}` : ''}
+                  {p.phone ? ` · ${p.phone}` : ''}
                 </div>
               </div>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => navigate(`/patients/${p.id}/chart`)}
-              >
-                Open chart
-              </button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid var(--line)',
+                    color: 'var(--text-dim)',
+                    padding: '8px 12px',
+                    borderRadius: 9,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: 13,
+                  }}
+                  onClick={() => navigate(`/patients/${p.id}/chart?tab=visits`)}
+                >
+                  Visit history
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => navigate(`/patients/${p.id}/chart?tab=consultation`)}
+                >
+                  Consultation
+                </button>
+              </div>
             </div>
           ))
         )}
