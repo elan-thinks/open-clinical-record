@@ -5,7 +5,8 @@ import {
   updateAppointmentStatus,
   type Appointment,
 } from '../../services/appointmentsApi';
-import './AppointmentsPage.css';
+import './AppointmentsList.css';
+import './AppointmentsCalendar.css';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
