@@ -23,6 +23,7 @@ export interface VitalSigns {
   bloodPressure?: string | null;
   pulse?: number | null;
   temperatureC?: number | null;
+  respiratoryRate?: number | null;
   spo2?: number | null;
   weightKg?: number | null;
   heightCm?: number | null;
@@ -69,6 +70,9 @@ export interface PatientChart {
   dateOfBirth?: string | null;
   sex?: string | null;
   phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  city?: string | null;
   status: string;
   allergies: Allergy[];
   medicalHistory: HistoryItem[];
@@ -81,6 +85,7 @@ export interface CreateVisitPayload {
   bloodPressure?: string;
   pulse?: number;
   temperatureC?: number;
+  respiratoryRate?: number;
   spo2?: number;
   weightKg?: number;
   heightCm?: number;

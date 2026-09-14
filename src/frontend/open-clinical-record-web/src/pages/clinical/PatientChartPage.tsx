@@ -19,7 +19,14 @@ function ageFromDob(dob?: string | null): string {
   let age = now.getFullYear() - d.getFullYear();
   const m = now.getMonth() - d.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
-  return `${age} yrs`;
+  return `${age}`;
+}
+
+function formatDob(dob?: string | null): string {
+  if (!dob) return '-';
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return dob;
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function initials(first: string, last: string): string {
@@ -47,12 +54,12 @@ export function PatientChartPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>((searchParams.get('tab') as TabId) || 'overview');
+  const [saving, setSaving] = useState(false);
 
   const [allergySub, setAllergySub] = useState('');
   const [allergyReaction, setAllergyReaction] = useState('');
   const [historyDesc, setHistoryDesc] = useState('');
   const [historyCat, setHistoryCat] = useState('Condition');
-  const [saving, setSaving] = useState(false);
 
   const [chiefComplaint, setChiefComplaint] = useState('');
   const [bp, setBp] = useState('');
@@ -95,9 +102,9 @@ export function PatientChartPage() {
       parts.push(chart.allergies.map((a) => a.substance).join(', ') + ' allergy');
     }
     const primary = chart.visits[0]?.diagnoses.find((d) => d.isPrimary);
-    if (primary) parts.push(primary.description);
+    if (primary) parts.push(primary.description + ' flagged on last visit');
     if (!parts.length) return null;
-    return parts.join(' | ');
+    return `${parts.length} chart alert${parts.length > 1 ? 's' : ''} — ${parts.join(' · ')}`;
   }, [chart]);
 
   async function onAddAllergy(e: FormEvent) {
@@ -127,10 +134,7 @@ export function PatientChartPage() {
     setSaving(true);
     setError(null);
     try {
-      await addHistoryItem(patientId, {
-        category: historyCat,
-        description: historyDesc.trim(),
-      });
+      await addHistoryItem(patientId, { category: historyCat, description: historyDesc.trim() });
       setHistoryDesc('');
       await load();
     } catch (err) {
@@ -199,13 +203,16 @@ export function PatientChartPage() {
     );
   }
 
+  const age = ageFromDob(chart.dateOfBirth);
+  const meds = chart.medicalHistory.filter((h) => h.category.toLowerCase().includes('med'));
+
   return (
     <div className="chart-page">
       <div className="breadcrumb">
         <button type="button" onClick={() => navigate('/patients')}>
           Patients
         </button>
-        {' | '}Chart
+        {' · '}Chart
       </div>
 
       <div className="patient-header">
@@ -218,23 +225,23 @@ export function PatientChartPage() {
             <div className="p-meta">
               <span>{chart.medicalRecordNumber}</span>
               <span>
-                {chart.sex ? chart.sex[0] : '-'} / {ageFromDob(chart.dateOfBirth)}
+                {chart.sex ? chart.sex[0] : '-'} · {age} yrs
               </span>
+              <span>DOB {formatDob(chart.dateOfBirth)}</span>
               <span>{chart.phone ?? '-'}</span>
               <span className="badge">{chart.status}</span>
             </div>
           </div>
         </div>
         <div className="header-actions">
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => navigate(`/patients/${chart.patientId}`)}
-          >
-            View profile
+          <button type="button" className="btn-ghost" onClick={() => navigate(`/patients/${chart.patientId}`)}>
+            Edit demographics
           </button>
-          <button type="button" className="btn-primary" onClick={() => selectTab('consultation')}>
-            + New consultation
+          <button type="button" className="btn-ghost" onClick={() => navigate(`/patients/${chart.patientId}`)}>
+            Mark deceased
+          </button>
+          <button type="button" className="btn-primary" onClick={() => navigate('/appointments/new')}>
+            + New appointment
           </button>
         </div>
       </div>
@@ -243,7 +250,10 @@ export function PatientChartPage() {
 
       {alertText && (
         <div className="alert-bar">
-          <b>Chart alerts</b> - {alertText}
+          <span className="ico">!</span>
+          <div>
+            <b>{alertText}</b>
+          </div>
         </div>
       )}
 
@@ -255,7 +265,7 @@ export function PatientChartPage() {
             ['vitals', 'Vital signs'],
             ['visits', 'Visits & diagnosis'],
             ['notes', 'Clinical notes'],
-            ['consultation', 'New consultation'],
+            ['consultation', 'Consultation'],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -270,86 +280,163 @@ export function PatientChartPage() {
       </div>
 
       {tab === 'overview' && (
-        <div className="grid-2">
-          <div className="panel">
-            <div className="panel-title">Demographics</div>
-            <div className="list-row">
-              <span>MRN</span>
-              <span>{chart.medicalRecordNumber}</span>
-            </div>
-            <div className="list-row">
-              <span>Sex / Age</span>
-              <span>
-                {chart.sex ?? '-'} / {ageFromDob(chart.dateOfBirth)}
-              </span>
-            </div>
-            <div className="list-row">
-              <span>Phone</span>
-              <span>{chart.phone ?? '-'}</span>
-            </div>
-            <div className="list-row">
-              <span>Status</span>
-              <span>{chart.status}</span>
-            </div>
-          </div>
-          <div className="panel">
-            <div className="panel-title">Allergies</div>
-            {chart.allergies.length === 0 ? (
-              <div className="empty">No allergies recorded.</div>
-            ) : (
-              chart.allergies.map((a) => (
-                <div key={a.id} className="list-row">
-                  <div>
-                    <div>{a.substance}</div>
-                    <div className="muted">{a.reaction ?? a.severity}</div>
+        <>
+          <div className="grid-2">
+            <div className="panel">
+              <div className="panel-head">
+                <div className="panel-title">Demographics</div>
+                <button type="button" className="panel-link" onClick={() => navigate(`/patients/${chart.patientId}`)}>
+                  Edit
+                </button>
+              </div>
+              <div className="info-grid">
+                <div className="info-item">
+                  <label>Full name</label>
+                  <div className="val">
+                    {chart.firstName} {chart.lastName}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-          <div className="panel">
-            <div className="panel-title">Recent visits</div>
-            {chart.visits.length === 0 ? (
-              <div className="empty">No visits yet.</div>
-            ) : (
-              chart.visits.slice(0, 5).map((v) => (
-                <div key={v.id} className="list-row">
-                  <div>
-                    <div>
-                      {v.visitType} - {v.status}
-                    </div>
-                    <div className="muted">
-                      {fmtDate(v.visitDate)} | {v.clinicianName ?? 'Clinician'}
-                    </div>
+                <div className="info-item">
+                  <label>Patient ID</label>
+                  <div className="val">{chart.medicalRecordNumber}</div>
+                </div>
+                <div className="info-item">
+                  <label>Sex</label>
+                  <div className="val">{chart.sex ?? '-'}</div>
+                </div>
+                <div className="info-item">
+                  <label>Date of birth</label>
+                  <div className="val">
+                    {formatDob(chart.dateOfBirth)} ({age})
                   </div>
                 </div>
-              ))
-            )}
+                <div className="info-item">
+                  <label>Phone</label>
+                  <div className="val">{chart.phone ?? '-'}</div>
+                </div>
+                <div className="info-item">
+                  <label>Email</label>
+                  <div className="val">{chart.email ?? '-'}</div>
+                </div>
+                <div className="info-item">
+                  <label>Address</label>
+                  <div className="val">{[chart.address, chart.city].filter(Boolean).join(', ') || '-'}</div>
+                </div>
+                <div className="info-item">
+                  <label>Status</label>
+                  <div className="val">{chart.status}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="panel-head">
+                <div className="panel-title">Allergies &amp; alerts</div>
+                <button type="button" className="panel-link" onClick={() => selectTab('history')}>
+                  + Add
+                </button>
+              </div>
+              {chart.allergies.length === 0 ? (
+                <div className="empty">No allergies recorded.</div>
+              ) : (
+                <div className="tag-list">
+                  {chart.allergies.map((a) => (
+                    <span key={a.id} className="tag allergy">
+                      {a.substance}
+                      {a.reaction ? ` — ${a.severity} (${a.reaction})` : a.severity ? ` — ${a.severity}` : ''}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: 16 }}>
+                <div className="panel-title" style={{ marginBottom: 10 }}>
+                  Alerts
+                </div>
+                <div className="tag-list">
+                  {chart.medicalHistory.filter((h) => h.isActive).length === 0 ? (
+                    <span className="muted">No active clinical alerts.</span>
+                  ) : (
+                    chart.medicalHistory
+                      .filter((h) => h.isActive)
+                      .slice(0, 6)
+                      .map((h) => (
+                        <span key={h.id} className="tag">
+                          {h.description}
+                          {h.category ? ` — ${h.category}` : ''}
+                        </span>
+                      ))
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="panel">
-            <div className="panel-title">Active conditions</div>
-            {chart.medicalHistory.filter((h) => h.isActive).length === 0 ? (
-              <div className="empty">No history items.</div>
-            ) : (
-              chart.medicalHistory
-                .filter((h) => h.isActive)
-                .map((h) => (
-                  <div key={h.id} className="list-row">
-                    <div>
-                      <div>{h.description}</div>
-                      <div className="muted">{h.category}</div>
+
+          <div className="grid-2">
+            <div className="panel">
+              <div className="panel-head">
+                <div className="panel-title">Current medications</div>
+                <button type="button" className="panel-link" onClick={() => selectTab('history')}>
+                  + Add
+                </button>
+              </div>
+              {meds.length === 0 ? (
+                <div className="empty">
+                  No medications recorded. Add under Medical history with category Medication.
+                </div>
+              ) : (
+                <div className="list-rows">
+                  {meds.map((h) => (
+                    <div key={h.id} className="list-row">
+                      <div>
+                        <div>{h.description}</div>
+                        <div className="muted">{h.category}</div>
+                      </div>
+                      <span className="tag med">{h.isActive ? 'Active' : 'Inactive'}</span>
                     </div>
-                  </div>
-                ))
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="panel">
+              <div className="panel-head">
+                <div className="panel-title">Recent visits</div>
+                <button type="button" className="panel-link" onClick={() => selectTab('visits')}>
+                  View all
+                </button>
+              </div>
+              {chart.visits.length === 0 ? (
+                <div className="empty">No visits yet.</div>
+              ) : (
+                <div className="list-rows">
+                  {chart.visits.slice(0, 5).map((v) => (
+                    <div key={v.id} className="list-row">
+                      <div>
+                        <div>
+                          {fmtDate(v.visitDate)} — {v.visitType}
+                        </div>
+                        <div className="muted">
+                          {v.clinicianName ?? 'Clinician'} · {v.status}
+                        </div>
+                      </div>
+                      <span className={`status-pill ${v.status === 'Completed' ? 'done' : 'open'}`}>
+                        {v.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {tab === 'history' && (
         <>
           <div className="panel">
-            <div className="panel-title">Medical history</div>
+            <div className="panel-head">
+              <div className="panel-title">Medical history</div>
+            </div>
             {chart.medicalHistory.length === 0 ? (
               <div className="empty">No history recorded.</div>
             ) : (
@@ -358,7 +445,7 @@ export function PatientChartPage() {
                   <div>
                     <div>{h.description}</div>
                     <div className="muted">
-                      {h.category} | {h.isActive ? 'Active' : 'Resolved'}
+                      {h.category} · {h.isActive ? 'Active' : 'Resolved'}
                     </div>
                   </div>
                 </div>
@@ -371,11 +458,7 @@ export function PatientChartPage() {
               <div className="form-grid">
                 <div className="field">
                   <label className="label">Category</label>
-                  <select
-                    className="select"
-                    value={historyCat}
-                    onChange={(e) => setHistoryCat(e.target.value)}
-                  >
+                  <select className="select" value={historyCat} onChange={(e) => setHistoryCat(e.target.value)}>
                     <option>Condition</option>
                     <option>Surgery</option>
                     <option>Medication</option>
@@ -385,12 +468,7 @@ export function PatientChartPage() {
                 </div>
                 <div className="field span-2">
                   <label className="label">Description</label>
-                  <input
-                    className="input"
-                    value={historyDesc}
-                    onChange={(e) => setHistoryDesc(e.target.value)}
-                    required
-                  />
+                  <input className="input" value={historyDesc} onChange={(e) => setHistoryDesc(e.target.value)} required />
                 </div>
               </div>
               <div className="form-actions">
@@ -406,20 +484,11 @@ export function PatientChartPage() {
               <div className="form-grid">
                 <div className="field">
                   <label className="label">Substance</label>
-                  <input
-                    className="input"
-                    value={allergySub}
-                    onChange={(e) => setAllergySub(e.target.value)}
-                    required
-                  />
+                  <input className="input" value={allergySub} onChange={(e) => setAllergySub(e.target.value)} required />
                 </div>
                 <div className="field">
                   <label className="label">Reaction</label>
-                  <input
-                    className="input"
-                    value={allergyReaction}
-                    onChange={(e) => setAllergyReaction(e.target.value)}
-                  />
+                  <input className="input" value={allergyReaction} onChange={(e) => setAllergyReaction(e.target.value)} />
                 </div>
               </div>
               <div className="form-actions">
@@ -436,7 +505,7 @@ export function PatientChartPage() {
         <div className="panel">
           <div className="panel-title">Vital signs history</div>
           {chart.visits.filter((v) => v.vitalSigns).length === 0 ? (
-            <div className="empty">No vitals recorded. Use New consultation to capture vitals.</div>
+            <div className="empty">No vitals recorded. Use Consultation or Record vitals.</div>
           ) : (
             chart.visits
               .filter((v) => v.vitalSigns)
@@ -444,11 +513,11 @@ export function PatientChartPage() {
                 <div key={v.id} className="list-row">
                   <div>
                     <div>
-                      BP {v.vitalSigns?.bloodPressure ?? '-'} | Pulse {v.vitalSigns?.pulse ?? '-'} |
-                      Temp {v.vitalSigns?.temperatureC ?? '-'}C | SpO2 {v.vitalSigns?.spo2 ?? '-'}%
+                      BP {v.vitalSigns?.bloodPressure ?? '-'} · Pulse {v.vitalSigns?.pulse ?? '-'} · Temp{' '}
+                      {v.vitalSigns?.temperatureC ?? '-'}°C · SpO₂ {v.vitalSigns?.spo2 ?? '-'}%
                     </div>
                     <div className="muted">
-                      {fmtDate(v.vitalSigns?.recordedAt)} | {v.vitalSigns?.recordedByName}
+                      {fmtDate(v.vitalSigns?.recordedAt)} · {v.vitalSigns?.recordedByName}
                     </div>
                   </div>
                 </div>
@@ -459,7 +528,7 @@ export function PatientChartPage() {
 
       {tab === 'visits' && (
         <div className="panel">
-          <div className="panel-title">Visits and diagnosis</div>
+          <div className="panel-title">Visits &amp; diagnosis</div>
           {chart.visits.length === 0 ? (
             <div className="empty">No visits yet.</div>
           ) : (
@@ -467,19 +536,18 @@ export function PatientChartPage() {
               <div key={v.id} className="list-row">
                 <div>
                   <div>
-                    {v.visitType} | {v.status}
+                    {v.visitType} · {v.status}
                   </div>
                   <div className="muted">
-                    {fmtDate(v.visitDate)} | {v.clinicianName ?? '-'}
+                    {fmtDate(v.visitDate)} · {v.clinicianName ?? '-'}
                   </div>
                   {v.diagnoses.map((d) => (
                     <div key={d.id} className="muted">
                       {d.isPrimary ? 'Primary: ' : 'Other: '}
-                      {d.code ? `${d.code} - ` : ''}
+                      {d.code ? `${d.code} — ` : ''}
                       {d.description}
                     </div>
                   ))}
-                  {v.plan && <div className="muted">Plan: {v.plan}</div>}
                 </div>
               </div>
             ))
@@ -490,7 +558,7 @@ export function PatientChartPage() {
       {tab === 'notes' && (
         <div className="panel">
           <div className="panel-title">Clinical notes</div>
-          {chart.visits.flatMap((v) => v.notes.map((n) => ({ v, n }))).length === 0 ? (
+          {chart.visits.flatMap((v) => v.notes).length === 0 ? (
             <div className="empty">No clinical notes yet.</div>
           ) : (
             chart.visits.flatMap((v) =>
@@ -499,8 +567,7 @@ export function PatientChartPage() {
                   <div>
                     <div>{n.content}</div>
                     <div className="muted">
-                      {n.noteType} | {n.authorName ?? '-'} | {fmtDate(n.createdAt)} | visit{' '}
-                      {fmtDate(v.visitDate)}
+                      {n.noteType} · {n.authorName ?? '-'} · {fmtDate(n.createdAt)}
                     </div>
                   </div>
                 </div>
@@ -538,11 +605,11 @@ export function PatientChartPage() {
                 <input className="input" value={pulse} onChange={(e) => setPulse(e.target.value)} placeholder="72" />
               </div>
               <div className="field">
-                <label className="label">Temp C</label>
+                <label className="label">Temp °C</label>
                 <input className="input" value={temp} onChange={(e) => setTemp(e.target.value)} placeholder="36.8" />
               </div>
               <div className="field">
-                <label className="label">SpO2 %</label>
+                <label className="label">SpO₂ %</label>
                 <input className="input" value={spo2} onChange={(e) => setSpo2(e.target.value)} placeholder="98" />
               </div>
             </div>
@@ -552,54 +619,38 @@ export function PatientChartPage() {
             <div className="form-grid">
               <div className="field span-2">
                 <label className="label">Primary diagnosis</label>
-                <input
-                  className="input"
-                  value={primaryDx}
-                  onChange={(e) => setPrimaryDx(e.target.value)}
-                  placeholder="e.g. Essential hypertension"
-                />
+                <input className="input" value={primaryDx} onChange={(e) => setPrimaryDx(e.target.value)} />
               </div>
               <div className="field span-2">
-                <label className="label">Secondary / other</label>
+                <label className="label">Secondary</label>
                 <input className="input" value={secondaryDx} onChange={(e) => setSecondaryDx(e.target.value)} />
               </div>
             </div>
           </div>
           <div className="panel">
-            <div className="panel-title">4. Clinical notes</div>
-            <div className="field span-2">
-              <textarea
-                className="textarea"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="SOAP or free-text note..."
-              />
-            </div>
-          </div>
-          <div className="panel">
-            <div className="panel-title">5. Plan / follow-up</div>
+            <div className="panel-title">4. Notes &amp; plan</div>
             <div className="form-grid">
+              <div className="field span-2">
+                <label className="label">Clinical note</label>
+                <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
+              </div>
               <div className="field span-2">
                 <label className="label">Plan</label>
                 <input className="input" value={plan} onChange={(e) => setPlan(e.target.value)} />
               </div>
               <div className="field span-2">
-                <label className="label">Instructions to patient</label>
-                <input
-                  className="input"
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                />
+                <label className="label">Instructions</label>
+                <input className="input" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
               </div>
             </div>
-          </div>
-          <div className="form-actions">
-            <button type="button" className="btn-ghost" onClick={() => selectTab('overview')}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : 'Save consultation'}
-            </button>
+            <div className="form-actions">
+              <button type="button" className="btn-ghost" onClick={() => selectTab('overview')}>
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary" disabled={saving}>
+                {saving ? 'Saving...' : 'Save consultation'}
+              </button>
+            </div>
           </div>
         </form>
       )}

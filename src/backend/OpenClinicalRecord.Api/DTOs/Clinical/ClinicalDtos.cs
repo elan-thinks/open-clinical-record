@@ -46,6 +46,7 @@ public class VitalSignsDto
     public string? BloodPressure { get; set; }
     public int? Pulse { get; set; }
     public decimal? TemperatureC { get; set; }
+    public int? RespiratoryRate { get; set; }
     public int? Spo2 { get; set; }
     public decimal? WeightKg { get; set; }
     public decimal? HeightCm { get; set; }
@@ -97,6 +98,7 @@ public class CreateVisitRequest
     public string? BloodPressure { get; set; }
     public int? Pulse { get; set; }
     public decimal? TemperatureC { get; set; }
+    public int? RespiratoryRate { get; set; }
     public int? Spo2 { get; set; }
     public decimal? WeightKg { get; set; }
     public decimal? HeightCm { get; set; }
@@ -127,6 +129,9 @@ public class PatientChartDto
     public DateOnly? DateOfBirth { get; set; }
     public string? Sex { get; set; }
     public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? Address { get; set; }
+    public string? City { get; set; }
     public string Status { get; set; } = "Active";
     public List<AllergyDto> Allergies { get; set; } = new();
     public List<HistoryItemDto> MedicalHistory { get; set; } = new();
