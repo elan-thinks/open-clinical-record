@@ -8,6 +8,7 @@ public class VitalSigns
     public string? BloodPressure { get; set; }
     public int? Pulse { get; set; }
     public decimal? TemperatureC { get; set; }
+    public int? RespiratoryRate { get; set; }
     public int? Spo2 { get; set; }
     public decimal? WeightKg { get; set; }
     public decimal? HeightCm { get; set; }
