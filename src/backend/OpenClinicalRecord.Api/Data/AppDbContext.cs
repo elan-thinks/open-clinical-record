@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<VitalSigns> VitalSigns => Set<VitalSigns>();
     public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
     public DbSet<ClinicalNote> ClinicalNotes => Set<ClinicalNote>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -95,6 +96,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.ToTable("VitalSigns");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.BloodPressure).HasMaxLength(20);
+            entity.Property(x => x.RespiratoryRate);
             entity.Property(x => x.TemperatureC).HasPrecision(4, 1);
             entity.Property(x => x.WeightKg).HasPrecision(6, 2);
             entity.Property(x => x.HeightCm).HasPrecision(5, 1);
@@ -124,6 +126,22 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(x => x.AuthorName).HasMaxLength(200);
             entity.HasOne(x => x.Visit).WithMany(v => v.Notes).HasForeignKey(x => x.VisitId).OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(x => x.VisitId);
+        });
+
+        modelBuilder.Entity<Appointment>(entity =>
+        {
+            entity.ToTable("Appointments");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.AppointmentType).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.ProviderUserId).HasMaxLength(450);
+            entity.Property(x => x.ProviderName).HasMaxLength(200);
+            entity.Property(x => x.Reason).HasMaxLength(500);
+            entity.Property(x => x.Notes).HasMaxLength(500);
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.AppointmentDate);
+            entity.HasIndex(x => x.PatientId);
+            entity.HasIndex(x => x.Status);
         });
     }
 }
