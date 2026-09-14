@@ -35,6 +35,8 @@ export function AppRouter() {
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="patients" element={<PatientsPage />} />
               <Route path="patients/new" element={<PatientRegisterPage />} />
+              <Route path="register" element={<Navigate to="/patients/new" replace />} />
+              <Route path="checkin" element={<Navigate to="/appointments" replace />} />
               <Route path="patients/:id" element={<PatientDetailPage />} />
               <Route path="chart" element={<ChartIndexPage />} />
               <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
@@ -42,15 +44,6 @@ export function AppRouter() {
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="appointments/new" element={<AppointmentCreatePage />} />
               <Route path="vitals" element={<RecordVitalsPage />} />
-              <Route
-                path="checkin"
-                element={
-                  <Placeholder
-                    title="Check-in / Queue"
-                    description="Check in arrivals and manage the walk-in queue."
-                  />
-                }
-              />
               <Route
                 path="reports"
                 element={
