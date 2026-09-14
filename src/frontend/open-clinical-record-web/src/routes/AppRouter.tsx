@@ -4,6 +4,7 @@ import { AppLayout } from '../layouts/AppLayout';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
+import { ProfilePage } from '../pages/ProfilePage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { RolesPage } from '../pages/admin/RolesPage';
 import { PatientsPage } from '../pages/patients/PatientsPage';
@@ -56,12 +57,7 @@ export function AppRouter() {
                   <Placeholder title="Reports" description="Operational and clinical summary reports." />
                 }
               />
-              <Route
-                path="profile"
-                element={
-                  <Placeholder title="Profile" description="Your account details and preferences." />
-                }
-              />
+              <Route path="profile" element={<ProfilePage />} />
               <Route path="admin/users" element={<UsersPage />} />
               <Route path="admin/roles" element={<RolesPage />} />
               <Route
