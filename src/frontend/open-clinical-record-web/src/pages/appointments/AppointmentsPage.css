@@ -1,101 +1,646 @@
-.appt-page { max-width: 1100px; }
+.appt-page {
+  max-width: 1280px;
+}
+
 .appt-page .page-head {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 12px; flex-wrap: wrap; margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
+
 .appt-page .page-title {
-  font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; margin: 0 0 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 4px;
 }
-.appt-page .page-sub { font-size: 13px; color: var(--text-faint); margin: 0; }
-.appt-page .toolbar {
-  display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;
+
+.appt-page .page-sub {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin: 0;
 }
-.appt-page .filter-pill {
-  background: var(--surface); border: 1px solid var(--line); color: var(--text-dim);
-  border-radius: 20px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit;
-}
-.appt-page .filter-pill.active {
-  background: rgba(94, 196, 168, 0.15); border-color: var(--teal-dim); color: var(--teal);
-}
+
 .appt-page .btn-primary {
-  background: var(--teal); color: #04140c; border: none; padding: 10px 16px;
-  border-radius: 9px; font-weight: 600; font-size: 13.5px; cursor: pointer; font-family: inherit;
+  background: var(--teal);
+  color: #04140c;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  font-family: inherit;
 }
+
 .appt-page .btn-ghost {
-  background: transparent; border: 1px solid var(--line); color: var(--text-dim);
-  padding: 10px 14px; border-radius: 9px; font-size: 13px; cursor: pointer; font-family: inherit;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
 }
+
+.appt-page .toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.appt-page .date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.appt-page .date-chip input {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.appt-page .search-box {
+  flex: 1;
+  min-width: 160px;
+  max-width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 8px 14px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.appt-page .search-box:focus {
+  border-color: var(--teal-dim);
+}
+
+.appt-page .filter-pill {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  border-radius: 20px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.appt-page .filter-pill.active {
+  background: rgba(61, 220, 151, 0.18);
+  border-color: rgba(61, 220, 151, 0.35);
+  color: var(--teal);
+}
+
+.appt-page .view-toggle {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.appt-page .view-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.appt-page .view-btn.active {
+  background: rgba(61, 220, 151, 0.15);
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.appt-page .layout-cal {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 12px;
+  min-height: 560px;
+}
+
+@media (max-width: 960px) {
+  .appt-page .layout-cal {
+    grid-template-columns: 1fr;
+  }
+}
+
+.appt-page .side-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appt-page .mini-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.appt-page .mini-cal-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.appt-page .mini-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.appt-page .mini-nav button {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.appt-page .dow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.appt-page .dow span {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-faint);
+  padding: 4px 0;
+}
+
+.appt-page .days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.appt-page .day-cell {
+  aspect-ratio: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+}
+
+.appt-page .day-cell:hover {
+  background: var(--surface-2);
+}
+
+.appt-page .day-cell.other {
+  color: var(--text-faint);
+  opacity: 0.45;
+}
+
+.appt-page .day-cell.selected {
+  background: rgba(61, 220, 151, 0.2);
+  color: var(--teal);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(61, 220, 151, 0.35);
+}
+
+.appt-page .queue-title {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+.appt-page .queue-item {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+  cursor: pointer;
+}
+
+.appt-page .queue-item:last-child {
+  border-bottom: none;
+}
+
+.appt-page .queue-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.appt-page .queue-time {
+  font-size: 12px;
+  color: var(--text-faint);
+  width: 42px;
+  flex-shrink: 0;
+}
+
+.appt-page .queue-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.appt-page .queue-meta {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.appt-page .cal-main {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 560px;
+}
+
+.appt-page .cal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+
+.appt-page .cal-date-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.appt-page .cal-body {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  max-height: 620px;
+}
+
+.appt-page .time-grid {
+  position: relative;
+  min-height: 780px;
+}
+
+.appt-page .hour-row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  height: 60px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.appt-page .hour-label {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 4px 8px;
+  text-align: right;
+}
+
+.appt-page .hour-track {
+  position: relative;
+  border-left: 1px solid var(--line-soft);
+}
+
+.appt-page .blocks-layer {
+  position: absolute;
+  left: 56px;
+  right: 8px;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.appt-page .appt-block {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  cursor: pointer;
+  pointer-events: auto;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.appt-page .appt-block .t {
+  font-weight: 600;
+  font-size: 11.5px;
+  opacity: 0.9;
+}
+
+.appt-page .appt-block .n {
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.appt-page .block-CheckedIn {
+  background: rgba(61, 220, 151, 0.22);
+  border-color: rgba(61, 220, 151, 0.35);
+  color: #b8f5d8;
+}
+
+.appt-page .block-Waiting {
+  background: rgba(234, 179, 90, 0.2);
+  border-color: rgba(234, 179, 90, 0.35);
+  color: #f0d4a0;
+}
+
+.appt-page .block-Scheduled {
+  background: rgba(91, 159, 212, 0.2);
+  border-color: rgba(91, 159, 212, 0.35);
+  color: #b5d4ef;
+}
+
+.appt-page .block-InProgress {
+  background: rgba(155, 126, 217, 0.22);
+  border-color: rgba(155, 126, 217, 0.4);
+  color: #d4c4f5;
+}
+
+.appt-page .block-Cancelled,
+.appt-page .block-NoShow {
+  background: rgba(232, 119, 138, 0.18);
+  border-color: rgba(232, 119, 138, 0.35);
+  color: #f0b8c2;
+}
+
+.appt-page .block-Completed {
+  background: rgba(61, 220, 151, 0.12);
+  border-color: rgba(61, 220, 151, 0.25);
+  color: var(--text-dim);
+}
+
+.appt-page .legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.appt-page .legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.appt-page .legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
 .appt-page .panel {
-  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
 }
-.appt-page table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+
+.appt-page table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
 .appt-page th {
-  text-align: left; padding: 12px 14px; font-size: 11.5px; color: var(--text-faint);
-  border-bottom: 1px solid var(--line); font-weight: 500;
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--line);
+  font-weight: 500;
 }
-.appt-page td { padding: 12px 14px; border-bottom: 1px solid var(--line-soft); }
-.appt-page tr:last-child td { border-bottom: none; }
+
+.appt-page td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.appt-page tr:last-child td {
+  border-bottom: none;
+}
+
 .appt-page .status-pill {
-  display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
-  padding: 4px 10px; border-radius: 20px; background: var(--surface-2); color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  color: var(--text-dim);
 }
+
 .appt-page .status-pill .dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
 }
-.appt-page .status-CheckedIn, .appt-page .status-InProgress {
-  background: rgba(94, 196, 168, 0.15); color: var(--teal);
+
+.appt-page .status-CheckedIn,
+.appt-page .status-InProgress {
+  background: rgba(61, 220, 151, 0.15);
+  color: var(--teal);
 }
-.appt-page .status-CheckedIn .dot, .appt-page .status-InProgress .dot { background: var(--teal); }
-.appt-page .status-Waiting, .appt-page .status-Scheduled {
-  background: rgba(234, 179, 90, 0.12); color: #eab35a;
+
+.appt-page .status-CheckedIn .dot,
+.appt-page .status-InProgress .dot {
+  background: var(--teal);
 }
-.appt-page .status-Waiting .dot, .appt-page .status-Scheduled .dot { background: #eab35a; }
-.appt-page .status-Cancelled, .appt-page .status-NoShow {
-  background: rgba(232, 119, 138, 0.12); color: var(--red);
+
+.appt-page .status-Waiting,
+.appt-page .status-Scheduled {
+  background: rgba(234, 179, 90, 0.12);
+  color: #eab35a;
 }
+
+.appt-page .status-Waiting .dot,
+.appt-page .status-Scheduled .dot {
+  background: #eab35a;
+}
+
+.appt-page .status-Cancelled,
+.appt-page .status-NoShow {
+  background: rgba(232, 119, 138, 0.12);
+  color: var(--red);
+}
+
 .appt-page .action-link {
-  background: none; border: none; color: var(--teal); cursor: pointer;
-  font-size: 13px; font-family: inherit; padding: 0 8px 0 0;
+  background: none;
+  border: none;
+  color: var(--teal);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 0 8px 0 0;
 }
-.appt-page .empty { padding: 24px; color: var(--text-dim); font-size: 13.5px; }
+
+.appt-page .empty {
+  padding: 28px;
+  color: var(--text-dim);
+  font-size: 13.5px;
+  text-align: center;
+}
+
 .appt-page .error-banner {
-  margin-bottom: 12px; padding: 12px 14px; border-radius: 10px;
-  background: rgba(232, 119, 138, 0.12); border: 1px solid rgba(232, 119, 138, 0.25);
-  color: var(--red); font-size: 13px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(232, 119, 138, 0.12);
+  border: 1px solid rgba(232, 119, 138, 0.25);
+  color: var(--red);
+  font-size: 13px;
 }
-.appt-page .input, .appt-page .select {
-  background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px;
-  padding: 10px 12px; color: var(--text); font-size: 13.5px; font-family: inherit;
+
+.appt-page .input,
+.appt-page .select {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
 }
+
 .appt-page .form-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  padding: 16px;
 }
-.appt-page .field { display: flex; flex-direction: column; gap: 6px; }
-.appt-page .field.span-2 { grid-column: 1 / -1; }
-.appt-page .label { font-size: 12.5px; color: var(--text-dim); }
-.appt-page .label .req { color: var(--red); }
+
+.appt-page .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.appt-page .field.span-2 {
+  grid-column: 1 / -1;
+}
+
+.appt-page .label {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.appt-page .label .req {
+  color: var(--red);
+}
+
 .appt-page .section-title {
-  font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
-  margin: 0 0 12px; padding: 16px 16px 10px; border-bottom: 1px solid var(--line-soft);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid var(--line-soft);
 }
+
 .appt-page .form-actions {
-  display: flex; justify-content: flex-end; gap: 10px; padding: 0 16px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 16px 16px;
 }
-.appt-page .breadcrumb { font-size: 12.5px; color: var(--text-faint); margin-bottom: 12px; }
+
+.appt-page .breadcrumb {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+
 .appt-page .breadcrumb button {
-  background: none; border: none; color: var(--teal); cursor: pointer; font-family: inherit; font-size: inherit; padding: 0;
+  background: none;
+  border: none;
+  color: var(--teal);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
 }
+
 .appt-page .slot-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
 }
+
 .appt-page .slot {
-  border: 1px solid var(--line); background: var(--surface-2); color: var(--text);
-  border-radius: 8px; padding: 8px; font-size: 13px; cursor: pointer; font-family: inherit;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
 }
+
 .appt-page .slot.selected {
-  border-color: var(--teal); background: rgba(94, 196, 168, 0.15); color: var(--teal); font-weight: 600;
+  border-color: var(--teal);
+  background: rgba(61, 220, 151, 0.15);
+  color: var(--teal);
+  font-weight: 600;
 }
-.appt-page .hint { font-size: 12px; color: var(--text-faint); padding: 0 16px 12px; }
+
+.appt-page .hint {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding: 0 16px 12px;
+}
+
 @media (max-width: 720px) {
-  .appt-page .form-grid { grid-template-columns: 1fr; }
+  .appt-page .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
