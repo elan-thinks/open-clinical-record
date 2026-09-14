@@ -16,24 +16,20 @@ const FILTERS = [
 ] as const;
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
-const GRID_START_MIN = 8 * 60;
-const PX_PER_MIN = 1;
+const HOUR_PX = 72;
+const GRID_START = 8 * 60;
 
 function toIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function parseIsoDate(iso: string): Date {
+function parseIso(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 
-function formatLongDate(iso: string): string {
-  const d = parseIsoDate(iso);
-  return d.toLocaleDateString(undefined, {
+function formatLong(iso: string): string {
+  return parseIso(iso).toLocaleDateString(undefined, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -41,59 +37,58 @@ function formatLongDate(iso: string): string {
   });
 }
 
-function formatMonthTitle(year: number, month: number): string {
-  return new Date(year, month, 1).toLocaleDateString(undefined, {
-    month: 'long',
+function formatChip(iso: string): string {
+  return parseIso(iso).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
     year: 'numeric',
   });
+}
+
+function formatMonth(y: number, m: number): string {
+  return new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
 function formatTime(t: string): string {
   return t.length >= 5 ? t.slice(0, 5) : t;
 }
 
-function timeToMinutes(t: string): number {
-  const parts = t.split(':').map(Number);
-  return (parts[0] ?? 0) * 60 + (parts[1] ?? 0);
+function timeMins(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
 }
 
-function statusColor(status: string): string {
-  switch (status) {
-    case 'CheckedIn':
-    case 'InProgress':
-      return '#3ddc97';
-    case 'Waiting':
-      return '#eab35a';
-    case 'Scheduled':
-      return '#5b9fd4';
-    case 'Cancelled':
-    case 'NoShow':
-      return '#e8778a';
-    default:
-      return '#9b7ed9';
-  }
+function statusClass(status: string): string {
+  if (status === 'CheckedIn' || status === 'InProgress') return 'checked';
+  if (status === 'Waiting') return 'waiting';
+  if (status === 'Cancelled' || status === 'NoShow') return 'cancelled';
+  if (status === 'Scheduled') return 'scheduled';
+  return 'nurse';
 }
 
-function buildMonthCells(year: number, month: number) {
+function statusLabel(status: string): string {
+  if (status === 'CheckedIn') return 'Checked in';
+  return status;
+}
+
+function buildMonth(year: number, month: number) {
   const first = new Date(year, month, 1);
   const startPad = (first.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevDays = new Date(year, month, 0).getDate();
-  const cells: { date: Date; inMonth: boolean }[] = [];
+  const cells: { date: Date; muted: boolean }[] = [];
   for (let i = 0; i < startPad; i++) {
-    cells.push({
-      date: new Date(year, month - 1, prevDays - startPad + i + 1),
-      inMonth: false,
-    });
+    cells.push({ date: new Date(year, month - 1, prevDays - startPad + i + 1), muted: true });
   }
   for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ date: new Date(year, month, d), inMonth: true });
+    cells.push({ date: new Date(year, month, d), muted: false });
   }
   while (cells.length % 7 !== 0) {
     const last = cells[cells.length - 1].date;
     cells.push({
       date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1),
-      inMonth: false,
+      muted: true,
     });
   }
   return cells;
@@ -101,15 +96,16 @@ function buildMonthCells(year: number, month: number) {
 
 export function AppointmentsPage() {
   const navigate = useNavigate();
-  const [date, setDate] = useState(toIsoDate(new Date()));
-  const [filter, setFilter] = useState<string>('all');
+  const todayIso = toIsoDate(new Date());
+  const [date, setDate] = useState(todayIso);
+  const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'list' | 'calendar'>('calendar');
   const [items, setItems] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const selected = parseIsoDate(date);
+  const selected = parseIso(date);
   const [calYear, setCalYear] = useState(selected.getFullYear());
   const [calMonth, setCalMonth] = useState(selected.getMonth());
 
@@ -136,9 +132,7 @@ export function AppointmentsPage() {
 
   const filtered = useMemo(() => {
     let list = items;
-    if (filter !== 'all') {
-      list = list.filter((a) => a.status === filter);
-    }
+    if (filter !== 'all') list = list.filter((a) => a.status === filter);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -150,7 +144,15 @@ export function AppointmentsPage() {
     return list;
   }, [items, filter, search]);
 
-  const monthCells = useMemo(() => buildMonthCells(calYear, calMonth), [calYear, calMonth]);
+  const monthCells = useMemo(() => buildMonth(calYear, calMonth), [calYear, calMonth]);
+
+  const nowLineTop = useMemo(() => {
+    if (date !== todayIso) return null;
+    const now = new Date();
+    const mins = now.getHours() * 60 + now.getMinutes();
+    if (mins < GRID_START || mins > 17 * 60) return null;
+    return (mins - GRID_START) * (HOUR_PX / 60);
+  }, [date, todayIso]);
 
   async function setStatus(id: string, status: string) {
     setError(null);
@@ -163,13 +165,9 @@ export function AppointmentsPage() {
   }
 
   function shiftDay(delta: number) {
-    const d = parseIsoDate(date);
+    const d = parseIso(date);
     d.setDate(d.getDate() + delta);
     setDate(toIsoDate(d));
-  }
-
-  function goToday() {
-    setDate(toIsoDate(new Date()));
   }
 
   return (
@@ -189,24 +187,41 @@ export function AppointmentsPage() {
       <div className="toolbar">
         <div className="date-chip">
           <span aria-hidden>📅</span>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <span>{formatChip(date)}</span>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            style={{ width: 0, opacity: 0, position: 'absolute' }}
+            id="appt-date-input"
+          />
+          <label htmlFor="appt-date-input" style={{ cursor: 'pointer', color: 'var(--teal)', fontSize: 12 }}>
+            Change
+          </label>
         </div>
-        <input
-          className="search-box"
-          placeholder="Search patient..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            className={`filter-pill${filter === f.id ? ' active' : ''}`}
-            onClick={() => setFilter(f.id)}
-          >
-            {f.label}
-          </button>
-        ))}
+
+        <div className="search-box">
+          <span aria-hidden>🔍</span>
+          <input
+            placeholder="Search patient..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="filter-pills">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              className={`filter-pill${filter === f.id ? ' active' : ''}`}
+              onClick={() => setFilter(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         <div className="view-toggle">
           <button
             type="button"
@@ -254,11 +269,11 @@ export function AppointmentsPage() {
                       </div>
                     </td>
                     <td>{a.appointmentType}</td>
-                    <td>{a.providerName ?? '-'}</td>
+                    <td>{a.providerName ?? '—'}</td>
                     <td>
-                      <span className={`status-pill status-${a.status}`}>
+                      <span className={`status-pill ${statusClass(a.status)}`}>
                         <span className="dot" />
-                        {a.status === 'CheckedIn' ? 'Checked in' : a.status}
+                        {statusLabel(a.status)}
                       </span>
                     </td>
                     <td>
@@ -281,7 +296,7 @@ export function AppointmentsPage() {
                       {a.status !== 'Cancelled' && a.status !== 'Completed' && (
                         <button
                           type="button"
-                          className="action-link"
+                          className="action-link muted"
                           onClick={() => void setStatus(a.id, 'Cancelled')}
                         >
                           Cancel
@@ -295,59 +310,60 @@ export function AppointmentsPage() {
           )}
         </div>
       ) : (
-        <div className="layout-cal">
-          <aside className="side-panel">
-            <div>
-              <div className="mini-cal-head">
-                <div className="mini-cal-title">{formatMonthTitle(calYear, calMonth)}</div>
-                <div className="mini-nav">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const d = new Date(calYear, calMonth - 1, 1);
-                      setCalYear(d.getFullYear());
-                      setCalMonth(d.getMonth());
-                    }}
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const d = new Date(calYear, calMonth + 1, 1);
-                      setCalYear(d.getFullYear());
-                      setCalMonth(d.getMonth());
-                    }}
-                  >
-                    ›
-                  </button>
-                </div>
-              </div>
-              <div className="dow">
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                  <span key={`${d}-${i}`}>{d}</span>
-                ))}
-              </div>
-              <div className="days">
-                {monthCells.map((cell, i) => {
-                  const iso = toIsoDate(cell.date);
-                  const selectedDay = iso === date;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`day-cell${cell.inMonth ? '' : ' other'}${selectedDay ? ' selected' : ''}`}
-                      onClick={() => setDate(iso)}
-                    >
-                      {cell.date.getDate()}
-                    </button>
-                  );
-                })}
+        <div className="cal-layout">
+          <aside className="cal-sidebar">
+            <div className="mini-cal-head">
+              <div className="mini-cal-title">{formatMonth(calYear, calMonth)}</div>
+              <div className="mini-nav">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date(calYear, calMonth - 1, 1);
+                    setCalYear(d.getFullYear());
+                    setCalMonth(d.getMonth());
+                  }}
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date(calYear, calMonth + 1, 1);
+                    setCalYear(d.getFullYear());
+                    setCalMonth(d.getMonth());
+                  }}
+                >
+                  ›
+                </button>
               </div>
             </div>
 
-            <div>
-              <div className="queue-title">Today&apos;s queue</div>
+            <div className="mini-grid">
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                <div key={`${d}-${i}`} className="mini-dow">
+                  {d}
+                </div>
+              ))}
+              {monthCells.map((cell, i) => {
+                const iso = toIsoDate(cell.date);
+                const cls = [
+                  'mini-day',
+                  cell.muted ? 'muted' : '',
+                  iso === todayIso ? 'today' : '',
+                  iso === date ? 'selected' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ');
+                return (
+                  <button key={i} type="button" className={cls} onClick={() => setDate(iso)}>
+                    {cell.date.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="upcoming-box">
+              <div className="upcoming-title">Today&apos;s queue</div>
               {loading ? (
                 <div className="empty" style={{ padding: 8 }}>
                   Loading...
@@ -360,21 +376,20 @@ export function AppointmentsPage() {
                 items.map((a) => (
                   <div
                     key={a.id}
-                    className="queue-item"
+                    className="upcoming-item"
                     onClick={() => navigate(`/patients/${a.patientId}/chart`)}
-                    role="button"
-                    tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') navigate(`/patients/${a.patientId}/chart`);
                     }}
+                    role="button"
+                    tabIndex={0}
                   >
-                    <span className="queue-dot" style={{ background: statusColor(a.status) }} />
-                    <span className="queue-time">{formatTime(a.startTime)}</span>
+                    <span className={`up-dot ${statusClass(a.status)}`} />
+                    <span className="up-time">{formatTime(a.startTime)}</span>
                     <div>
-                      <div className="queue-name">{a.patientName}</div>
-                      <div className="queue-meta">
-                        {a.appointmentType} ·{' '}
-                        {a.status === 'CheckedIn' ? 'Checked in' : a.status}
+                      <div className="up-name">{a.patientName}</div>
+                      <div className="up-type">
+                        {a.appointmentType} · {statusLabel(a.status)}
                       </div>
                     </div>
                   </div>
@@ -385,49 +400,67 @@ export function AppointmentsPage() {
 
           <div className="cal-main">
             <div className="cal-toolbar">
-              <button type="button" className="btn-ghost" onClick={() => shiftDay(-1)}>
-                ‹
-              </button>
-              <div className="cal-date-label">{formatLongDate(date)}</div>
-              <button type="button" className="btn-ghost" onClick={() => shiftDay(1)}>
-                ›
-              </button>
-              <button type="button" className="btn-ghost" onClick={goToday}>
-                Today
-              </button>
+              <div className="cal-nav-group">
+                <button type="button" className="cal-nav-btn" onClick={() => shiftDay(-1)}>
+                  ‹
+                </button>
+                <div className="cal-date-label">{formatLong(date)}</div>
+                <button type="button" className="cal-nav-btn" onClick={() => shiftDay(1)}>
+                  ›
+                </button>
+                <button
+                  type="button"
+                  className="cal-nav-btn"
+                  style={{ width: 'auto', padding: '0 12px' }}
+                  onClick={() => setDate(todayIso)}
+                >
+                  Today
+                </button>
+              </div>
+              <div className="cal-mode">
+                <button type="button" className="active">
+                  Day
+                </button>
+                <button type="button" disabled title="Week view — next">
+                  Week
+                </button>
+              </div>
             </div>
 
-            <div className="cal-body">
-              <div className="time-grid">
-                {HOURS.map((h) => (
-                  <div key={h} className="hour-row">
-                    <div className="hour-label">
+            <div className="cal-scroll">
+              <div className="day-timeline">
+                <div className="day-hours">
+                  {HOURS.map((h) => (
+                    <div key={h} className="hour-lbl">
                       {h === 12 ? '12 PM' : h > 12 ? `${h - 12} PM` : `${h} AM`}
                     </div>
-                    <div className="hour-track" />
-                  </div>
-                ))}
-                <div className="blocks-layer">
+                  ))}
+                </div>
+                <div className="day-track">
+                  {HOURS.map((h) => (
+                    <div key={h} className="hour-line" />
+                  ))}
+                  {nowLineTop != null && <div className="now-line" style={{ top: nowLineTop }} />}
                   {filtered.map((a) => {
-                    const start = timeToMinutes(a.startTime);
-                    const top = (start - GRID_START_MIN) * PX_PER_MIN;
-                    const height = Math.max(a.durationMinutes * PX_PER_MIN, 36);
-                    if (top < -30 || top > HOURS.length * 60) return null;
+                    const start = timeMins(a.startTime);
+                    const top = ((start - GRID_START) / 60) * HOUR_PX;
+                    const height = Math.max((a.durationMinutes / 60) * HOUR_PX, 40);
+                    if (top < -20 || top > HOURS.length * HOUR_PX) return null;
                     return (
                       <div
                         key={a.id}
-                        className={`appt-block block-${a.status}`}
+                        className={`appt-block ${statusClass(a.status)}`}
                         style={{ top, height }}
                         onClick={() => navigate(`/patients/${a.patientId}/chart`)}
-                        role="button"
-                        tabIndex={0}
-                        title={`${a.patientName} · ${a.status}`}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') navigate(`/patients/${a.patientId}/chart`);
                         }}
+                        role="button"
+                        tabIndex={0}
                       >
-                        <div className="t">{formatTime(a.startTime)}</div>
-                        <div className="n">{a.patientName}</div>
+                        <div className="ab-time">{formatTime(a.startTime)}</div>
+                        <div className="ab-name">{a.patientName}</div>
+                        <div className="ab-type">{a.appointmentType}</div>
                       </div>
                     );
                   })}
@@ -435,20 +468,20 @@ export function AppointmentsPage() {
               </div>
             </div>
 
-            <div className="legend">
-              <span>
+            <div className="cal-legend">
+              <span className="leg">
                 <i style={{ background: '#3ddc97' }} /> Checked in
               </span>
-              <span>
+              <span className="leg">
                 <i style={{ background: '#eab35a' }} /> Waiting
               </span>
-              <span>
+              <span className="leg">
                 <i style={{ background: '#5b9fd4' }} /> Scheduled
               </span>
-              <span>
-                <i style={{ background: '#9b7ed9' }} /> In progress
+              <span className="leg">
+                <i style={{ background: '#9b7ed9' }} /> Nurse / walk-in
               </span>
-              <span>
+              <span className="leg">
                 <i style={{ background: '#e8778a' }} /> Cancelled
               </span>
             </div>
