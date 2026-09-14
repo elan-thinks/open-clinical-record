@@ -157,21 +157,11 @@
   flex-shrink: 0;
 }
 
-.appt-page .up-dot.checked {
-  background: #3ddc97;
-}
-.appt-page .up-dot.waiting {
-  background: #eab35a;
-}
-.appt-page .up-dot.scheduled {
-  background: #5b9fd4;
-}
-.appt-page .up-dot.nurse {
-  background: #9b7ed9;
-}
-.appt-page .up-dot.cancelled {
-  background: #e8778a;
-}
+.appt-page .up-dot.checked { background: #3ddc97; }
+.appt-page .up-dot.waiting { background: #eab35a; }
+.appt-page .up-dot.scheduled { background: #5b9fd4; }
+.appt-page .up-dot.nurse { background: #9b7ed9; }
+.appt-page .up-dot.cancelled { background: #e8778a; }
 
 .appt-page .cal-main {
   background: var(--surface);
@@ -389,6 +379,96 @@
 .appt-page .cal-legend .leg i {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: 3px;
   display: inline-block;
+}
+
+/* WEEK VIEW */
+.appt-page .week-wrap {
+  min-width: 700px;
+}
+
+.appt-page .week-header {
+  display: grid;
+  grid-template-columns: 64px repeat(5, 1fr);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.appt-page .week-header .wh {
+  padding: 12px 6px;
+  text-align: center;
+  border-left: 1px solid var(--line-soft);
+  cursor: pointer;
+}
+
+.appt-page .week-header .wh .dow {
+  font-size: 11px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.appt-page .week-header .wh .dom {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.appt-page .week-header .wh.today .dom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #04140c;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.appt-page .week-header .wh.today .dow {
+  color: var(--teal);
+}
+
+.appt-page .week-body {
+  display: grid;
+  grid-template-columns: 64px repeat(5, 1fr);
+  position: relative;
+}
+
+.appt-page .week-labels .hour-lbl {
+  height: 72px;
+}
+
+.appt-page .week-col {
+  border-left: 1px solid var(--line-soft);
+  position: relative;
+}
+
+.appt-page .week-col .hour-line {
+  height: 72px;
+}
+
+.appt-page .week-col.today-col {
+  background: rgba(61, 220, 151, 0.03);
+}
+
+.appt-page .week-col .appt-block {
+  left: 4px;
+  right: 4px;
+  padding: 6px 8px;
+}
+
+.appt-page .week-col .appt-block .ab-type {
+  display: none;
+}
+
+.appt-page .week-col .appt-block .ab-name {
+  font-size: 12px;
 }
