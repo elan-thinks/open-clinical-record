@@ -1,0 +1,101 @@
+.appt-page { max-width: 1100px; }
+.appt-page .page-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.appt-page .page-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; margin: 0 0 6px;
+}
+.appt-page .page-sub { font-size: 13px; color: var(--text-faint); margin: 0; }
+.appt-page .toolbar {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;
+}
+.appt-page .filter-pill {
+  background: var(--surface); border: 1px solid var(--line); color: var(--text-dim);
+  border-radius: 20px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit;
+}
+.appt-page .filter-pill.active {
+  background: rgba(94, 196, 168, 0.15); border-color: var(--teal-dim); color: var(--teal);
+}
+.appt-page .btn-primary {
+  background: var(--teal); color: #04140c; border: none; padding: 10px 16px;
+  border-radius: 9px; font-weight: 600; font-size: 13.5px; cursor: pointer; font-family: inherit;
+}
+.appt-page .btn-ghost {
+  background: transparent; border: 1px solid var(--line); color: var(--text-dim);
+  padding: 10px 14px; border-radius: 9px; font-size: 13px; cursor: pointer; font-family: inherit;
+}
+.appt-page .panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+}
+.appt-page table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.appt-page th {
+  text-align: left; padding: 12px 14px; font-size: 11.5px; color: var(--text-faint);
+  border-bottom: 1px solid var(--line); font-weight: 500;
+}
+.appt-page td { padding: 12px 14px; border-bottom: 1px solid var(--line-soft); }
+.appt-page tr:last-child td { border-bottom: none; }
+.appt-page .status-pill {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+  padding: 4px 10px; border-radius: 20px; background: var(--surface-2); color: var(--text-dim);
+}
+.appt-page .status-pill .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint);
+}
+.appt-page .status-CheckedIn, .appt-page .status-InProgress {
+  background: rgba(94, 196, 168, 0.15); color: var(--teal);
+}
+.appt-page .status-CheckedIn .dot, .appt-page .status-InProgress .dot { background: var(--teal); }
+.appt-page .status-Waiting, .appt-page .status-Scheduled {
+  background: rgba(234, 179, 90, 0.12); color: #eab35a;
+}
+.appt-page .status-Waiting .dot, .appt-page .status-Scheduled .dot { background: #eab35a; }
+.appt-page .status-Cancelled, .appt-page .status-NoShow {
+  background: rgba(232, 119, 138, 0.12); color: var(--red);
+}
+.appt-page .action-link {
+  background: none; border: none; color: var(--teal); cursor: pointer;
+  font-size: 13px; font-family: inherit; padding: 0 8px 0 0;
+}
+.appt-page .empty { padding: 24px; color: var(--text-dim); font-size: 13.5px; }
+.appt-page .error-banner {
+  margin-bottom: 12px; padding: 12px 14px; border-radius: 10px;
+  background: rgba(232, 119, 138, 0.12); border: 1px solid rgba(232, 119, 138, 0.25);
+  color: var(--red); font-size: 13px;
+}
+.appt-page .input, .appt-page .select {
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px;
+  padding: 10px 12px; color: var(--text); font-size: 13.5px; font-family: inherit;
+}
+.appt-page .form-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; padding: 16px;
+}
+.appt-page .field { display: flex; flex-direction: column; gap: 6px; }
+.appt-page .field.span-2 { grid-column: 1 / -1; }
+.appt-page .label { font-size: 12.5px; color: var(--text-dim); }
+.appt-page .label .req { color: var(--red); }
+.appt-page .section-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
+  margin: 0 0 12px; padding: 16px 16px 10px; border-bottom: 1px solid var(--line-soft);
+}
+.appt-page .form-actions {
+  display: flex; justify-content: flex-end; gap: 10px; padding: 0 16px 16px;
+}
+.appt-page .breadcrumb { font-size: 12.5px; color: var(--text-faint); margin-bottom: 12px; }
+.appt-page .breadcrumb button {
+  background: none; border: none; color: var(--teal); cursor: pointer; font-family: inherit; font-size: inherit; padding: 0;
+}
+.appt-page .slot-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px;
+}
+.appt-page .slot {
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--text);
+  border-radius: 8px; padding: 8px; font-size: 13px; cursor: pointer; font-family: inherit;
+}
+.appt-page .slot.selected {
+  border-color: var(--teal); background: rgba(94, 196, 168, 0.15); color: var(--teal); font-weight: 600;
+}
+.appt-page .hint { font-size: 12px; color: var(--text-faint); padding: 0 16px 12px; }
+@media (max-width: 720px) {
+  .appt-page .form-grid { grid-template-columns: 1fr; }
+}
