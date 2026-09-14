@@ -47,8 +47,11 @@ export function ChartIndexPage() {
       <h1 className="p-name" style={{ marginBottom: 6 }}>
         Medical Chart
       </h1>
-      <p className="muted" style={{ marginBottom: 18 }}>
-        Select a patient to open their clinical chart (history, vitals, visits, notes).
+      <p className="muted" style={{ marginBottom: 8 }}>
+        Open a patient&apos;s full clinical chart — overview, history, vitals, visits, and notes in one place.
+      </p>
+      <p className="muted" style={{ marginBottom: 18, fontSize: 12.5 }}>
+        For visit-only documentation and consultation forms, use <strong>Medical Records</strong> instead.
       </p>
 
       {error && <div className="error-banner">{error}</div>}
