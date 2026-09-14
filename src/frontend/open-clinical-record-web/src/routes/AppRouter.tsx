@@ -10,6 +10,7 @@ import { PatientsPage } from '../pages/patients/PatientsPage';
 import { PatientDetailPage } from '../pages/patients/PatientDetailPage';
 import { PatientRegisterPage } from '../pages/patients/PatientRegisterPage';
 import { PatientChartPage } from '../pages/clinical/PatientChartPage';
+import { ChartIndexPage } from '../pages/clinical/ChartIndexPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 function Placeholder({ title, description }: { title: string; description: string }) {
@@ -31,15 +32,7 @@ export function AppRouter() {
               <Route path="patients/new" element={<PatientRegisterPage />} />
               <Route path="patients/:id" element={<PatientDetailPage />} />
               <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
-              <Route
-                path="chart"
-                element={
-                  <Placeholder
-                    title="Medical Chart"
-                    description="Open a patient from Patients, then use Open chart."
-                  />
-                }
-              />
+              <Route path="chart" element={<ChartIndexPage />} />
               <Route
                 path="records"
                 element={
