@@ -1,64 +1,80 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider, useAuth } from '../context/AuthContext';
-import { AppShell } from '../layouts/AppShell';
-import { LoginPage } from '../pages/LoginPage';
+import { AuthProvider } from '../context/AuthContext';
+import { AppLayout } from '../layouts/AppLayout';
 import { DashboardPage } from '../pages/DashboardPage';
-import { ProfilePage } from '../pages/ProfilePage';
+import { LoginPage } from '../pages/LoginPage';
+import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { RolesPage } from '../pages/admin/RolesPage';
-import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { PatientsPage } from '../pages/patients/PatientsPage';
-import { PatientFormPage } from '../pages/patients/PatientFormPage';
+import { PatientDetailPage } from '../pages/patients/PatientDetailPage';
+import { PatientRegisterPage } from '../pages/patients/PatientRegisterPage';
 import { PatientChartPage } from '../pages/clinical/PatientChartPage';
 import { ChartIndexPage } from '../pages/clinical/ChartIndexPage';
 import { MedicalRecordsPage } from '../pages/clinical/MedicalRecordsPage';
 import { RecordVitalsPage } from '../pages/clinical/RecordVitalsPage';
 import { AppointmentsPage } from '../pages/appointments/AppointmentsPage';
 import { AppointmentCreatePage } from '../pages/appointments/AppointmentCreatePage';
+import { ProfilePage } from '../pages/ProfilePage';
+import { ProtectedRoute } from './ProtectedRoute';
 
-function ProtectedApp() {
-  const { token, loading } = useAuth();
-  if (loading) return <div style={{ padding: 40, color: '#a7bdae' }}>Loading…</div>;
-  if (!token) return <Navigate to="/login" replace />;
-  return <AppShell />;
+function Placeholder({ title, description }: { title: string; description: string }) {
+  return <PlaceholderPage title={title} description={description} />;
 }
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<ProtectedApp />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="patients" element={<PatientsPage />} />
-            <Route path="patients/new" element={<PatientFormPage />} />
-            <Route path="patients/:patientId/edit" element={<PatientFormPage />} />
-            <Route path="chart" element={<ChartIndexPage />} />
-            <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
-            <Route path="records" element={<MedicalRecordsPage />} />
-            <Route path="vitals" element={<RecordVitalsPage />} />
-            <Route path="appointments" element={<AppointmentsPage />} />
-            <Route path="appointments/new" element={<AppointmentCreatePage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="reports" element={<PlaceholderPage title="Reports" />} />
-            <Route
-              path="admin/users"
-              element={<UsersPage />}
-            />
-            <Route
-              path="admin/roles"
-              element={<RolesPage />}
-            />
-            <Route
-              path="admin/audit"
-              element={<PlaceholderPage title="Audit logs" />}
-            />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="patients" element={<PatientsPage />} />
+              <Route path="patients/new" element={<PatientRegisterPage />} />
+              <Route path="patients/:id" element={<PatientDetailPage />} />
+              <Route path="chart" element={<ChartIndexPage />} />
+              <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
+              <Route path="records" element={<MedicalRecordsPage />} />
+              <Route path="appointments" element={<AppointmentsPage />} />
+              <Route path="appointments/new" element={<AppointmentCreatePage />} />
+              <Route path="vitals" element={<RecordVitalsPage />} />
+              <Route
+                path="checkin"
+                element={
+                  <Placeholder
+                    title="Check-in / Queue"
+                    description="Check in arrivals and manage the walk-in queue."
+                  />
+                }
+              />
+              <Route
+                path="reports"
+                element={
+                  <Placeholder title="Reports" description="Operational and clinical summary reports." />
+                }
+              />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="admin/users" element={<UsersPage />} />
+              <Route path="admin/roles" element={<RolesPage />} />
+              <Route
+                path="admin/audit"
+                element={
+                  <Placeholder
+                    title="Audit Logs"
+                    description="Review security and clinical audit events."
+                  />
+                }
+              />
+            </Route>
           </Route>
+
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
