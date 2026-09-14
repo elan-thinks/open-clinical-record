@@ -54,8 +54,8 @@ export const ROLE_NAV: RoleNavMap = {
       items: [
         { path: '/patients', label: 'Patients' },
         { path: '/appointments', label: 'Appointments' },
-        { path: '/register', label: 'Registration' },
-        { path: '/checkin', label: 'Check-in / Queue' },
+        { path: '/patients/new', label: 'Registration' },
+        { path: '/appointments', label: 'Check-in / Queue' },
       ],
     },
     {
@@ -97,7 +97,7 @@ export function primaryRole(roles: string[]): AppRole {
   return 'Doctor';
 }
 
-/** Simple geometric icons matching mock intent. */
+/** Simple geometric icons matching mock intent (inline SVG paths kept small). */
 export function navIcon(path: string): string {
   const map: Record<string, string> = {
     '/dashboard': 'grid',
@@ -106,6 +106,7 @@ export function navIcon(path: string): string {
     '/records': 'folder',
     '/appointments': 'cal',
     '/vitals': 'pulse',
+    '/patients/new': 'plus',
     '/register': 'plus',
     '/checkin': 'list',
     '/reports': 'chart',
