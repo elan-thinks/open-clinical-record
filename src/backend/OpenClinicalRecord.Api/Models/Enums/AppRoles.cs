@@ -1,7 +1,8 @@
 namespace OpenClinicalRecord.Api.Models.Enums;
 
 /// <summary>
-/// Application roles used for authorization. Values match JWT role claims.
+/// Four application roles used for authorization. Values match JWT role claims.
+/// Doctor, Nurse, Receptionist (clinical/front-desk) and Admin (system administration).
 /// </summary>
 public static class AppRoles
 {
