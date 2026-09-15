@@ -28,7 +28,7 @@ Appointment events are subordinate to an appointment and therefore use **CASCADE
 
 Clinical content is subordinate to a visit and uses **CASCADE** from Visit → VitalSigns/Diagnoses/ClinicalNotes.
 
-A visit's optional Appointment relationship uses **SET NULL**, so deleting an appointment does not erase the clinical visit.
+A visit's optional Appointment relationship uses **SET NULL**, so removing an appointment relationship does not erase the clinical visit.
 
 The death record is provenance for deceased status and uses **RESTRICT** from Patient → PatientDeathRecords.
 
@@ -45,13 +45,15 @@ The death record is provenance for deceased status and uses **RESTRICT** from Pa
 
 ## Migrations
 
-The repository contains an existing `EnhanceVisitEncounterModel` migration and the EF model has now moved beyond that migration. Before applying the updated model to an existing development database, generate/apply the next migration from the API project:
+A follow-up migration is committed at:
+
+`src/backend/OpenClinicalRecord.Api/Data/Migrations/20260915143000_AlignClinicalHistoryModel.cs`
+
+It adds `AppointmentEvents` and `PatientDeathRecords`, changes patient-owned clinical relationships to `RESTRICT`, and adds the status constraints represented by the EF model.
+
+Apply the committed migrations from the repository root:
 
 ```powershell
-cd <repo-root>\open-clinical-record
-
-dotnet ef migrations add AlignClinicalHistoryModel --project src/backend/OpenClinicalRecord.Api --startup-project src/backend/OpenClinicalRecord.Api
-
 dotnet ef database update --project src/backend/OpenClinicalRecord.Api --startup-project src/backend/OpenClinicalRecord.Api
 ```
 
