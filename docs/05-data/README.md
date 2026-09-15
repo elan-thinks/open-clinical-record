@@ -1,43 +1,32 @@
-# Data Model
+# OCR data / database docs
 
-This directory contains the persistent data-model baseline for the Open Clinical Record MVP.
+| File | Purpose |
+|------|--------|
+| [`ocr-complete-database.sql`](./ocr-complete-database.sql) | Full PostgreSQL reference schema matching EF Core (Week 4) |
+| [`ocr-database-audit.md`](./ocr-database-audit.md) | Table inventory, conflicts, checklist |
 
-## Current MVP boundary
+## Apply schema
 
-The data model supports exactly three business areas:
+**Preferred for the running app:**
 
-1. Patient Management
-2. Patient Chart
-3. Appointment Management
+```bash
+cd src/backend/OpenClinicalRecord.Api
+dotnet ef database update
+```
 
-Cross-cutting data supports authentication/authorization and minimal auditability.
+**Reference script (empty DB / documentation):**
 
-## ERD
+From the **repository root**:
 
-The current MVP ERD is maintained at:
+```powershell
+psql -U postgres -d open_clinical_record -f docs/05-data/ocr-complete-database.sql
+```
 
-`docs/03-requirements/ER/OCR_MVP_ERD.html`
+If you get `No such file or directory`, you are not in the repo root. Example:
 
-That ERD is the logical data-model baseline until the physical database design is selected.
+```powershell
+cd D:\edHil ╝\Intern\Home_code\open-clinical-record\open-clinical-record
+psql -U postgres -d open_clinical_record -f docs/05-data/ocr-complete-database.sql
+```
 
-## Core entities
-
-- Patient
-- User
-- Allergy
-- Medication History
-- Patient Alert
-- Appointment
-- Appointment History Event
-- Visit
-- Audit Event
-
-Optional entities such as vital signs/observations require explicit confirmation before being added to the MVP.
-
-## Explicit exclusions
-
-The MVP data model does not include implementation commitments for diagnosis, treatment/care plans, prescriptions, medical reports/documents, document amendments, laboratory, pharmacy, billing, insurance, radiology, patient portal, FHIR/international-standard integration, enterprise scheduling, or AI clinical decision support.
-
-## Design principle
-
-Keep the model normalized, understandable, database-independent, and small enough to implement and test within the remaining internship period.
+Or use an absolute path to the `.sql` file.
