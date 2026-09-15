@@ -81,11 +81,12 @@ This module manages the planned and basic operational visit workflow: appointmen
 Appointments must remain linked to the correct patient. A walk-in may create a visit without a fabricated prior appointment.
 
 \section{Cross-Cutting Concerns}
-The application has exactly three application roles:
+The application has four application roles:
 \begin{itemize}
     \item Receptionist / Front Desk
     \item Nurse / Clinical Staff
     \item Clinician / Doctor
+    \item System Administrator
 \end{itemize}
 
 Authentication, role-based authorization, validation, error handling, and basic audit logging support the three modules. Access to a patient chart does not automatically grant permission to modify every piece of patient information.
