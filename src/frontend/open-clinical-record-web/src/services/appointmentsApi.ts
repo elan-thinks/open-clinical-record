@@ -80,15 +80,36 @@ export async function createAppointment(body: CreateAppointmentPayload): Promise
   return (await res.json()) as Appointment;
 }
 
-export async function updateAppointmentStatus(id: string, status: string): Promise<Appointment> {
+export async function updateAppointmentStatus(
+  id: string,
+  status: string,
+  reason?: string,
+): Promise<Appointment> {
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/appointments/${id}/status`, {
     method: 'PATCH',
     headers: authHeaders(),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, reason }),
   });
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as Appointment;
+}
+
+export interface AppointmentEvent {
+  id: string;
+  appointmentId: string;
+  fromStatus: string;
+  toStatus: string;
+  reason?: string | null;
+  actorName?: string | null;
+  createdAt: string;
+}
+
+export async function listAppointmentEvents(id: string): Promise<AppointmentEvent[]> {
+  const base = getApiBaseUrl();
+  const res = await fetch(`${base}/api/appointments/${id}/events`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as AppointmentEvent[];
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
