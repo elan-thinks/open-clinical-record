@@ -15,6 +15,7 @@ import { MedicalRecordsPage } from '../pages/clinical/MedicalRecordsPage';
 import { RecordVitalsPage } from '../pages/clinical/RecordVitalsPage';
 import { AppointmentsPage } from '../pages/appointments/AppointmentsPage';
 import { AppointmentCreatePage } from '../pages/appointments/AppointmentCreatePage';
+import { CheckInPage } from '../pages/appointments/CheckInPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -29,39 +30,55 @@ export function AppRouter() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
+          {/* Any authenticated staff */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="patients" element={<PatientsPage />} />
-              <Route path="patients/new" element={<PatientRegisterPage />} />
-              <Route path="register" element={<Navigate to="/patients/new" replace />} />
-              <Route path="checkin" element={<Navigate to="/appointments" replace />} />
               <Route path="patients/:id" element={<PatientDetailPage />} />
-              <Route path="chart" element={<ChartIndexPage />} />
-              <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
-              <Route path="records" element={<MedicalRecordsPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
-              <Route path="appointments/new" element={<AppointmentCreatePage />} />
-              <Route path="vitals" element={<RecordVitalsPage />} />
-              <Route
-                path="reports"
-                element={
-                  <Placeholder title="Reports" description="Operational and clinical summary reports." />
-                }
-              />
               <Route path="profile" element={<ProfilePage />} />
-              <Route path="admin/users" element={<UsersPage />} />
-              <Route path="admin/roles" element={<RolesPage />} />
-              <Route
-                path="admin/audit"
-                element={
-                  <Placeholder
-                    title="Audit Logs"
-                    description="Review security and clinical audit events."
-                  />
-                }
-              />
+
+              {/* Front desk: registration, check-in, booking */}
+              <Route element={<ProtectedRoute roles={['Admin', 'Receptionist']} />}>
+                <Route path="patients/new" element={<PatientRegisterPage />} />
+                <Route path="register" element={<Navigate to="/patients/new" replace />} />
+                <Route path="checkin" element={<CheckInPage />} />
+                <Route path="appointments/new" element={<AppointmentCreatePage />} />
+              </Route>
+
+              {/* Clinical documentation */}
+              <Route element={<ProtectedRoute roles={['Admin', 'Doctor', 'Nurse']} />}>
+                <Route path="chart" element={<ChartIndexPage />} />
+                <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
+                <Route path="records" element={<MedicalRecordsPage />} />
+                <Route path="vitals" element={<RecordVitalsPage />} />
+              </Route>
+
+              {/* Administration */}
+              <Route element={<ProtectedRoute roles={['Admin']} />}>
+                <Route path="admin/users" element={<UsersPage />} />
+                <Route path="admin/roles" element={<RolesPage />} />
+                <Route
+                  path="admin/audit"
+                  element={
+                    <Placeholder
+                      title="Audit Logs"
+                      description="Review security and clinical audit events. (Future milestone)"
+                    />
+                  }
+                />
+                <Route
+                  path="reports"
+                  element={
+                    <Placeholder
+                      title="Reports"
+                      description="Operational and clinical summary reports. (Future milestone)"
+                    />
+                  }
+                />
+              </Route>
             </Route>
           </Route>
 
