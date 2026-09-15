@@ -1,18 +1,64 @@
 # OCR database audit (Week 4)
 
-**SQL:** `docs/05-data/ocr-complete-database.sql`
+**Reference SQL:** `docs/05-data/ocr-complete-database.sql`
 
-## Tables (from EF Core)
+## Current EF model
 
-AspNetUsers/Roles, Patients, PatientAllergies, MedicalHistoryItems, Appointments, AppointmentEvents, ClinicalVisits, VitalSigns, Diagnoses, ClinicalNotes, PatientDeathRecords.
+The application data model includes:
 
-No AuditEvents table yet. No PATIENT_ALERT table (UI-derived).
+- ASP.NET Core Identity: users, roles, claims, logins, tokens
+- `Patients`
+- `PatientAllergies`
+- `MedicalHistoryItems`
+- `Appointments`
+- `AppointmentEvents`
+- `ClinicalVisits`
+- `VitalSigns`
+- `Diagnoses`
+- `ClinicalNotes`
+- `PatientDeathRecords`
 
-## Apply
+The model now explicitly configures the two previously unregistered entity classes (`AppointmentEvent` and `PatientDeathRecord`) in `AppDbContext`.
+
+## Clinical history safety
+
+Patient-owned historical records use **RESTRICT** foreign keys. A patient is not hard-deleted as a way of changing lifecycle state; the application uses Active/Inactive/Deceased status and retains the longitudinal record.
+
+Appointment events are subordinate to an appointment and therefore use **CASCADE** from Appointment → AppointmentEvents.
+
+Clinical content is subordinate to a visit and uses **CASCADE** from Visit → VitalSigns/Diagnoses/ClinicalNotes.
+
+A visit's optional Appointment relationship uses **SET NULL**, so deleting an appointment does not erase the clinical visit.
+
+The death record is provenance for deceased status and uses **RESTRICT** from Patient → PatientDeathRecords.
+
+## Important alignment fixes applied
+
+- `Patient.Notes`: EF and reference SQL are both `varchar(500)`.
+- `ClinicalVisit`: EpisodeLabel, Location, Department, finalized-user fields, and Appointment relationship are explicitly configured.
+- `VitalSigns`: EF precision is explicit for temperature, weight, and height.
+- `Patient.Status`: `Active | Inactive | Deceased` check constraint is represented in EF and SQL.
+- `ClinicalVisit.Status`: `Draft | Final | Cancelled` check constraint is represented in EF and SQL.
+- `AppointmentEvents` and `PatientDeathRecords` are included in the EF model and reference SQL.
+- No `AuditEvents` table is claimed as implemented yet.
+- No `PATIENT_ALERT` table is claimed as implemented; alerts remain a UI/application concern for the MVP.
+
+## Migrations
+
+The repository contains an existing `EnhanceVisitEncounterModel` migration and the EF model has now moved beyond that migration. Before applying the updated model to an existing development database, generate/apply the next migration from the API project:
 
 ```powershell
-cd <repo-root>\open-clinical-record   # not C:\Users\...
+cd <repo-root>\open-clinical-record
+
+dotnet ef migrations add AlignClinicalHistoryModel --project src/backend/OpenClinicalRecord.Api --startup-project src/backend/OpenClinicalRecord.Api
+
+dotnet ef database update --project src/backend/OpenClinicalRecord.Api --startup-project src/backend/OpenClinicalRecord.Api
+```
+
+For a fresh reference database, the complete SQL script can be applied directly:
+
+```powershell
 psql -U postgres -d open_clinical_record -f docs/05-data/ocr-complete-database.sql
 ```
 
-Or: `dotnet ef database update` from the API project.
+**Rule:** use EF migrations as the live application's migration source; use the SQL file as the complete PostgreSQL reference/bootstrap script. Do not treat the reference SQL as a replacement for EF migrations on an existing database.
