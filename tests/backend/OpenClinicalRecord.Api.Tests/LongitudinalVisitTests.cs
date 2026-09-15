@@ -50,7 +50,8 @@ public class LongitudinalVisitTests : IClassFixture<OcrWebApplicationFactory>
             firstName = "Longitudinal",
             lastName = "Test",
             sex = "Female",
-            dateOfBirth = "1995-04-12"
+            dateOfBirth = "1995-04-12",
+            phone = "0911000001"
         }));
         Assert.True(createPatient.IsSuccessStatusCode, await createPatient.Content.ReadAsStringAsync());
         var patientId = JsonDocument.Parse(await createPatient.Content.ReadAsStringAsync()).RootElement.GetProperty("id").GetGuid();
@@ -108,7 +109,8 @@ public class LongitudinalVisitTests : IClassFixture<OcrWebApplicationFactory>
             firstName = "Alice",
             lastName = "Owner",
             sex = "Female",
-            dateOfBirth = "1990-01-01"
+            dateOfBirth = "1990-01-01",
+            phone = "0911000002"
         }));
         p1.EnsureSuccessStatusCode();
         var p1Id = JsonDocument.Parse(await p1.Content.ReadAsStringAsync()).RootElement.GetProperty("id").GetGuid();
@@ -118,7 +120,8 @@ public class LongitudinalVisitTests : IClassFixture<OcrWebApplicationFactory>
             firstName = "Bob",
             lastName = "Other",
             sex = "Male",
-            dateOfBirth = "1991-02-02"
+            dateOfBirth = "1991-02-02",
+            phone = "0911000003"
         }));
         p2.EnsureSuccessStatusCode();
         var p2Id = JsonDocument.Parse(await p2.Content.ReadAsStringAsync()).RootElement.GetProperty("id").GetGuid();
@@ -146,7 +149,8 @@ public class LongitudinalVisitTests : IClassFixture<OcrWebApplicationFactory>
             firstName = "Desk",
             lastName = "Blocked",
             sex = "Male",
-            dateOfBirth = "1980-01-01"
+            dateOfBirth = "1980-01-01",
+            phone = "0911000004"
         }));
         create.EnsureSuccessStatusCode();
         var patientId = JsonDocument.Parse(await create.Content.ReadAsStringAsync()).RootElement.GetProperty("id").GetGuid();
