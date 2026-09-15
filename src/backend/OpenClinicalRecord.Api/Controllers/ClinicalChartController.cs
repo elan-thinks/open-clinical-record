@@ -84,6 +84,25 @@ public class ClinicalChartController : ControllerBase
         });
     }
 
+    [HttpGet("visits/{visitId:guid}")]
+    [ProducesResponseType(typeof(VisitDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetVisit(Guid patientId, Guid visitId, CancellationToken cancellationToken)
+    {
+        var visit = await _db.ClinicalVisits.AsNoTracking()
+            .Include(v => v.VitalSigns)
+            .Include(v => v.Diagnoses)
+            .Include(v => v.Notes)
+            .FirstOrDefaultAsync(v => v.Id == visitId && v.PatientId == patientId, cancellationToken);
+
+        if (visit is null)
+        {
+            return NotFound(new { message = "Visit not found for this patient." });
+        }
+
+        return Ok(MapVisit(visit));
+    }
+
     [HttpPost("allergies")]
     [Authorize(Roles = "Admin,Doctor,Nurse")]
     public async Task<IActionResult> AddAllergy(Guid patientId, [FromBody] CreateAllergyRequest request, CancellationToken cancellationToken)
@@ -231,7 +250,7 @@ public class ClinicalChartController : ControllerBase
             .Include(v => v.Notes)
             .FirstAsync(v => v.Id == visit.Id, cancellationToken);
 
-        return CreatedAtAction(nameof(GetChart), new { patientId }, MapVisit(loaded));
+        return CreatedAtAction(nameof(GetVisit), new { patientId, visitId = visit.Id }, MapVisit(loaded));
     }
 
     private async Task<bool> PatientExists(Guid patientId, CancellationToken cancellationToken) =>

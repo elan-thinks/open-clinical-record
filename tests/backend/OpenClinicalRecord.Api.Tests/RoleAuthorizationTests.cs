@@ -81,7 +81,15 @@ public class RoleAuthorizationTests : IClassFixture<OcrWebApplicationFactory>
     {
         var doctor = await LoginAsync("doctor@clinic.local");
         var nurse = await LoginAsync("nurse@clinic.local");
-        var payload = new { firstName = "Auth", lastName = "Test", sex = "Female", dateOfBirth = "1990-01-15" };
+        // Include required fields so model validation does not short-circuit before authorization.
+        var payload = new
+        {
+            firstName = "Auth",
+            lastName = "Test",
+            sex = "Female",
+            dateOfBirth = "1990-01-15",
+            phone = "0911999000"
+        };
 
         Assert.Equal(HttpStatusCode.Forbidden,
             (await _client.SendAsync(WithBearer(HttpMethod.Post, "/api/patients", doctor, payload))).StatusCode);
