@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient } from '../../services/patientsApi';
 import './PatientChartPage.css';
+import './ClinicalIndexPages.css';
 
 /**
  * Medical Records — visit history & consultation entry (Week 4).
@@ -47,90 +48,82 @@ export function MedicalRecordsPage() {
   }
 
   return (
-    <div className="chart-page">
-      <h1 className="p-name" style={{ marginBottom: 6 }}>
-        Medical Records
-      </h1>
-      <p className="muted" style={{ marginBottom: 8 }}>
-        Visit records, diagnosis, clinical notes, and consultation documentation.
-      </p>
-      <p className="muted" style={{ marginBottom: 18, fontSize: 12.5 }}>
-        This is not the full Medical Chart. Use <strong>Medical Chart</strong> for overview, history, and vitals
-        together — use this page to open visit / consultation records.
-      </p>
+    <div className="chart-page clinical-index">
+      <header className="ci-header">
+        <h1 className="ci-title">Medical Records</h1>
+        <p className="ci-lead">Visit records, diagnosis, clinical notes, and consultation documentation.</p>
+        <p className="ci-hint">
+          This is not the full Medical Chart. Use <strong>Medical Chart</strong> for overview, history, and
+          vitals together — use this page to open visit / consultation records.
+        </p>
+      </header>
 
       {error && <div className="error-banner">{error}</div>}
 
-      <form className="form-grid" onSubmit={onSearch} style={{ marginBottom: 16, alignItems: 'end' }}>
-        <div className="field span-2">
-          <label className="label">Find patient records</label>
+      <form className="ci-search" onSubmit={onSearch}>
+        <label className="ci-search-label" htmlFor="records-search">
+          Find patient records
+        </label>
+        <div className="ci-search-row">
           <input
-            className="input"
+            id="records-search"
+            className="ci-search-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Name, MRN, or phone"
+            autoComplete="off"
           />
-        </div>
-        <div className="form-actions" style={{ marginTop: 0 }}>
-          <button type="submit" className="btn-primary">
+          <button type="submit" className="ci-search-btn" disabled={loading}>
             Search
           </button>
         </div>
       </form>
 
-      <div className="panel">
-        <div className="panel-head" style={{ marginBottom: 8 }}>
-          <div
-            className="panel-title"
-            style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600 }}
-          >
-            Patients with clinical records
-          </div>
+      <div className="panel ci-list-panel">
+        <div className="panel-head ci-list-head">
+          <div className="panel-title">Patients with clinical records</div>
+          {!loading && (
+            <span className="ci-count">
+              {patients.length} {patients.length === 1 ? 'result' : 'results'}
+            </span>
+          )}
         </div>
         {loading ? (
-          <div className="empty">Loading patients...</div>
+          <div className="empty">Loading patients…</div>
         ) : patients.length === 0 ? (
           <div className="empty">No patients found. Register a patient first.</div>
         ) : (
-          patients.map((p) => (
-            <div key={p.id} className="list-row">
-              <div>
-                <div>
-                  {p.firstName} {p.lastName}
+          <ul className="ci-patient-list">
+            {patients.map((p) => (
+              <li key={p.id} className="ci-patient-row">
+                <div className="ci-patient-main">
+                  <div className="ci-patient-name">
+                    {p.firstName} {p.lastName}
+                  </div>
+                  <div className="ci-patient-meta">
+                    <span>{p.medicalRecordNumber}</span>
+                    {p.phone ? <span>{p.phone}</span> : null}
+                  </div>
                 </div>
-                <div className="muted">
-                  {p.medicalRecordNumber}
-                  {p.phone ? ` · ${p.phone}` : ''}
+                <div className="ci-actions">
+                  <button
+                    type="button"
+                    className="btn-ghost ci-action-ghost"
+                    onClick={() => navigate(`/patients/${p.id}/chart?tab=visits`)}
+                  >
+                    Visit history
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary ci-action-primary"
+                    onClick={() => navigate(`/patients/${p.id}/chart?tab=consultation`)}
+                  >
+                    Consultation
+                  </button>
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid var(--line)',
-                    color: 'var(--text-dim)',
-                    padding: '8px 12px',
-                    borderRadius: 9,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: 13,
-                  }}
-                  onClick={() => navigate(`/patients/${p.id}/chart?tab=visits`)}
-                >
-                  Visit history
-                </button>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => navigate(`/patients/${p.id}/chart?tab=consultation`)}
-                >
-                  Consultation
-                </button>
-              </div>
-            </div>
-          ))
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>

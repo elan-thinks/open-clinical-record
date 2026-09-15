@@ -1,0 +1,221 @@
+/* Shared polish for Medical Chart index + Medical Records index */
+
+.clinical-index {
+  max-width: 960px;
+}
+
+.clinical-index .ci-header {
+  margin-bottom: 20px;
+}
+
+.clinical-index .ci-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.clinical-index .ci-lead {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+.clinical-index .ci-hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-faint);
+  line-height: 1.45;
+}
+
+.clinical-index .ci-hint strong {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.clinical-index .ci-search {
+  margin-bottom: 16px;
+}
+
+.clinical-index .ci-search-label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.clinical-index .ci-search-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+}
+
+.clinical-index .ci-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.clinical-index .ci-search-input::placeholder {
+  color: var(--text-faint);
+}
+
+.clinical-index .ci-search-input:focus {
+  border-color: rgba(61, 220, 151, 0.45);
+  box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.12);
+}
+
+.clinical-index .ci-search-btn {
+  flex: 0 0 auto;
+  background: var(--teal);
+  color: #04140c;
+  border: none;
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.clinical-index .ci-search-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.clinical-index .ci-search-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .clinical-index .ci-search-row {
+    flex-direction: column;
+  }
+
+  .clinical-index .ci-search-btn {
+    width: 100%;
+  }
+}
+
+.clinical-index .ci-list-panel {
+  padding-top: 14px;
+  padding-bottom: 8px;
+}
+
+.clinical-index .ci-list-head {
+  margin-bottom: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.clinical-index .ci-count {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.clinical-index .ci-patient-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.clinical-index .ci-patient-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.clinical-index .ci-patient-row:last-child {
+  border-bottom: none;
+}
+
+.clinical-index .ci-patient-row:hover {
+  background: var(--surface-2);
+  margin-left: -8px;
+  margin-right: -8px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 10px;
+}
+
+.clinical-index .ci-patient-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.clinical-index .ci-patient-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.clinical-index .ci-patient-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+.clinical-index .ci-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.clinical-index .ci-action-primary {
+  padding: 9px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.clinical-index .ci-action-ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.clinical-index .ci-action-ghost:hover {
+  color: var(--text);
+  border-color: var(--text-faint);
+}
+
+@media (max-width: 640px) {
+  .clinical-index .ci-patient-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .clinical-index .ci-actions {
+    justify-content: stretch;
+  }
+
+  .clinical-index .ci-actions .btn-primary,
+  .clinical-index .ci-actions .ci-action-ghost {
+    flex: 1;
+  }
+}

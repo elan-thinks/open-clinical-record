@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient } from '../../services/patientsApi';
 import './PatientChartPage.css';
+import './ClinicalIndexPages.css';
 
 export function ChartIndexPage() {
   const navigate = useNavigate();
@@ -43,62 +44,74 @@ export function ChartIndexPage() {
   }
 
   return (
-    <div className="chart-page">
-      <h1 className="p-name" style={{ marginBottom: 6 }}>
-        Medical Chart
-      </h1>
-      <p className="muted" style={{ marginBottom: 8 }}>
-        Open a patient&apos;s full clinical chart — overview, history, vitals, visits, and notes in one place.
-      </p>
-      <p className="muted" style={{ marginBottom: 18, fontSize: 12.5 }}>
-        For visit-only documentation and consultation forms, use <strong>Medical Records</strong> instead.
-      </p>
+    <div className="chart-page clinical-index">
+      <header className="ci-header">
+        <h1 className="ci-title">Medical Chart</h1>
+        <p className="ci-lead">
+          Open a patient&apos;s full clinical chart — overview, history, vitals, visits, and notes in one place.
+        </p>
+        <p className="ci-hint">
+          For visit-only documentation and consultation forms, use <strong>Medical Records</strong> instead.
+        </p>
+      </header>
 
       {error && <div className="error-banner">{error}</div>}
 
-      <form className="form-grid" onSubmit={onSearch} style={{ marginBottom: 16, alignItems: 'end' }}>
-        <div className="field span-2">
-          <label className="label">Search patients</label>
+      <form className="ci-search" onSubmit={onSearch}>
+        <label className="ci-search-label" htmlFor="chart-search">
+          Search patients
+        </label>
+        <div className="ci-search-row">
           <input
-            className="input"
+            id="chart-search"
+            className="ci-search-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Name, MRN, or phone"
+            autoComplete="off"
           />
-        </div>
-        <div className="form-actions" style={{ marginTop: 0 }}>
-          <button type="submit" className="btn-primary">
+          <button type="submit" className="ci-search-btn" disabled={loading}>
             Search
           </button>
         </div>
       </form>
 
-      <div className="panel">
+      <div className="panel ci-list-panel">
+        <div className="panel-head ci-list-head">
+          <div className="panel-title">Patients</div>
+          {!loading && (
+            <span className="ci-count">
+              {patients.length} {patients.length === 1 ? 'result' : 'results'}
+            </span>
+          )}
+        </div>
         {loading ? (
-          <div className="empty">Loading patients...</div>
+          <div className="empty">Loading patients…</div>
         ) : patients.length === 0 ? (
           <div className="empty">No patients found. Register a patient first.</div>
         ) : (
-          patients.map((p) => (
-            <div key={p.id} className="list-row">
-              <div>
-                <div>
-                  {p.firstName} {p.lastName}
+          <ul className="ci-patient-list">
+            {patients.map((p) => (
+              <li key={p.id} className="ci-patient-row">
+                <div className="ci-patient-main">
+                  <div className="ci-patient-name">
+                    {p.firstName} {p.lastName}
+                  </div>
+                  <div className="ci-patient-meta">
+                    <span>{p.medicalRecordNumber}</span>
+                    {p.phone ? <span>{p.phone}</span> : null}
+                  </div>
                 </div>
-                <div className="muted">
-                  {p.medicalRecordNumber}
-                  {p.phone ? ` | ${p.phone}` : ''}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => navigate(`/patients/${p.id}/chart`)}
-              >
-                Open chart
-              </button>
-            </div>
-          ))
+                <button
+                  type="button"
+                  className="btn-primary ci-action-primary"
+                  onClick={() => navigate(`/patients/${p.id}/chart`)}
+                >
+                  Open chart
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
