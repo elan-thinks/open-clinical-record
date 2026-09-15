@@ -1,14 +1,10 @@
 # Open Clinical Record
 
-
-
 **Open Clinical Record (OCR)** is a focused outpatient EMR internship project built around three core workflows:
 
 1. **Patient Management**
 2. **Patient Chart**
 3. **Appointment Management**
-
-![alt text](image.png)
 
 The MVP is intentionally limited to functionality that can realistically be implemented, tested, and demonstrated within the remaining one-month internship period.
 
@@ -30,13 +26,16 @@ The project is not attempting to build a complete hospital EMR during the intern
 
 ### Application Roles
 
-The MVP uses **exactly three application roles**:
+The MVP uses **four application roles**:
 
-- Receptionist / Front Desk
-- Nurse / Clinical Staff
-- Clinician / Doctor
+| Role | Identity claim | Primary responsibility |
+|------|----------------|------------------------|
+| **Receptionist / Front Desk** | `Receptionist` | Registration, appointments, check-in |
+| **Nurse / Clinical Staff** | `Nurse` | Chart support, vitals, visit workflow |
+| **Clinician / Doctor** | `Doctor` | Chart review and authorized clinical updates |
+| **System Administrator** | `Admin` | Users, roles, system configuration |
 
-Authentication, authorization, validation, error handling, and basic audit logging are cross-cutting concerns, not additional business roles or modules.
+Authentication, authorization, validation, error handling, and basic audit logging are **cross-cutting mechanisms** (not extra clinical modules). System Administrator is an **application role** because the product includes real user/role administration endpoints and UI.
 
 ## MVP Modules
 
@@ -58,7 +57,7 @@ Authentication, authorization, validation, error handling, and basic audit loggi
 - Record and view important patient alerts where required
 - View appointment and visit/check-in history
 
-The chart is intentionally basic. Full clinical encounter documentation is outside the committed MVP.
+The chart is the longitudinal patient view. Per-visit clinical detail is organized under visit history / medical records for each attendance.
 
 ### 3. Appointment Management
 
@@ -78,54 +77,12 @@ The chart is intentionally basic. Full clinical encounter documentation is outsi
 - **Database:** PostgreSQL
 - **ORM / Data Access:** Entity Framework Core + Npgsql
 
-PostgreSQL is the selected and authoritative database engine for the internship MVP. It is used consistently across the database design, local development environment, application persistence, migrations, testing, and deployment planning.
-
-International healthcare standards and FHIR integration are **not required for the internship MVP**.
-
-## Deferred / Future Work
-
-The following are outside the committed MVP and may be considered later:
-
-- Full clinical encounter documentation
-- Diagnosis and treatment documentation
-- Prescription management
-- Medical report generation and advanced document lifecycle
-- Laboratory, pharmacy, billing, insurance, and radiology
-- Patient portal/mobile application
-- SMS and external integrations
-- FHIR or other international-standard integrations
-- Advanced analytics and enterprise scheduling
-- AI clinical decision support
+PostgreSQL is the selected and authoritative database engine for the internship MVP.
 
 ## Documentation
 
-The `docs/` directory separates engineering documentation from formal documents:
-
-- `00-project/` — project identity, scope, objectives, glossary
-- `01-research/` — EMR and domain research
-- `02-discovery/` — clinical workflows and stakeholder discovery
-- `03-requirements/` — requirements, NFRs, traceability, SRS, and clinical domain rules
-- `04-architecture/` — architecture overview and ADRs
-- `05-data/` — data-model baseline and data dictionary material
-- `06-ux/` — user flows and wireframes
-- `07-api/` — API design
-- `08-security/` — security and audit design
-- `09-testing/` — testing strategy and test plans
-- `10-release/` — deployment and release documentation
-
-## Development Approach
-
-```text
-Research → Discovery → Requirements → Architecture → Data Model
-→ UX → Implementation → Testing → Release
-```
+See the `docs/` directory for scope, SRS, role guide, architecture, clinical visit model, and related material.
 
 ## Status
 
-**Current phase: Requirements + architecture + MVP data-model baseline → UX / implementation planning**
-
-The scope, SRS, workflow, NFRs, traceability matrix, architecture, clinical domain rules, and logical ERD are aligned to the same three-module MVP. PostgreSQL is the selected database engine. The next project work should follow the established requirements and resolve any remaining workflow decisions before they are treated as final.
-
-## License
-
-License will be selected as part of project governance and release planning.
+**Aligned baseline:** four application roles, Patient → Visit → Encounter longitudinal model, three core modules. Next work is implementation audit (authorization endpoints, ERD vs EF, chart finish) rather than expanding scope.
