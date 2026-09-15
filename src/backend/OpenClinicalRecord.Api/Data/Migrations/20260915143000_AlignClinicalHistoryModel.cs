@@ -60,18 +60,6 @@ public partial class AlignClinicalHistoryModel : Migration
             principalColumn: "Id",
             onDelete: ReferentialAction.Restrict);
 
-        // Match the EF model's bounded patient note field.
-        migrationBuilder.AlterColumn<string>(
-            name: "Notes",
-            table: "Patients",
-            type: "character varying(500)",
-            maxLength: 500,
-            nullable: true,
-            oldClrType: typeof(string),
-            oldType: "character varying(2000)",
-            oldMaxLength: 2000,
-            oldNullable: true);
-
         // Keep the database-level invariants explicit.
         migrationBuilder.AddCheckConstraint(
             name: "CK_Patients_Status",
@@ -167,17 +155,6 @@ public partial class AlignClinicalHistoryModel : Migration
         migrationBuilder.DropCheckConstraint(
             name: "CK_Patients_Status",
             table: "Patients");
-
-        migrationBuilder.AlterColumn<string>(
-            name: "Notes",
-            table: "Patients",
-            type: "character varying(2000)",
-            maxLength: 2000,
-            nullable: true,
-            oldClrType: typeof(string),
-            oldType: "character varying(500)",
-            oldMaxLength: 500,
-            oldNullable: true);
 
         migrationBuilder.DropForeignKey(
             name: "FK_PatientAllergies_Patients_PatientId",
