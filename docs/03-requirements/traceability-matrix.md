@@ -29,12 +29,12 @@ These six workflows are the canonical MVP set. Individual CRUD actions are requi
 |---|---|---|---|---|
 | FR-PM-001 | Register patient | UC-01 | Receptionist / Front Desk | Acceptance test |
 | FR-PM-002 | Assign unique patient ID | UC-01 | System / Receptionist | Unit + integration test |
-| FR-PM-003 | Search patient | UC-02 | All three roles | Acceptance test |
-| FR-PM-004 | View patient profile | UC-02 | All three roles, permission-controlled | Acceptance test |
+| FR-PM-003 | Search patient | UC-02 | All four roles, permission-controlled | Acceptance test |
+| FR-PM-004 | View patient profile | UC-02 | All four roles, permission-controlled | Acceptance test |
 | FR-PM-005 | Update permitted patient information | UC-02 | Authorized roles | Authorization + acceptance test |
 | FR-PM-006 | Detect likely duplicate patients | UC-01, UC-02 | System behavior | Validation/integration test |
 | FR-PM-007 | Maintain basic patient status | UC-02 | Authorized role | Authorization + acceptance test |
-| FR-PC-001 | Open patient chart | UC-02, UC-03 | All three roles, permission-controlled | Acceptance test |
+| FR-PC-001 | Open patient chart | UC-02, UC-03 | Authorized roles, permission-controlled | Acceptance test |
 | FR-PC-002 | Display chart summary | UC-03 | Nurse / Clinical Staff; Clinician / Doctor | Acceptance test |
 | FR-PC-003 | Record/view allergies | UC-03 | Authorized clinical role | Authorization + integration test |
 | FR-PC-004 | Record/view medication history | UC-03 | Authorized clinical role | Authorization + integration test |
@@ -43,7 +43,7 @@ These six workflows are the canonical MVP set. Individual CRUD actions are requi
 | FR-PC-007 | View visit/check-in history | UC-03 | Authorized roles | Acceptance test |
 | FR-PC-008 | Prevent wrong-patient chart association | UC-03 | System behavior | Integration + authorization test |
 | FR-AP-001 | Create appointment | UC-04 | Receptionist / Front Desk | Acceptance test |
-| FR-AP-002 | View appointments | UC-04 | All three roles, permission-controlled | Acceptance test |
+| FR-AP-002 | View appointments | UC-04 | Authorized roles, permission-controlled | Acceptance test |
 | FR-AP-003 | View appointment details | UC-04 | Authorized roles | Acceptance test |
 | FR-AP-004 | Reschedule appointment | UC-04 | Receptionist / Front Desk | Acceptance + integration test |
 | FR-AP-005 | Cancel appointment | UC-04 | Receptionist / Front Desk | Acceptance + integration test |
@@ -52,13 +52,13 @@ These six workflows are the canonical MVP set. Individual CRUD actions are requi
 | FR-AP-008 | Support basic walk-in | UC-05 | Receptionist / Front Desk; Nurse / Clinical Staff | Acceptance test |
 | FR-AP-009 | Link visit to patient and applicable appointment | UC-05 | System behavior | Integration test |
 | FR-AP-010 | Preserve appointment history | UC-04 | System behavior | Integration test |
-| FR-SEC-001 | Authenticate user | UC-06 | All three roles | Security test |
-| FR-SEC-002 | Enforce exactly three roles | UC-06 | System behavior | Authorization test |
-| FR-SEC-003 | Restrict unauthorized operations | UC-06 | All three roles | Authorization test |
+| FR-SEC-001 | Authenticate user | UC-06 | All four roles | Security test |
+| FR-SEC-002 | Enforce exactly four roles | UC-06 | System behavior | Authorization test |
+| FR-SEC-003 | Restrict unauthorized operations | UC-06 | All four roles | Authorization test |
 | FR-SEC-004 | Audit important actions | UC-06 | System behavior | Audit test |
 | FR-VAL-001 | Validate required data and relationships | UC-01–UC-05 | System behavior | Validation test |
 | FR-VAL-002 | Enforce appointment/patient status rules | UC-04, UC-05 | System behavior | Acceptance test |
-| FR-VAL-003 | Report failures clearly | UC-01–UC-06 | All three roles | Usability test |
+| FR-VAL-003 | Report failures clearly | UC-01–UC-06 | All four roles | Usability test |
 | FR-VAL-004 | Prevent partial/inconsistent save on failure | UC-01–UC-05 | System behavior | Integration test |
 
 ## 4. Business Rules
@@ -72,8 +72,8 @@ These six workflows are the canonical MVP set. Individual CRUD actions are requi
 | BR-005 | A walk-in may create a visit without a prior appointment. |
 | BR-006 | Appointment operations must respect applicable patient and appointment status rules. |
 | BR-007 | Chart access does not automatically grant permission to modify every chart information type. |
-| BR-008 | Only Receptionist / Front Desk, Nurse / Clinical Staff, and Clinician / Doctor are MVP application roles. |
-| BR-009 | Important patient and appointment actions should be auditable. |
+| BR-008 | Exactly four application roles are used: Receptionist / Front Desk, Nurse / Clinical Staff, Clinician / Doctor, and System Administrator. |
+| BR-009 | Important patient, appointment, access, and administrative security actions should be auditable. |
 | BR-010 | Future EMR functionality is deferred until the three core modules are complete. |
 
 ## 5. Role Coverage
@@ -81,10 +81,11 @@ These six workflows are the canonical MVP set. Individual CRUD actions are requi
 | Role | Core responsibilities |
 |---|---|
 | Receptionist / Front Desk | Register/search patients, maintain permitted demographics, manage appointments, check in patients, support basic walk-ins |
-| Nurse / Clinical Staff | View patient/chart information, support check-in/visit workflow, maintain permitted chart information |
+| Nurse / Clinical Staff | View patient/chart information, support check-in/visit workflow, maintain permitted chart information and observations where approved |
 | Clinician / Doctor | Review patient charts/history and perform authorized chart updates required by the MVP |
+| System Administrator | Manage users, roles/permissions, approved system configuration, security/operational functions, and audit access; does not receive clinical authoring privileges by default |
 
-**There is no Administrator role in the MVP.** Authentication and authorization are cross-cutting mechanisms supporting these three roles.
+**The MVP has exactly four application roles.** Authentication, authorization, validation, audit, and error handling are cross-cutting mechanisms supporting these four roles.
 
 ## 6. Non-Functional Traceability
 
@@ -110,6 +111,7 @@ International interoperability/FHIR is intentionally not included in the MVP NFR
 | Appointment Management | Appointment + optional appointment history/event + Visit |
 | Authentication/authorization | User/authentication service and backend authorization |
 | Audit | Audit Event or equivalent minimal audit mechanism |
+| Administration | User/role/permission management + audit + approved system configuration |
 
 The current logical ERD at `docs/03-requirements/ER/OCR_MVP_ERD.html` and the data-model baseline at `docs/05-data/README.md` are the current data references for implementation.
 
@@ -117,8 +119,8 @@ The current logical ERD at `docs/03-requirements/ER/OCR_MVP_ERD.html` and the da
 
 The following requirements from earlier drafts are no longer MVP requirements and must not appear as implementation commitments:
 
-- Full clinical encounter documentation
-- Diagnosis and treatment documentation
+- Full enterprise clinical encounter documentation
+- Diagnosis and treatment documentation beyond explicitly approved MVP chart functionality
 - Prescription management
 - Clinical notes as a full documentation subsystem
 - Medical report/document generation
@@ -133,6 +135,4 @@ They may remain in research documents as future/domain context, but they must no
 
 ## 9. Status
 
-**Current status:** Scope, SRS, architecture, NFRs, traceability, clinical domain rules, and logical ERD are aligned to the same three-module MVP. The data-model baseline is established and project work can proceed while the remaining workflow decisions are resolved.
-
-A requirement moves to **verified** only when objective implementation/test evidence exists.
+**Current status:** The MVP has exactly four application roles and three business modules. Scope, SRS, role baseline, NFRs, traceability, architecture, and logical ERD must remain aligned to this baseline. A requirement moves to **verified** only when objective implementation/test evidence exists.
