@@ -34,7 +34,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         modelBuilder.Entity<Patient>(entity =>
         {
-            entity.ToTable("Patients");
+            entity.ToTable("Patients", table => table.HasCheckConstraint("CK_Patients_Status", "\"Status\" IN ('Active', 'Inactive', 'Deceased')"));
             entity.HasKey(p => p.Id);
             entity.Property(p => p.MedicalRecordNumber).HasMaxLength(32).IsRequired();
             entity.HasIndex(p => p.MedicalRecordNumber).IsUnique();
@@ -81,7 +81,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         modelBuilder.Entity<ClinicalVisit>(entity =>
         {
-            entity.ToTable("ClinicalVisits");
+            entity.ToTable("ClinicalVisits", table => table.HasCheckConstraint("CK_ClinicalVisits_Status", "\"Status\" IN ('Draft', 'Final', 'Cancelled')"));
             entity.HasKey(x => x.Id);
             entity.Property(x => x.VisitType).HasMaxLength(40).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
@@ -177,7 +177,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(x => x.ClearedByUserId).HasMaxLength(450);
             entity.Property(x => x.ClearedByName).HasMaxLength(200);
             entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
-            entity.HasIndex(x => x.PatientId);
             entity.HasIndex(x => x.PatientId)
                 .HasFilter("\"IsActive\" = TRUE")
                 .IsUnique();
