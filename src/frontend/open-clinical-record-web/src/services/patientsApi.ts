@@ -89,21 +89,20 @@ function writeBody(body: PatientWritePayload) {
     preferredLanguage: body.preferredLanguage || null,
     insuranceScheme: body.insuranceScheme || null,
     notes: body.notes || null,
-    isActive: body.isActive ?? (body.status !== 'Inactive' && body.status !== 'Deceased'),
+    isActive: body.isActive ?? body.status !== 'Inactive',
   };
 }
 
 export async function listPatients(
-  q?: string,
+  search?: string,
   status: PatientStatusFilter = 'active',
 ): Promise<Patient[]> {
   const base = getApiBaseUrl();
   const params = new URLSearchParams();
-  if (q?.trim()) params.set('q', q.trim());
-  if (status && status !== 'active') params.set('status', status);
+  if (search) params.set('search', search);
+  params.set('status', status);
   const qs = params.toString();
-  const url = `${base}/api/patients${qs ? `?${qs}` : ''}`;
-  const res = await fetch(url, { headers: authHeaders() });
+  const res = await fetch(`${base}/api/patients?${qs}`, { headers: authHeaders() });
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as Patient[];
 }
@@ -135,4 +134,48 @@ export async function updatePatient(id: string, body: PatientWritePayload): Prom
   });
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as Patient;
+}
+
+export interface DeathRecord {
+  id: string;
+  patientId: string;
+  dateOfDeath?: string | null;
+  note?: string | null;
+  recordedByName?: string | null;
+  recordedAt: string;
+  isActive: boolean;
+  clearedAt?: string | null;
+  clearedByName?: string | null;
+}
+
+export async function markPatientDeceased(
+  id: string,
+  body?: { dateOfDeath?: string; note?: string },
+): Promise<Patient> {
+  const base = getApiBaseUrl();
+  const res = await fetch(`${base}/api/patients/${id}/deceased`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body ?? {}),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as Patient;
+}
+
+export async function clearPatientDeceased(id: string): Promise<Patient> {
+  const base = getApiBaseUrl();
+  const res = await fetch(`${base}/api/patients/${id}/deceased/clear`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as Patient;
+}
+
+export async function getDeathRecord(id: string): Promise<DeathRecord | null> {
+  const base = getApiBaseUrl();
+  const res = await fetch(`${base}/api/patients/${id}/death-record`, { headers: authHeaders() });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as DeathRecord;
 }
