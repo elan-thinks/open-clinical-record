@@ -1,20 +1,26 @@
 -- =============================================================================
 -- Open Clinical Record (OCR) — COMPLETE PostgreSQL DATABASE SCRIPT
 -- =============================================================================
--- Source of truth: EF Core entities + AppDbContext + migrations (Week 4)
--- Repository: elan-thinks/open-clinical-record
+-- Source of truth: EF Core entities + AppDbContext model.
 -- Generated: 2026-09-15
 --
--- HOW TO USE (from repository ROOT, not C:\\Users\\...)
+-- HOW TO USE (from repository ROOT):
 --   psql -U postgres -d open_clinical_record -f docs/05-data/ocr-complete-database.sql
--- Prefer for live app:  dotnet ef database update
+-- Prefer for the live application: dotnet ef database update
+--
+-- IMPORTANT:
+--   Patient history is retained. Patient-owned clinical records use RESTRICT
+--   rather than cascade deletion. Patient lifecycle is handled through status/
+--   inactivation and the death-record provenance model.
 -- =============================================================================
 
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Identity (ASP.NET Core)
+-- -----------------------------------------------------------------------------
+-- ASP.NET Core Identity
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS "AspNetRoles" (
     "Id" text NOT NULL,
     "Name" character varying(256) NULL,
@@ -76,8 +82,8 @@ CREATE TABLE IF NOT EXISTS "AspNetUserRoles" (
     "UserId" text NOT NULL,
     "RoleId" text NOT NULL,
     CONSTRAINT "PK_AspNetUserRoles" PRIMARY KEY ("UserId", "RoleId"),
-    CONSTRAINT "FK_AspNetUserRoles_AspNetRoles_RoleId" FOREIGN KEY ("RoleId") REFERENCES "AspNetRoles" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_AspNetUserRoles_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+    CONSTRAINT "FK_AspNetUserRoles_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_AspNetUserRoles_AspNetRoles_RoleId" FOREIGN KEY ("RoleId") REFERENCES "AspNetRoles" ("Id") ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS "AspNetUserTokens" (
@@ -97,6 +103,9 @@ CREATE INDEX IF NOT EXISTS "IX_AspNetUserRoles_RoleId" ON "AspNetUserRoles" ("Ro
 CREATE INDEX IF NOT EXISTS "EmailIndex" ON "AspNetUsers" ("NormalizedEmail");
 CREATE UNIQUE INDEX IF NOT EXISTS "UserNameIndex" ON "AspNetUsers" ("NormalizedUserName");
 
+-- -----------------------------------------------------------------------------
+-- Patients
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Patients" (
     "Id" uuid NOT NULL,
     "MedicalRecordNumber" character varying(32) NOT NULL,
@@ -114,7 +123,7 @@ CREATE TABLE IF NOT EXISTS "Patients" (
     "EmergencyContactName" character varying(120) NULL,
     "PreferredLanguage" character varying(64) NULL,
     "InsuranceScheme" character varying(120) NULL,
-    "Notes" character varying(2000) NULL,
+    "Notes" character varying(500) NULL,
     "IsActive" boolean NOT NULL DEFAULT TRUE,
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT NOW(),
     "UpdatedAt" timestamp with time zone NULL,
@@ -123,9 +132,10 @@ CREATE TABLE IF NOT EXISTS "Patients" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_Patients_MedicalRecordNumber" ON "Patients" ("MedicalRecordNumber");
 CREATE INDEX IF NOT EXISTS "IX_Patients_LastName_FirstName" ON "Patients" ("LastName", "FirstName");
-CREATE INDEX IF NOT EXISTS "IX_Patients_Phone" ON "Patients" ("Phone");
-CREATE INDEX IF NOT EXISTS "IX_Patients_Status" ON "Patients" ("Status");
 
+-- -----------------------------------------------------------------------------
+-- Patient history / allergies
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS "PatientAllergies" (
     "Id" uuid NOT NULL,
     "PatientId" uuid NOT NULL,
@@ -151,6 +161,9 @@ CREATE TABLE IF NOT EXISTS "MedicalHistoryItems" (
 );
 CREATE INDEX IF NOT EXISTS "IX_MedicalHistoryItems_PatientId" ON "MedicalHistoryItems" ("PatientId");
 
+-- -----------------------------------------------------------------------------
+-- Appointments and appointment event history
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS "Appointments" (
     "Id" uuid NOT NULL,
     "PatientId" uuid NOT NULL,
@@ -186,6 +199,9 @@ CREATE TABLE IF NOT EXISTS "AppointmentEvents" (
 );
 CREATE INDEX IF NOT EXISTS "IX_AppointmentEvents_AppointmentId" ON "AppointmentEvents" ("AppointmentId");
 
+-- -----------------------------------------------------------------------------
+-- Clinical visits / encounter records
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS "ClinicalVisits" (
     "Id" uuid NOT NULL,
     "PatientId" uuid NOT NULL,
@@ -214,7 +230,7 @@ CREATE TABLE IF NOT EXISTS "ClinicalVisits" (
     CONSTRAINT "CK_ClinicalVisits_Status" CHECK ("Status" IN ('Draft', 'Final', 'Cancelled'))
 );
 CREATE INDEX IF NOT EXISTS "IX_ClinicalVisits_PatientId" ON "ClinicalVisits" ("PatientId");
-CREATE INDEX IF NOT EXISTS "IX_ClinicalVisits_PatientId_VisitDate" ON "ClinicalVisits" ("PatientId", "VisitDate" DESC);
+CREATE INDEX IF NOT EXISTS "IX_ClinicalVisits_PatientId_VisitDate" ON "ClinicalVisits" ("PatientId", "VisitDate");
 CREATE INDEX IF NOT EXISTS "IX_ClinicalVisits_AppointmentId" ON "ClinicalVisits" ("AppointmentId");
 
 CREATE TABLE IF NOT EXISTS "VitalSigns" (
@@ -222,11 +238,11 @@ CREATE TABLE IF NOT EXISTS "VitalSigns" (
     "VisitId" uuid NOT NULL,
     "BloodPressure" character varying(20) NULL,
     "Pulse" integer NULL,
-    "TemperatureC" numeric NULL,
+    "TemperatureC" numeric(4,1) NULL,
     "RespiratoryRate" integer NULL,
     "Spo2" integer NULL,
-    "WeightKg" numeric NULL,
-    "HeightCm" numeric NULL,
+    "WeightKg" numeric(6,2) NULL,
+    "HeightCm" numeric(5,1) NULL,
     "RecordedByUserId" character varying(450) NULL,
     "RecordedByName" character varying(200) NULL,
     "RecordedAt" timestamp with time zone NOT NULL DEFAULT NOW(),
@@ -259,6 +275,9 @@ CREATE TABLE IF NOT EXISTS "ClinicalNotes" (
 );
 CREATE INDEX IF NOT EXISTS "IX_ClinicalNotes_VisitId" ON "ClinicalNotes" ("VisitId");
 
+-- -----------------------------------------------------------------------------
+-- Death-note provenance: patient remains in the longitudinal record
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS "PatientDeathRecords" (
     "Id" uuid NOT NULL,
     "PatientId" uuid NOT NULL,
@@ -274,13 +293,15 @@ CREATE TABLE IF NOT EXISTS "PatientDeathRecords" (
     CONSTRAINT "PK_PatientDeathRecords" PRIMARY KEY ("Id"),
     CONSTRAINT "FK_PatientDeathRecords_Patients_PatientId" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT
 );
-CREATE INDEX IF NOT EXISTS "IX_PatientDeathRecords_PatientId" ON "PatientDeathRecords" ("PatientId");
 CREATE UNIQUE INDEX IF NOT EXISTS "UX_PatientDeathRecords_ActivePatient" ON "PatientDeathRecords" ("PatientId") WHERE "IsActive" = TRUE;
 
 COMMIT;
 
--- Seed roles + longitudinal demo (Marta Visit1 38.1/90, Visit2 36.8/74)
+-- -----------------------------------------------------------------------------
+-- Reference seed data for local/demo environments
+-- -----------------------------------------------------------------------------
 BEGIN;
+
 INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES
  ('role-doctor','Doctor','DOCTOR',gen_random_uuid()::text),
  ('role-nurse','Nurse','NURSE',gen_random_uuid()::text),
@@ -302,29 +323,22 @@ INSERT INTO "Appointments" ("Id","PatientId","AppointmentDate","StartTime","Dura
 ON CONFLICT ("Id") DO NOTHING;
 
 INSERT INTO "ClinicalVisits" ("Id","PatientId","AppointmentId","VisitDate","VisitType","Status","ChiefComplaint","ClinicianName","CheckInAt","FinalizedAt","CreatedAt") VALUES
- ('55555555-5555-5555-5555-555555555501','11111111-1111-1111-1111-111111111101','44444444-4444-4444-4444-444444444401','2026-09-01 09:15:00+00','Consultation','Final','Fever','Dr. Samuel Clinician','2026-09-01 09:10:00+00','2026-09-01 09:45:00+00',NOW())
-ON CONFLICT ("Id") DO NOTHING;
-
-INSERT INTO "VitalSigns" ("Id","VisitId","TemperatureC","Pulse","RecordedByName","RecordedAt") VALUES
- ('66666666-6666-6666-6666-666666666601','55555555-5555-5555-5555-555555555501',38.1,90,'Hana Mekonnen','2026-09-01 09:20:00+00')
-ON CONFLICT ("Id") DO NOTHING;
-
-INSERT INTO "ClinicalNotes" ("Id","VisitId","NoteType","Content","AuthorName","CreatedAt") VALUES
- ('77777777-7777-7777-7777-777777777701','55555555-5555-5555-5555-555555555501','Progress','Visit 1 test record.','Dr. Samuel Clinician','2026-09-01 09:40:00+00')
-ON CONFLICT ("Id") DO NOTHING;
-
-INSERT INTO "ClinicalVisits" ("Id","PatientId","AppointmentId","VisitDate","VisitType","Status","ChiefComplaint","ClinicianName","CheckInAt","FinalizedAt","CreatedAt") VALUES
+ ('55555555-5555-5555-5555-555555555501','11111111-1111-1111-1111-111111111101','44444444-4444-4444-4444-444444444401','2026-09-01 09:15:00+00','Consultation','Final','Fever','Dr. Samuel Clinician','2026-09-01 09:10:00+00','2026-09-01 09:45:00+00',NOW()),
  ('55555555-5555-5555-5555-555555555502','11111111-1111-1111-1111-111111111101',NULL,'2026-09-10 10:00:00+00','Walk-in','Final','Follow-up after fever','Dr. Samuel Clinician','2026-09-10 09:55:00+00','2026-09-10 10:30:00+00',NOW())
 ON CONFLICT ("Id") DO NOTHING;
 
 INSERT INTO "VitalSigns" ("Id","VisitId","TemperatureC","Pulse","RecordedByName","RecordedAt") VALUES
+ ('66666666-6666-6666-6666-666666666601','55555555-5555-5555-5555-555555555501',38.1,90,'Hana Mekonnen','2026-09-01 09:20:00+00'),
  ('66666666-6666-6666-6666-666666666602','55555555-5555-5555-5555-555555555502',36.8,74,'Hana Mekonnen','2026-09-10 10:05:00+00')
 ON CONFLICT ("Id") DO NOTHING;
 
 INSERT INTO "ClinicalNotes" ("Id","VisitId","NoteType","Content","AuthorName","CreatedAt") VALUES
+ ('77777777-7777-7777-7777-777777777701','55555555-5555-5555-5555-555555555501','Progress','Visit 1 test record.','Dr. Samuel Clinician','2026-09-01 09:40:00+00'),
  ('77777777-7777-7777-7777-777777777702','55555555-5555-5555-5555-555555555502','Progress','Visit 2 test record.','Dr. Samuel Clinician','2026-09-10 10:25:00+00')
 ON CONFLICT ("Id") DO NOTHING;
+
 COMMIT;
 
--- Revisit acceptance (expect Visit1 still 38.1 / 90)
--- SELECT vs."TemperatureC", vs."Pulse" FROM "VitalSigns" vs WHERE vs."VisitId" = '55555555-5555-5555-5555-555555555501';
+-- Revisit acceptance check: Visit 1 remains 38.1 C / pulse 90.
+-- SELECT "TemperatureC", "Pulse" FROM "VitalSigns"
+-- WHERE "VisitId" = '55555555-5555-5555-5555-555555555501';
