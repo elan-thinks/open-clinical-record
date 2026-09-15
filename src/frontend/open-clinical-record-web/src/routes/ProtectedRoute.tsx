@@ -29,7 +29,7 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
         <div style={{ padding: 40, maxWidth: 480 }}>
           <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', marginBottom: 8 }}>Access denied</h2>
           <p style={{ color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.5 }}>
-            Your role ({primaryRole ?? user.roles.join(', ') || 'none'}) cannot open this page.
+            Your role ({primaryRole ?? (user.roles.join(', ') || 'none')}) cannot open this page.
             Contact an administrator if you need access.
           </p>
           <button
