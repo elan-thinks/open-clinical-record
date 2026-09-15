@@ -17,11 +17,8 @@ export const ROLE_NAV: RoleNavMap = {
       ],
     },
     {
-      label: 'Insights',
-      items: [
-        { path: '/reports', label: 'Reports' },
-        { path: '/profile', label: 'Profile' },
-      ],
+      label: 'Account',
+      items: [{ path: '/profile', label: 'Profile' }],
     },
   ],
   Nurse: [
@@ -55,7 +52,7 @@ export const ROLE_NAV: RoleNavMap = {
         { path: '/patients', label: 'Patients' },
         { path: '/appointments', label: 'Appointments' },
         { path: '/patients/new', label: 'Registration' },
-        { path: '/appointments', label: 'Check-in / Queue' },
+        { path: '/checkin', label: 'Check-in / Queue' },
       ],
     },
     {
@@ -74,8 +71,8 @@ export const ROLE_NAV: RoleNavMap = {
         { path: '/admin/users', label: 'Users' },
         { path: '/admin/roles', label: 'Roles & Permissions' },
         { path: '/patients', label: 'Patients' },
-        { path: '/admin/audit', label: 'Audit Logs' },
-        { path: '/reports', label: 'Reports' },
+        { path: '/checkin', label: 'Check-in / Queue' },
+        { path: '/appointments', label: 'Appointments' },
       ],
     },
     {
@@ -97,7 +94,38 @@ export function primaryRole(roles: string[]): AppRole {
   return 'Doctor';
 }
 
-/** Simple geometric icons matching mock intent (inline SVG paths kept small). */
+/**
+ * Whether a nav item should appear active for the current location.
+ * Uses exact match for most items; prefix match for nested patient/chart routes.
+ */
+export function isNavActive(itemPath: string, currentPath: string): boolean {
+  if (itemPath === currentPath) return true;
+
+  if (itemPath === '/patients') {
+    if (currentPath === '/patients/new') return false;
+    if (currentPath.startsWith('/patients/') && currentPath.endsWith('/chart')) return false;
+    return currentPath.startsWith('/patients/');
+  }
+
+  if (itemPath === '/chart') {
+    return currentPath === '/chart' || /\/patients\/[^/]+\/chart/.test(currentPath);
+  }
+
+  if (itemPath === '/appointments') {
+    return currentPath === '/appointments' || currentPath.startsWith('/appointments/');
+  }
+
+  if (itemPath === '/admin/users') {
+    return currentPath.startsWith('/admin/users');
+  }
+
+  if (itemPath === '/admin/roles') {
+    return currentPath.startsWith('/admin/roles');
+  }
+
+  return false;
+}
+
 export function navIcon(path: string): string {
   const map: Record<string, string> = {
     '/dashboard': 'grid',

@@ -46,16 +46,24 @@ export interface ClinicalNote {
   createdAt: string;
 }
 
+/** Facility visit + encounter content (each return is a new visit; history is never overwritten). */
 export interface Visit {
   id: string;
   patientId: string;
+  appointmentId?: string | null;
   visitDate: string;
   visitType: string;
   status: string;
+  episodeLabel?: string | null;
+  location?: string | null;
+  department?: string | null;
   chiefComplaint?: string | null;
   plan?: string | null;
   instructions?: string | null;
   clinicianName?: string | null;
+  checkInAt?: string | null;
+  checkOutAt?: string | null;
+  finalizedAt?: string | null;
   createdAt: string;
   vitalSigns?: VitalSigns | null;
   diagnoses: Diagnosis[];
@@ -80,7 +88,11 @@ export interface PatientChart {
 }
 
 export interface CreateVisitPayload {
+  appointmentId?: string;
   visitType?: string;
+  episodeLabel?: string;
+  location?: string;
+  department?: string;
   chiefComplaint?: string;
   bloodPressure?: string;
   pulse?: number;
