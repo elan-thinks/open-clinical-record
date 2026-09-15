@@ -30,14 +30,22 @@ public static class IdentityDataSeeder
 
         await EnsureUserAsync(userManager, "admin@clinic.local", "System Administrator", AppRoles.Admin, seedPassword);
         await EnsureUserAsync(userManager, "doctor@clinic.local", "Dr. Samuel Clinician", AppRoles.Doctor, seedPassword);
-        await EnsureUserAsync(userManager, "nurse@clinic.local", "Nurse Ayana", AppRoles.Nurse, seedPassword);
-        await EnsureUserAsync(userManager, "desk@clinic.local", "Front Desk", AppRoles.Receptionist, seedPassword);
+        await EnsureUserAsync(userManager, "nurse@clinic.local", "Hana Mekonnen", AppRoles.Nurse, seedPassword);
+        await EnsureUserAsync(userManager, "desk@clinic.local", "Reception Desk", AppRoles.Receptionist, seedPassword);
 
         logger?.LogInformation("Identity roles and seed users are ready.");
     }
 
     private static async Task EnsureSchemaAsync(AppDbContext db, ILogger? logger)
     {
+        // In-memory / non-relational providers (integration tests): model-only create.
+        if (!db.Database.IsRelational())
+        {
+            await db.Database.EnsureCreatedAsync();
+            logger?.LogInformation("Non-relational database: EnsureCreated completed.");
+            return;
+        }
+
         var definedMigrations = db.Database.GetMigrations().ToList();
         var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
 
@@ -55,8 +63,6 @@ public static class IdentityDataSeeder
         }
         else
         {
-            // No migration classes in the assembly (e.g. not pulled yet).
-            // Create schema from the current model so the app is still runnable.
             logger?.LogWarning(
                 "No EF migrations found in the assembly. Using EnsureCreated for Identity schema. " +
                 "Add/pull Data/Migrations and use Migrate for production-style updates.");
@@ -64,7 +70,6 @@ public static class IdentityDataSeeder
             await db.Database.EnsureCreatedAsync();
         }
 
-        // Final check
         try
         {
             await db.Database.ExecuteSqlRawAsync("""SELECT 1 FROM "AspNetRoles" LIMIT 1""");
