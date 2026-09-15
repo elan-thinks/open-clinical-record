@@ -19,6 +19,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
     public DbSet<ClinicalNote> ClinicalNotes => Set<ClinicalNote>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<AppointmentEvent> AppointmentEvents => Set<AppointmentEvent>();
+    public DbSet<PatientDeathRecord> PatientDeathRecords => Set<PatientDeathRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,6 +56,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(p => new { p.LastName, p.FirstName });
         });
 
+        // Patient-owned clinical history must not be hard-deleted through a cascade.
+        // The application uses status/inactivation for patient lifecycle management.
         modelBuilder.Entity<PatientAllergy>(entity =>
         {
             entity.ToTable("PatientAllergies");
@@ -61,7 +65,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(x => x.Substance).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Reaction).HasMaxLength(200);
             entity.Property(x => x.Severity).HasMaxLength(32).IsRequired();
-            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => x.PatientId);
         });
 
@@ -71,7 +75,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Category).HasMaxLength(32).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(500).IsRequired();
-            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => x.PatientId);
         });
 
@@ -81,14 +85,21 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(x => x.Id);
             entity.Property(x => x.VisitType).HasMaxLength(40).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.EpisodeLabel).HasMaxLength(200);
+            entity.Property(x => x.Location).HasMaxLength(120);
+            entity.Property(x => x.Department).HasMaxLength(120);
             entity.Property(x => x.ChiefComplaint).HasMaxLength(500);
             entity.Property(x => x.Plan).HasMaxLength(1000);
             entity.Property(x => x.Instructions).HasMaxLength(500);
             entity.Property(x => x.ClinicianUserId).HasMaxLength(450);
             entity.Property(x => x.ClinicianName).HasMaxLength(200);
-            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            entity.Property(x => x.FinalizedByUserId).HasMaxLength(450);
+            entity.Property(x => x.FinalizedByName).HasMaxLength(200);
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Appointment).WithMany().HasForeignKey(x => x.AppointmentId).OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(x => x.PatientId);
-            entity.HasIndex(x => x.VisitDate);
+            entity.HasIndex(x => new { x.PatientId, x.VisitDate });
+            entity.HasIndex(x => x.AppointmentId);
         });
 
         modelBuilder.Entity<VitalSigns>(entity =>
@@ -96,7 +107,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.ToTable("VitalSigns");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.BloodPressure).HasMaxLength(20);
-            entity.Property(x => x.RespiratoryRate);
             entity.Property(x => x.TemperatureC).HasPrecision(4, 1);
             entity.Property(x => x.WeightKg).HasPrecision(6, 2);
             entity.Property(x => x.HeightCm).HasPrecision(5, 1);
@@ -138,10 +148,39 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(x => x.ProviderName).HasMaxLength(200);
             entity.Property(x => x.Reason).HasMaxLength(500);
             entity.Property(x => x.Notes).HasMaxLength(500);
-            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => x.AppointmentDate);
             entity.HasIndex(x => x.PatientId);
             entity.HasIndex(x => x.Status);
+        });
+
+        modelBuilder.Entity<AppointmentEvent>(entity =>
+        {
+            entity.ToTable("AppointmentEvents");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.FromStatus).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.ToStatus).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Reason).HasMaxLength(500);
+            entity.Property(x => x.ActorUserId).HasMaxLength(450);
+            entity.Property(x => x.ActorName).HasMaxLength(200);
+            entity.HasOne(x => x.Appointment).WithMany().HasForeignKey(x => x.AppointmentId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.AppointmentId);
+        });
+
+        modelBuilder.Entity<PatientDeathRecord>(entity =>
+        {
+            entity.ToTable("PatientDeathRecords");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Note).HasMaxLength(500);
+            entity.Property(x => x.RecordedByUserId).HasMaxLength(450);
+            entity.Property(x => x.RecordedByName).HasMaxLength(200);
+            entity.Property(x => x.ClearedByUserId).HasMaxLength(450);
+            entity.Property(x => x.ClearedByName).HasMaxLength(200);
+            entity.HasOne(x => x.Patient).WithMany().HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => x.PatientId);
+            entity.HasIndex(x => x.PatientId)
+                .HasFilter("\"IsActive\" = TRUE")
+                .IsUnique();
         });
     }
 }
