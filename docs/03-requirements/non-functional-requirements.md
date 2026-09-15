@@ -10,13 +10,14 @@ This document defines the practical quality requirements for the internship MVP.
 
 ## 2. Approved Application Roles
 
-The MVP has exactly three application roles:
+The MVP has exactly four application roles:
 
 - **Receptionist / Front Desk** — patient registration/search, permitted demographic updates, appointment management, check-in, and basic walk-in intake.
 - **Nurse / Clinical Staff** — patient/chart access, permitted chart updates, patient flow, check-in support, and observations such as vitals where included in the final MVP.
 - **Clinician / Doctor** — patient/chart review and authorized clinical/chart updates included in the MVP.
+- **System Administrator** — user accounts, role/permission administration, audit access, approved system configuration, and security/operational management. Administrator access does not imply clinical authoring privileges.
 
-There is **no Administrator role in the MVP**. Authentication, authorization, validation, audit, and error handling are cross-cutting concerns.
+Authentication, authorization, validation, audit, and error handling are cross-cutting mechanisms supporting these four application roles.
 
 ## 3. Security and Privacy
 
@@ -27,7 +28,7 @@ Protected patient, chart, appointment, and visit information shall require authe
 Authorization shall be enforced at the backend/application-service boundary, not only through UI visibility.
 
 **NFR-SEC-003 — Least privilege**  
-Permissions shall follow least-privilege principles across the three approved roles.
+Permissions shall follow least-privilege principles across the four approved roles.
 
 **NFR-SEC-004 — Session protection**  
 Authenticated sessions shall use an approved timeout and protection against trivial unauthorized reuse.
@@ -42,7 +43,7 @@ Patient and clinical information shall not be unnecessarily exposed through logs
 Important patient, chart, appointment, status, and security actions shall be attributable to an actor and timestamp where audit is required.
 
 **NFR-SEC-008 — Role separation**  
-Receptionist / Front Desk users shall not receive permissions intended only for authorized clinical roles.
+Receptionist / Front Desk users shall not receive permissions intended only for authorized clinical roles. System Administrator privileges shall not automatically grant clinical authoring permissions.
 
 **NFR-PRI-001 — Minimum necessary access**  
 Patient information shall be exposed only to authenticated users with permission for the requested operation.
