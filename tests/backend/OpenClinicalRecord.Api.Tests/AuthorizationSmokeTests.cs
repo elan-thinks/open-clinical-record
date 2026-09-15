@@ -1,18 +1,16 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace OpenClinicalRecord.Api.Tests;
 
 /// <summary>
 /// Smoke checks: protected routes reject unauthenticated callers (401).
-/// Role-specific 403 coverage should be added with a seeded test host.
 /// </summary>
-public class AuthorizationSmokeTests : IClassFixture<WebApplicationFactory<Program>>
+public class AuthorizationSmokeTests : IClassFixture<OcrWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public AuthorizationSmokeTests(WebApplicationFactory<Program> factory)
+    public AuthorizationSmokeTests(OcrWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

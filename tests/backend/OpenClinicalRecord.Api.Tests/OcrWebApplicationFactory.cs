@@ -9,12 +9,15 @@ using OpenClinicalRecord.Api.Data;
 namespace OpenClinicalRecord.Api.Tests;
 
 /// <summary>
-/// Test host: in-memory EF, fixed JWT key, Development seeding (roles + users).
+/// Test host: in-memory EF (unique DB per instance), fixed JWT key, Development seeding (roles + users).
 /// </summary>
 public class OcrWebApplicationFactory : WebApplicationFactory<Program>
 {
     public const string JwtKey = "TEST_ONLY_OpenClinicalRecord_Jwt_Signing_Key_32!";
     public const string SeedPassword = "Dev@12345";
+
+    // Unique name so parallel / multi-class fixtures never share state or create duplicate seed users.
+    private readonly string _dbName = $"ocr-tests-{Guid.NewGuid():N}";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -31,6 +34,7 @@ public class OcrWebApplicationFactory : WebApplicationFactory<Program>
                 ["Jwt:Issuer"] = "OpenClinicalRecord",
                 ["Jwt:Audience"] = "OpenClinicalRecord",
                 ["Jwt:ExpirationMinutes"] = "60",
+                // Placeholder only; services replace this with in-memory provider below.
                 ["ConnectionStrings:DefaultConnection"] =
                     "Host=localhost;Port=5432;Database=ocr_test_unused;Username=postgres"
             });
@@ -53,7 +57,7 @@ public class OcrWebApplicationFactory : WebApplicationFactory<Program>
             }
 
             services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase("ocr-auth-tests"));
+                options.UseInMemoryDatabase(_dbName));
         });
     }
 }
