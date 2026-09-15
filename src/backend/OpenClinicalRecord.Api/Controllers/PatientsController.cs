@@ -63,7 +63,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
+    [Authorize(Roles = "Admin,Receptionist")]
     public async Task<IActionResult> Create([FromBody] CreatePatientRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
