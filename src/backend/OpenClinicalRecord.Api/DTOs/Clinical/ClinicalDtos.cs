@@ -157,6 +157,14 @@ public class PatientChartDto
 /// </summary>
 public class DocumentVisitRequest
 {
+    [MaxLength(200)]
+    public string? EpisodeLabel { get; set; }
+    [MaxLength(120)]
+    public string? Location { get; set; }
+    [MaxLength(120)]
+    public string? Department { get; set; }
+    [MaxLength(500)]
+    public string? ChiefComplaint { get; set; }
     [MaxLength(20)]
     public string? BloodPressure { get; set; }
     public int? Pulse { get; set; }
@@ -173,14 +181,14 @@ public class DocumentVisitRequest
     public string? SecondaryDiagnosisCode { get; set; }
     [MaxLength(500)]
     public string? SecondaryDiagnosis { get; set; }
+    [MaxLength(32)]
+    public string? NoteType { get; set; }
     [MaxLength(4000)]
     public string? ClinicalNote { get; set; }
     [MaxLength(1000)]
     public string? Plan { get; set; }
     [MaxLength(500)]
     public string? Instructions { get; set; }
-    [MaxLength(500)]
-    public string? ChiefComplaint { get; set; }
     /// <summary>Draft | Final. Finalizing seals the visit for historical display.</summary>
     [MaxLength(32)]
     public string? Status { get; set; }
