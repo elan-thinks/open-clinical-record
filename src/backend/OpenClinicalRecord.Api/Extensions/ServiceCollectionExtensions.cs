@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -99,6 +100,8 @@ public static class ServiceCollectionExtensions
             })
             .AddJwtBearer(options =>
             {
+                // Keep claim types as issued so role checks match token payload ("role" / ClaimTypes.Role).
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -108,7 +111,10 @@ public static class ServiceCollectionExtensions
                     ValidIssuer = jwt.Issuer,
                     ValidAudience = jwt.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
-                    ClockSkew = TimeSpan.FromMinutes(1)
+                    ClockSkew = TimeSpan.FromMinutes(1),
+                    // JWT often serializes roles as short name "role"
+                    RoleClaimType = "role",
+                    NameClaimType = ClaimTypes.Name
                 };
             });
 
@@ -119,6 +125,8 @@ public static class ServiceCollectionExtensions
             options.AddPolicy("ReceptionistOnly", p => p.RequireRole(AppRoles.Receptionist));
             options.AddPolicy("AdminOnly", p => p.RequireRole(AppRoles.Admin));
             options.AddPolicy("ClinicalStaff", p => p.RequireRole(AppRoles.Doctor, AppRoles.Nurse));
+            options.AddPolicy("StaffCanBook",
+                p => p.RequireRole(AppRoles.Admin, AppRoles.Receptionist, AppRoles.Doctor, AppRoles.Nurse));
         });
 
         return services;
