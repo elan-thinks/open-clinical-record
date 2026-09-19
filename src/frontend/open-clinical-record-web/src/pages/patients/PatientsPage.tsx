@@ -31,7 +31,8 @@ export function PatientsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PatientStatusFilter>('active');
-  const showLoader = useHoldLoading(loading, 2800);
+  // Short hold for list loads (default ~1.2s)
+  const showLoader = useHoldLoading(loading, 1200);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQ(q.trim()), 280);

@@ -8,8 +8,8 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
-  const { user, isLoading, primaryRole } = useAuth();
-  // ~3s so the session pulse has time to shine
+  const { user, isLoading } = useAuth();
+  // Only this “Restoring your session…” screen stays longer (~3.2s)
   const showLoader = useHoldLoading(isLoading, 3200);
 
   if (showLoader) {
