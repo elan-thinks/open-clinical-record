@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -147,7 +148,6 @@ public static class ServiceCollectionExtensions
 
         services.AddAuthorization(options =>
         {
-            // Assertion helpers: robust against JWT role claim shape.
             static bool HasAnyRole(AuthorizationHandlerContext ctx, params string[] allowed)
             {
                 if (ctx.User.Identity?.IsAuthenticated != true) return false;
@@ -174,12 +174,10 @@ public static class ServiceCollectionExtensions
                 p => p.RequireAssertion(c => HasAnyRole(c,
                     AppRoles.Admin, AppRoles.Receptionist, AppRoles.Doctor, AppRoles.Nurse)));
 
-            // Mark deceased: clinical + front desk + admin (not Nurse alone — policy choice).
             options.AddPolicy("CanMarkDeceased",
                 p => p.RequireAssertion(c => HasAnyRole(c,
                     AppRoles.Admin, AppRoles.Doctor, AppRoles.Receptionist)));
 
-            // Clear deceased is more restricted.
             options.AddPolicy("CanClearDeceased",
                 p => p.RequireAssertion(c => HasAnyRole(c, AppRoles.Admin, AppRoles.Doctor)));
         });
