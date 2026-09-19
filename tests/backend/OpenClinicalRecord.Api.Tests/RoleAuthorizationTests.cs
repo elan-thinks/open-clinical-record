@@ -8,6 +8,8 @@ namespace OpenClinicalRecord.Api.Tests;
 
 /// <summary>
 /// Role matrix: wrong role → 403; correct role → not 403 (200/400/404 acceptable).
+/// Product policy (internship demo): clinical roles may register patients;
+/// chart writes remain clinical-only; users/roles remain Admin-only.
 /// </summary>
 public class RoleAuthorizationTests : IClassFixture<OcrWebApplicationFactory>
 {
@@ -77,24 +79,32 @@ public class RoleAuthorizationTests : IClassFixture<OcrWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Register_patient_clinical_roles_403()
+    public async Task Register_patient_allowed_for_clinical_and_desk_roles()
     {
         var doctor = await LoginAsync("doctor@clinic.local");
         var nurse = await LoginAsync("nurse@clinic.local");
-        // Include required fields so model validation does not short-circuit before authorization.
-        var payload = new
+        var payloadDoctor = new
         {
             firstName = "Auth",
-            lastName = "Test",
+            lastName = "DoctorReg",
             sex = "Female",
             dateOfBirth = "1990-01-15",
-            phone = "0911999000"
+            phone = "0911999001"
+        };
+        var payloadNurse = new
+        {
+            firstName = "Auth",
+            lastName = "NurseReg",
+            sex = "Male",
+            dateOfBirth = "1990-02-15",
+            phone = "0911999002"
         };
 
-        Assert.Equal(HttpStatusCode.Forbidden,
-            (await _client.SendAsync(WithBearer(HttpMethod.Post, "/api/patients", doctor, payload))).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden,
-            (await _client.SendAsync(WithBearer(HttpMethod.Post, "/api/patients", nurse, payload))).StatusCode);
+        var doctorRes = await _client.SendAsync(WithBearer(HttpMethod.Post, "/api/patients", doctor, payloadDoctor));
+        Assert.Equal(HttpStatusCode.Created, doctorRes.StatusCode);
+
+        var nurseRes = await _client.SendAsync(WithBearer(HttpMethod.Post, "/api/patients", nurse, payloadNurse));
+        Assert.Equal(HttpStatusCode.Created, nurseRes.StatusCode);
     }
 
     [Fact]

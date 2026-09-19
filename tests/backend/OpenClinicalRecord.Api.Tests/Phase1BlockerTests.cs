@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 namespace OpenClinicalRecord.Api.Tests;
 
 /// <summary>
-/// Phase 1 blockers: Draft default, deceased path only, Admin excluded from appointment status.
+/// Phase 1 blockers: Draft default, deceased path only.
+/// Admin is allowed appointment status updates (same staff set as create).
 /// </summary>
 public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
 {
@@ -94,7 +95,7 @@ public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Admin_cannot_update_appointment_status()
+    public async Task Admin_and_desk_can_update_appointment_status()
     {
         var desk = await LoginAsync("desk@clinic.local");
         var admin = await LoginAsync("admin@clinic.local");
@@ -117,16 +118,15 @@ public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
             HttpMethod.Patch,
             $"/api/appointments/{apptId}/status",
             admin,
-            new { status = "CheckedIn" }));
-        Assert.Equal(HttpStatusCode.Forbidden, adminStatus.StatusCode);
+            new { status = "Waiting" }));
+        Assert.Equal(HttpStatusCode.OK, adminStatus.StatusCode);
 
         var deskStatus = await _client.SendAsync(Req(
             HttpMethod.Patch,
             $"/api/appointments/{apptId}/status",
             desk,
             new { status = "CheckedIn" }));
-        Assert.NotEqual(HttpStatusCode.Forbidden, deskStatus.StatusCode);
-        Assert.NotEqual(HttpStatusCode.Unauthorized, deskStatus.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, deskStatus.StatusCode);
     }
 
     private sealed class LoginBody
