@@ -161,7 +161,6 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         _db.Appointments.Add(appt);
         await _db.SaveChangesAsync(ct);
 
@@ -176,7 +175,6 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             CreatedAt = DateTimeOffset.UtcNow
         });
         await _db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
 
         appt.Patient = patient;
         return ServiceResult<AppointmentDto>.Ok(Map(appt));
@@ -217,8 +215,6 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
                 ServiceErrorKind.Validation);
         }
 
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
-
         appt.Status = toStatus;
         appt.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -258,7 +254,6 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         }
 
         await _db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
         return ServiceResult<AppointmentDto>.Ok(Map(appt));
     }
 
