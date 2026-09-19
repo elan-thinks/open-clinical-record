@@ -75,13 +75,20 @@ public class VisitDto
 {
     public Guid Id { get; set; }
     public Guid PatientId { get; set; }
+    public Guid? AppointmentId { get; set; }
     public DateTimeOffset VisitDate { get; set; }
     public string VisitType { get; set; } = "Consultation";
-    public string Status { get; set; } = "InProgress";
+    public string Status { get; set; } = "Draft";
+    public string? EpisodeLabel { get; set; }
+    public string? Location { get; set; }
+    public string? Department { get; set; }
     public string? ChiefComplaint { get; set; }
     public string? Plan { get; set; }
     public string? Instructions { get; set; }
     public string? ClinicianName { get; set; }
+    public DateTimeOffset? CheckInAt { get; set; }
+    public DateTimeOffset? CheckOutAt { get; set; }
+    public DateTimeOffset? FinalizedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public VitalSignsDto? VitalSigns { get; set; }
     public List<DiagnosisDto> Diagnoses { get; set; } = new();
@@ -90,8 +97,15 @@ public class VisitDto
 
 public class CreateVisitRequest
 {
+    public Guid? AppointmentId { get; set; }
     [MaxLength(40)]
     public string VisitType { get; set; } = "Consultation";
+    [MaxLength(200)]
+    public string? EpisodeLabel { get; set; }
+    [MaxLength(120)]
+    public string? Location { get; set; }
+    [MaxLength(120)]
+    public string? Department { get; set; }
     [MaxLength(500)]
     public string? ChiefComplaint { get; set; }
     [MaxLength(20)]
@@ -117,7 +131,7 @@ public class CreateVisitRequest
     [MaxLength(500)]
     public string? Instructions { get; set; }
     [MaxLength(32)]
-    public string Status { get; set; } = "Completed";
+    public string Status { get; set; } = "Draft";
 }
 
 public class PatientChartDto
@@ -136,4 +150,38 @@ public class PatientChartDto
     public List<AllergyDto> Allergies { get; set; } = new();
     public List<HistoryItemDto> MedicalHistory { get; set; } = new();
     public List<VisitDto> Visits { get; set; } = new();
+}
+
+/// <summary>
+/// Document an existing open visit (e.g. Draft from check-in). Does not create a new visit row.
+/// </summary>
+public class DocumentVisitRequest
+{
+    [MaxLength(20)]
+    public string? BloodPressure { get; set; }
+    public int? Pulse { get; set; }
+    public decimal? TemperatureC { get; set; }
+    public int? RespiratoryRate { get; set; }
+    public int? Spo2 { get; set; }
+    public decimal? WeightKg { get; set; }
+    public decimal? HeightCm { get; set; }
+    [MaxLength(32)]
+    public string? PrimaryDiagnosisCode { get; set; }
+    [MaxLength(500)]
+    public string? PrimaryDiagnosis { get; set; }
+    [MaxLength(32)]
+    public string? SecondaryDiagnosisCode { get; set; }
+    [MaxLength(500)]
+    public string? SecondaryDiagnosis { get; set; }
+    [MaxLength(4000)]
+    public string? ClinicalNote { get; set; }
+    [MaxLength(1000)]
+    public string? Plan { get; set; }
+    [MaxLength(500)]
+    public string? Instructions { get; set; }
+    [MaxLength(500)]
+    public string? ChiefComplaint { get; set; }
+    /// <summary>Draft | Final. Finalizing seals the visit for historical display.</summary>
+    [MaxLength(32)]
+    public string? Status { get; set; }
 }
