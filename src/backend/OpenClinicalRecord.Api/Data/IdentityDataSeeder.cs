@@ -38,7 +38,6 @@ public static class IdentityDataSeeder
 
     private static async Task EnsureSchemaAsync(AppDbContext db, ILogger? logger)
     {
-        // In-memory / non-relational providers (integration tests): model-only create.
         if (!db.Database.IsRelational())
         {
             await db.Database.EnsureCreatedAsync();
@@ -64,9 +63,7 @@ public static class IdentityDataSeeder
         else
         {
             logger?.LogWarning(
-                "No EF migrations found in the assembly. Using EnsureCreated for Identity schema. " +
-                "Add/pull Data/Migrations and use Migrate for production-style updates.");
-
+                "No EF migrations found in the assembly. Using EnsureCreated for Identity schema.");
             await db.Database.EnsureCreatedAsync();
         }
 
@@ -81,6 +78,64 @@ public static class IdentityDataSeeder
                 "Try: drop the database (or DROP TABLE \"__EFMigrationsHistory\"), " +
                 "ensure Data/Migrations is present, then run: dotnet ef database update",
                 ex);
+        }
+
+        // Safety net: hand-written migrations sometimes lag behind local DBs.
+        await EnsureAppointmentTablesAsync(db, logger);
+    }
+
+    private static async Task EnsureAppointmentTablesAsync(AppDbContext db, ILogger? logger)
+    {
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE TABLE IF NOT EXISTS "Appointments" (
+                    "Id" uuid NOT NULL,
+                    "PatientId" uuid NOT NULL,
+                    "AppointmentDate" date NOT NULL,
+                    "StartTime" time without time zone NOT NULL,
+                    "DurationMinutes" integer NOT NULL,
+                    "AppointmentType" character varying(40) NOT NULL,
+                    "Status" character varying(32) NOT NULL,
+                    "ProviderUserId" character varying(450) NULL,
+                    "ProviderName" character varying(200) NULL,
+                    "Reason" character varying(500) NULL,
+                    "Notes" character varying(500) NULL,
+                    "CreatedAt" timestamp with time zone NOT NULL,
+                    "UpdatedAt" timestamp with time zone NULL,
+                    CONSTRAINT "PK_Appointments" PRIMARY KEY ("Id")
+                );
+                """);
+
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE TABLE IF NOT EXISTS "AppointmentEvents" (
+                    "Id" uuid NOT NULL,
+                    "AppointmentId" uuid NOT NULL,
+                    "FromStatus" character varying(32) NOT NULL,
+                    "ToStatus" character varying(32) NOT NULL,
+                    "Reason" character varying(500) NULL,
+                    "ActorUserId" character varying(450) NULL,
+                    "ActorName" character varying(200) NULL,
+                    "CreatedAt" timestamp with time zone NOT NULL,
+                    CONSTRAINT "PK_AppointmentEvents" PRIMARY KEY ("Id")
+                );
+                """);
+
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE INDEX IF NOT EXISTS "IX_Appointments_AppointmentDate" ON "Appointments" ("AppointmentDate");
+                CREATE INDEX IF NOT EXISTS "IX_Appointments_PatientId" ON "Appointments" ("PatientId");
+                CREATE INDEX IF NOT EXISTS "IX_Appointments_Status" ON "Appointments" ("Status");
+                CREATE INDEX IF NOT EXISTS "IX_AppointmentEvents_AppointmentId" ON "AppointmentEvents" ("AppointmentId");
+                """);
+
+            logger?.LogInformation("Appointment tables verified (CREATE IF NOT EXISTS)." );
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "Could not ensure appointment tables. Create may fail until schema is fixed.");
         }
     }
 

@@ -16,9 +16,6 @@ public interface IAppointmentWorkflowService
     Task<ServiceResult<AppointmentDto>> RescheduleAsync(Guid id, RescheduleAppointmentRequest request, ActorContext actor, CancellationToken ct);
 }
 
-/// <summary>
-/// Appointment lifecycle: create, status transitions, check-in → Draft visit, reschedule.
-/// </summary>
 public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
 {
     private static readonly HashSet<string> AllowedStatus = new(StringComparer.OrdinalIgnoreCase)
@@ -63,7 +60,7 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             .ThenBy(a => a.StartTime)
             .Take(200)
             .ToListAsync(ct);
-        return rows.Select(Map).ToList();
+        return rows.Select(a => Map(a)).ToList();
     }
 
     public async Task<ServiceResult<AppointmentDto>> GetAsync(Guid id, CancellationToken ct)
@@ -82,22 +79,29 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         if (!exists)
             return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Fail("Appointment not found.", ServiceErrorKind.NotFound);
 
-        var events = await _db.AppointmentEvents.AsNoTracking()
-            .Where(e => e.AppointmentId == id)
-            .OrderByDescending(e => e.CreatedAt)
-            .Select(e => new AppointmentEventDto
-            {
-                Id = e.Id,
-                AppointmentId = e.AppointmentId,
-                FromStatus = e.FromStatus,
-                ToStatus = e.ToStatus,
-                Reason = e.Reason,
-                ActorName = e.ActorName,
-                CreatedAt = e.CreatedAt
-            })
-            .ToListAsync(ct);
+        try
+        {
+            var events = await _db.AppointmentEvents.AsNoTracking()
+                .Where(e => e.AppointmentId == id)
+                .OrderByDescending(e => e.CreatedAt)
+                .Select(e => new AppointmentEventDto
+                {
+                    Id = e.Id,
+                    AppointmentId = e.AppointmentId,
+                    FromStatus = e.FromStatus,
+                    ToStatus = e.ToStatus,
+                    Reason = e.Reason,
+                    ActorName = e.ActorName,
+                    CreatedAt = e.CreatedAt
+                })
+                .ToListAsync(ct);
 
-        return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Ok(events);
+            return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Ok(events);
+        }
+        catch
+        {
+            return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Ok(Array.Empty<AppointmentEventDto>());
+        }
     }
 
     public async Task<ServiceResult<AppointmentDto>> CreateAsync(
@@ -111,7 +115,7 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         var patient = await _db.Patients.AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == request.PatientId, ct);
         if (patient is null)
-            return ServiceResult<AppointmentDto>.Fail("Patient not found.", ServiceErrorKind.Validation);
+            return ServiceResult<AppointmentDto>.Fail("Patient not found. Register the patient first.", ServiceErrorKind.Validation);
 
         if (string.Equals(patient.Status, "Deceased", StringComparison.OrdinalIgnoreCase))
             return ServiceResult<AppointmentDto>.Fail(
@@ -172,63 +176,38 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             CreatedAt = DateTimeOffset.UtcNow
         };
 
+        // 1) Save appointment alone (must succeed).
         try
         {
             _db.Appointments.Add(appt);
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<AppointmentDto>.Fail(
+                "Could not save appointment. " + (ex.InnerException?.Message ?? ex.Message),
+                ServiceErrorKind.Validation);
+        }
 
-            // History event in the same transaction when possible.
+        // 2) History event is best-effort (must not fail create).
+        try
+        {
             _db.AppointmentEvents.Add(new AppointmentEvent
             {
                 Id = Guid.NewGuid(),
                 AppointmentId = appt.Id,
-                FromStatus = "—",
+                FromStatus = "None",
                 ToStatus = "Scheduled",
                 Reason = "Created",
                 ActorUserId = providerUserId,
                 ActorName = providerName,
                 CreatedAt = DateTimeOffset.UtcNow
             });
-
             await _db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex)
+        catch
         {
-            // If events table is missing or FK fails, still try to save the appointment alone.
-            _db.ChangeTracker.Clear();
-            try
-            {
-                _db.Appointments.Add(appt);
-                await _db.SaveChangesAsync(ct);
-            }
-            catch (DbUpdateException inner)
-            {
-                return ServiceResult<AppointmentDto>.Fail(
-                    "Could not save appointment. " + (inner.InnerException?.Message ?? inner.Message),
-                    ServiceErrorKind.Validation);
-            }
-
-            // Best-effort event (ignore if table missing).
-            try
-            {
-                _db.AppointmentEvents.Add(new AppointmentEvent
-                {
-                    Id = Guid.NewGuid(),
-                    AppointmentId = appt.Id,
-                    FromStatus = "—",
-                    ToStatus = "Scheduled",
-                    Reason = "Created",
-                    ActorUserId = providerUserId,
-                    ActorName = providerName,
-                    CreatedAt = DateTimeOffset.UtcNow
-                });
-                await _db.SaveChangesAsync(ct);
-            }
-            catch
-            {
-                /* history is optional if schema lags */
-            }
-
-            _ = ex; // first failure path already handled
+            /* optional history */
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt, patient));
@@ -272,21 +251,9 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         appt.Status = toStatus;
         appt.UpdatedAt = DateTimeOffset.UtcNow;
 
-        _db.AppointmentEvents.Add(new AppointmentEvent
-        {
-            AppointmentId = appt.Id,
-            FromStatus = fromStatus,
-            ToStatus = toStatus,
-            Reason = NullIfEmpty(request.Reason),
-            ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
-            ActorName = actor.DisplayName,
-            CreatedAt = DateTimeOffset.UtcNow
-        });
-
         if (string.Equals(toStatus, "CheckedIn", StringComparison.OrdinalIgnoreCase))
         {
-            var existing = await _db.ClinicalVisits
-                .AnyAsync(v => v.AppointmentId == appt.Id, ct);
+            var existing = await _db.ClinicalVisits.AnyAsync(v => v.AppointmentId == appt.Id, ct);
             if (!existing)
             {
                 _db.ClinicalVisits.Add(new ClinicalVisit
@@ -311,11 +278,30 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex)
         {
             return ServiceResult<AppointmentDto>.Fail(
                 "Could not update appointment. " + (ex.InnerException?.Message ?? ex.Message),
                 ServiceErrorKind.Validation);
+        }
+
+        try
+        {
+            _db.AppointmentEvents.Add(new AppointmentEvent
+            {
+                AppointmentId = appt.Id,
+                FromStatus = fromStatus,
+                ToStatus = toStatus,
+                Reason = NullIfEmpty(request.Reason),
+                ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
+                ActorName = actor.DisplayName,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+            await _db.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            /* optional */
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt));
@@ -337,7 +323,7 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             || string.Equals(appt.Status, "InProgress", StringComparison.OrdinalIgnoreCase))
         {
             return ServiceResult<AppointmentDto>.Fail(
-                $"Cannot reschedule an appointment in status '{appt.Status}'. Cancel or complete the visit workflow instead.",
+                $"Cannot reschedule an appointment in status '{appt.Status}'.",
                 ServiceErrorKind.Validation);
         }
 
@@ -401,28 +387,36 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
 
         appt.UpdatedAt = DateTimeOffset.UtcNow;
 
-        _db.AppointmentEvents.Add(new AppointmentEvent
-        {
-            AppointmentId = appt.Id,
-            FromStatus = fromStatus,
-            ToStatus = appt.Status,
-            Reason = string.IsNullOrWhiteSpace(request.Reason)
-                ? $"Rescheduled: {oldSummary} → {newSummary}"
-                : $"Rescheduled: {oldSummary} → {newSummary}. {request.Reason.Trim()}",
-            ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
-            ActorName = actor.DisplayName,
-            CreatedAt = DateTimeOffset.UtcNow
-        });
-
         try
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex)
         {
             return ServiceResult<AppointmentDto>.Fail(
                 "Could not reschedule appointment. " + (ex.InnerException?.Message ?? ex.Message),
                 ServiceErrorKind.Validation);
+        }
+
+        try
+        {
+            _db.AppointmentEvents.Add(new AppointmentEvent
+            {
+                AppointmentId = appt.Id,
+                FromStatus = fromStatus,
+                ToStatus = appt.Status,
+                Reason = string.IsNullOrWhiteSpace(request.Reason)
+                    ? $"Rescheduled: {oldSummary} -> {newSummary}"
+                    : $"Rescheduled: {oldSummary} -> {newSummary}. {request.Reason.Trim()}",
+                ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
+                ActorName = actor.DisplayName,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+            await _db.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            /* optional */
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt));

@@ -13,10 +13,14 @@ namespace OpenClinicalRecord.Api.Controllers;
 public class AppointmentsController : ControllerBase
 {
     private readonly IAppointmentWorkflowService _appointments;
+    private readonly ILogger<AppointmentsController> _logger;
 
-    public AppointmentsController(IAppointmentWorkflowService appointments)
+    public AppointmentsController(
+        IAppointmentWorkflowService appointments,
+        ILogger<AppointmentsController> logger)
     {
         _appointments = appointments;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -48,9 +52,22 @@ public class AppointmentsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        var result = await _appointments.CreateAsync(request, GetActor(), cancellationToken);
-        if (!result.Succeeded) return ToActionResult(result);
-        return CreatedAtAction(nameof(Get), new { id = result.Value!.Id }, result.Value);
+
+        try
+        {
+            var result = await _appointments.CreateAsync(request, GetActor(), cancellationToken);
+            if (!result.Succeeded) return ToActionResult(result);
+            // Prefer 201 with body; avoid CreatedAtAction route issues.
+            return StatusCode(StatusCodes.Status201Created, result.Value);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create appointment for patient {PatientId}", request.PatientId);
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "Could not create appointment. " + (ex.InnerException?.Message ?? ex.Message)
+            });
+        }
     }
 
     [HttpPatch("{id:guid}/status")]
@@ -60,8 +77,19 @@ public class AppointmentsController : ControllerBase
         [FromBody] UpdateAppointmentStatusRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await _appointments.UpdateStatusAsync(id, request, GetActor(), cancellationToken);
-        return ToActionResult(result);
+        try
+        {
+            var result = await _appointments.UpdateStatusAsync(id, request, GetActor(), cancellationToken);
+            return ToActionResult(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update appointment {Id} status", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "Could not update appointment. " + (ex.InnerException?.Message ?? ex.Message)
+            });
+        }
     }
 
     [HttpPatch("{id:guid}/reschedule")]
@@ -72,8 +100,19 @@ public class AppointmentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        var result = await _appointments.RescheduleAsync(id, request, GetActor(), cancellationToken);
-        return ToActionResult(result);
+        try
+        {
+            var result = await _appointments.RescheduleAsync(id, request, GetActor(), cancellationToken);
+            return ToActionResult(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to reschedule appointment {Id}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "Could not reschedule appointment. " + (ex.InnerException?.Message ?? ex.Message)
+            });
+        }
     }
 
     private ActorContext GetActor()
