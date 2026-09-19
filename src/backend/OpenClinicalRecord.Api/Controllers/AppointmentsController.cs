@@ -67,6 +67,22 @@ public class AppointmentsController : ControllerBase
         return ToActionResult(result);
     }
 
+    /// <summary>
+    /// First-class reschedule: changes date/time while recording an event.
+    /// Allowed for Scheduled, Waiting, Cancelled, NoShow — not CheckedIn/InProgress/Completed.
+    /// </summary>
+    [HttpPatch("{id:guid}/reschedule")]
+    [Authorize(Roles = "Admin,Receptionist")]
+    public async Task<IActionResult> Reschedule(
+        Guid id,
+        [FromBody] RescheduleAppointmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        var result = await _appointments.RescheduleAsync(id, request, GetActor(), cancellationToken);
+        return ToActionResult(result);
+    }
+
     private ActorContext GetActor()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

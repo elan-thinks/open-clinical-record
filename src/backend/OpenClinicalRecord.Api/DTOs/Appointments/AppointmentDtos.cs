@@ -55,6 +55,24 @@ public class UpdateAppointmentStatusRequest
     public string? Reason { get; set; }
 }
 
+public class RescheduleAppointmentRequest
+{
+    [Required]
+    public DateOnly AppointmentDate { get; set; }
+
+    [Required]
+    public TimeOnly StartTime { get; set; }
+
+    public int DurationMinutes { get; set; } = 30;
+
+    [MaxLength(200)]
+    public string? ProviderName { get; set; }
+
+    /// <summary>Optional note explaining why the slot changed.</summary>
+    [MaxLength(500)]
+    public string? Reason { get; set; }
+}
+
 public class AppointmentEventDto
 {
     public Guid Id { get; set; }
