@@ -62,4 +62,16 @@ table{width:100%;border-collapse:collapse;min-width:620px;}th{font-size:10.5px;t
 .placeholder-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;}.placeholder-card h2{font-family:'Space Grotesk',sans-serif;margin:0 0 6px;font-size:18px;}.placeholder-card p{color:var(--text-dim);font-size:13px;line-height:1.55;margin:0;}
 .admin-page,.patients-page,.patient-detail,.chart-page{max-width:1120px;}
 
+/* When a message appears, auto-scroll leaves it fully visible */
+.error-banner,
+.success-banner,
+.notice-banner,
+.dash-error,
+.login-error,
+.flash-banner,
+[data-flash="true"] {
+  scroll-margin-top: 24px;
+  scroll-margin-bottom: 16px;
+}
+
 @media(max-width:700px){.page-head{flex-direction:column;}.form-grid{grid-template-columns:1fr;}.form-group.full{grid-column:auto;}}
