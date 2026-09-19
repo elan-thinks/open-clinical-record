@@ -18,6 +18,24 @@ public class AppointmentsController : ControllerBase
         "Scheduled", "Waiting", "CheckedIn", "InProgress", "Completed", "Cancelled", "NoShow"
     };
 
+    private static readonly Dictionary<string, HashSet<string>> Transitions =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Scheduled"] = new(StringComparer.OrdinalIgnoreCase)
+                { "Waiting", "CheckedIn", "Cancelled", "NoShow" },
+            ["Waiting"] = new(StringComparer.OrdinalIgnoreCase)
+                { "CheckedIn", "Cancelled", "NoShow", "Scheduled" },
+            ["CheckedIn"] = new(StringComparer.OrdinalIgnoreCase)
+                { "InProgress", "Waiting", "Completed", "Cancelled" },
+            ["InProgress"] = new(StringComparer.OrdinalIgnoreCase)
+                { "Completed", "CheckedIn" },
+            ["Cancelled"] = new(StringComparer.OrdinalIgnoreCase)
+                { "Scheduled" },
+            ["NoShow"] = new(StringComparer.OrdinalIgnoreCase)
+                { "Scheduled" },
+            ["Completed"] = new(StringComparer.OrdinalIgnoreCase),
+        };
+
     private readonly AppDbContext _db;
 
     public AppointmentsController(AppDbContext db)
@@ -65,8 +83,32 @@ public class AppointmentsController : ControllerBase
         return Ok(Map(a));
     }
 
+    [HttpGet("{id:guid}/events")]
+    public async Task<IActionResult> ListEvents(Guid id, CancellationToken cancellationToken)
+    {
+        var exists = await _db.Appointments.AsNoTracking().AnyAsync(a => a.Id == id, cancellationToken);
+        if (!exists) return NotFound(new { message = "Appointment not found." });
+
+        var events = await _db.AppointmentEvents.AsNoTracking()
+            .Where(e => e.AppointmentId == id)
+            .OrderByDescending(e => e.CreatedAt)
+            .Select(e => new AppointmentEventDto
+            {
+                Id = e.Id,
+                AppointmentId = e.AppointmentId,
+                FromStatus = e.FromStatus,
+                ToStatus = e.ToStatus,
+                Reason = e.Reason,
+                ActorName = e.ActorName,
+                CreatedAt = e.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return Ok(events);
+    }
+
     [HttpPost]
-    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
+    [Authorize(Roles = "Admin,Receptionist")]
     public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -75,14 +117,52 @@ public class AppointmentsController : ControllerBase
             .FirstOrDefaultAsync(p => p.Id == request.PatientId, cancellationToken);
         if (patient is null) return BadRequest(new { message = "Patient not found." });
 
+        if (string.Equals(patient.Status, "Deceased", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "Cannot book appointments for a deceased patient." });
+        }
+
+        var duration = request.DurationMinutes <= 0 ? 30 : request.DurationMinutes;
+        var start = request.StartTime;
+        var endMinutes = start.Hour * 60 + start.Minute + duration;
+
+        if (!string.IsNullOrWhiteSpace(request.ProviderName))
+        {
+            var provider = request.ProviderName.Trim();
+            var sameDay = await _db.Appointments.AsNoTracking()
+                .Where(a => a.AppointmentDate == request.AppointmentDate
+                            && a.ProviderName == provider
+                            && a.Status != "Cancelled"
+                            && a.Status != "NoShow"
+                            && a.Status != "Completed")
+                .ToListAsync(cancellationToken);
+
+            foreach (var existing in sameDay)
+            {
+                var eStart = existing.StartTime.Hour * 60 + existing.StartTime.Minute;
+                var eEnd = eStart + existing.DurationMinutes;
+                var nStart = start.Hour * 60 + start.Minute;
+                if (nStart < eEnd && endMinutes > eStart)
+                {
+                    return Conflict(new
+                    {
+                        message =
+                            $"Time conflict with existing appointment at {existing.StartTime:HH\\:mm} ({existing.DurationMinutes} min) for {provider}."
+                    });
+                }
+            }
+        }
+
         var (userId, name) = GetCurrentUser();
         var appt = new Appointment
         {
             PatientId = request.PatientId,
             AppointmentDate = request.AppointmentDate,
             StartTime = request.StartTime,
-            DurationMinutes = request.DurationMinutes <= 0 ? 30 : request.DurationMinutes,
-            AppointmentType = string.IsNullOrWhiteSpace(request.AppointmentType) ? "Consultation" : request.AppointmentType.Trim(),
+            DurationMinutes = duration,
+            AppointmentType = string.IsNullOrWhiteSpace(request.AppointmentType)
+                ? "Consultation"
+                : request.AppointmentType.Trim(),
             Status = "Scheduled",
             ProviderUserId = userId,
             ProviderName = string.IsNullOrWhiteSpace(request.ProviderName) ? name : request.ProviderName.Trim(),
@@ -94,27 +174,114 @@ public class AppointmentsController : ControllerBase
         _db.Appointments.Add(appt);
         await _db.SaveChangesAsync(cancellationToken);
 
+        _db.AppointmentEvents.Add(new AppointmentEvent
+        {
+            AppointmentId = appt.Id,
+            FromStatus = "",
+            ToStatus = "Scheduled",
+            Reason = "Created",
+            ActorUserId = userId,
+            ActorName = name,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        await _db.SaveChangesAsync(cancellationToken);
+
         appt.Patient = patient;
         return CreatedAtAction(nameof(Get), new { id = appt.Id }, Map(appt));
     }
 
+    /// <summary>
+    /// Routine appointment lifecycle (check-in, waiting, complete, cancel, no-show).
+    /// Admin is intentionally excluded — operational role, not clinical/front-desk workflow.
+    /// </summary>
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
-    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateAppointmentStatusRequest request, CancellationToken cancellationToken)
+    [Authorize(Roles = "Receptionist,Doctor,Nurse")]
+    public async Task<IActionResult> UpdateStatus(
+        Guid id,
+        [FromBody] UpdateAppointmentStatusRequest request,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Status) || !AllowedStatus.Contains(request.Status.Trim()))
         {
             return BadRequest(new { message = "Invalid status." });
         }
 
+        var toStatus = NormalizeStatus(request.Status);
+
         var appt = await _db.Appointments.Include(a => a.Patient)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         if (appt is null) return NotFound(new { message = "Appointment not found." });
 
-        appt.Status = NormalizeStatus(request.Status);
+        var fromStatus = appt.Status;
+        if (string.Equals(fromStatus, toStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            return Ok(Map(appt));
+        }
+
+        if (!IsTransitionAllowed(fromStatus, toStatus))
+        {
+            return BadRequest(new
+            {
+                message = $"Transition from '{fromStatus}' to '{toStatus}' is not allowed.",
+                from = fromStatus,
+                to = toStatus
+            });
+        }
+
+        if (string.Equals(toStatus, "Cancelled", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(request.Reason))
+        {
+            return BadRequest(new { message = "A reason is required when cancelling an appointment." });
+        }
+
+        var (userId, name) = GetCurrentUser();
+        appt.Status = toStatus;
         appt.UpdatedAt = DateTimeOffset.UtcNow;
+
+        _db.AppointmentEvents.Add(new AppointmentEvent
+        {
+            AppointmentId = appt.Id,
+            FromStatus = fromStatus,
+            ToStatus = toStatus,
+            Reason = NullIfEmpty(request.Reason),
+            ActorUserId = userId,
+            ActorName = name,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        // Check-in opens a NEW clinical visit (never overwrites prior encounters).
+        if (string.Equals(toStatus, "CheckedIn", StringComparison.OrdinalIgnoreCase))
+        {
+            var existing = await _db.ClinicalVisits
+                .AnyAsync(v => v.AppointmentId == appt.Id, cancellationToken);
+            if (!existing)
+            {
+                _db.ClinicalVisits.Add(new ClinicalVisit
+                {
+                    PatientId = appt.PatientId,
+                    AppointmentId = appt.Id,
+                    VisitDate = DateTimeOffset.UtcNow,
+                    VisitType = string.IsNullOrWhiteSpace(appt.AppointmentType)
+                        ? "Consultation"
+                        : appt.AppointmentType,
+                    Status = "Draft",
+                    ChiefComplaint = NullIfEmpty(appt.Reason),
+                    ClinicianName = NullIfEmpty(appt.ProviderName),
+                    Location = "Outpatient",
+                    CheckInAt = DateTimeOffset.UtcNow,
+                    CreatedAt = DateTimeOffset.UtcNow
+                });
+            }
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(Map(appt));
+    }
+
+    private static bool IsTransitionAllowed(string from, string to)
+    {
+        if (!Transitions.TryGetValue(from, out var allowed)) return false;
+        return allowed.Contains(to);
     }
 
     private static string NormalizeStatus(string status)
