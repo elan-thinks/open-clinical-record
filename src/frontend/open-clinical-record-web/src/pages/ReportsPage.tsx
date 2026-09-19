@@ -42,13 +42,13 @@ function downloadCsv(filename: string, rows: string[][]) {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  Scheduled: '#5b9fd4',
-  Waiting: '#eab35a',
-  CheckedIn: '#3ddc97',
-  InProgress: '#3ddc97',
-  Completed: '#29a874',
-  Cancelled: '#e8778a',
-  NoShow: '#e8778a',
+  Scheduled: 'var(--status-scheduled)',
+  Waiting: 'var(--status-waiting)',
+  CheckedIn: 'var(--status-checked-in)',
+  InProgress: 'var(--status-in-progress)',
+  Completed: 'var(--status-completed)',
+  Cancelled: 'var(--status-cancelled)',
+  NoShow: 'var(--status-no-show)',
 };
 
 export function ReportsPage() {
@@ -109,11 +109,12 @@ export function ReportsPage() {
       ['Report date', date],
       ['Appointments (selected day)', String(dayAppts.length)],
       ['Appointments today (live)', String(stats?.appointmentsToday ?? 0)],
-      ['Waiting / scheduled today', String(stats?.waitingCount ?? 0)],
+      ['Scheduled today', String(stats?.scheduledCount ?? 0)],
+      ['Waiting today', String(stats?.waitingCount ?? 0)],
       ['Checked in today', String(stats?.checkedInCount ?? 0)],
       ['Active patients', String(stats?.activePatients ?? 0)],
       ['Visits this week', String(stats?.visitsThisWeek ?? 0)],
-      ['Patients with allergy on chart', String(stats?.openChartAlerts ?? 0)],
+      ['Patients with allergy on chart', String(stats?.patientsWithAllergies ?? 0)],
       ...statusBreakdown.map(([status, count]) => [`Day status: ${status}`, String(count)]),
     ];
     downloadCsv(`ocr-summary-${date}.csv`, rows);
@@ -187,7 +188,7 @@ export function ReportsPage() {
             <ul className="breakdown-list">
               {statusBreakdown.map(([status, count]) => {
                 const pct = Math.round((count / maxStatus) * 100);
-                const color = STATUS_COLORS[status] ?? '#6d8577';
+                const color = STATUS_COLORS[status] ?? 'var(--text-faint)';
                 return (
                   <li key={status}>
                     <div className="bd-top">
@@ -240,8 +241,8 @@ export function ReportsPage() {
                           className="status-pill"
                           style={{
                             color: STATUS_COLORS[a.status] ?? undefined,
-                            borderColor: `${STATUS_COLORS[a.status] ?? '#6d8577'}44`,
-                            background: `${STATUS_COLORS[a.status] ?? '#6d8577'}18`,
+                            borderColor: STATUS_COLORS[a.status] ?? 'var(--line)',
+                            background: 'var(--surface-2)',
                           }}
                         >
                           {a.status}
