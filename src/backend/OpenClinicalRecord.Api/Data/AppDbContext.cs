@@ -21,6 +21,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<AppointmentEvent> AppointmentEvents => Set<AppointmentEvent>();
     public DbSet<PatientDeathRecord> PatientDeathRecords => Set<PatientDeathRecord>();
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,8 +57,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(p => new { p.LastName, p.FirstName });
         });
 
-        // Patient-owned clinical history must not be hard-deleted through a cascade.
-        // The application uses status/inactivation for patient lifecycle management.
         modelBuilder.Entity<PatientAllergy>(entity =>
         {
             entity.ToTable("PatientAllergies");
@@ -180,6 +179,21 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(x => x.PatientId)
                 .HasFilter("\"IsActive\" = TRUE")
                 .IsUnique();
+        });
+
+        modelBuilder.Entity<AuditEvent>(entity =>
+        {
+            entity.ToTable("AuditEvents");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Action).HasMaxLength(80).IsRequired();
+            entity.Property(e => e.EntityType).HasMaxLength(40).IsRequired();
+            entity.Property(e => e.ActorUserId).HasMaxLength(450);
+            entity.Property(e => e.ActorName).HasMaxLength(200);
+            entity.Property(e => e.Summary).HasMaxLength(500);
+            entity.Property(e => e.CorrelationId).HasMaxLength(64);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => new { e.EntityType, e.EntityId });
+            entity.HasIndex(e => e.Action);
         });
     }
 }
