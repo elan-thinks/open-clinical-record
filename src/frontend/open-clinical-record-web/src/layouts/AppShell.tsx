@@ -60,7 +60,6 @@ export function AppShell({
     onNavigate(path);
   };
 
-  // Whenever a page shows/hides an error or success message, bring it into view.
   useEffect(() => {
     const root = contentRef.current;
     if (!root) return;
@@ -125,44 +124,52 @@ export function AppShell({
         <div className="sidebar-foot">
           <div className="user-row">
             <div className="user-av">{initials(userName) || 'U'}</div>
-            <div>
+            <div className="user-meta">
               <div className="user-name">{userName}</div>
               <div className="user-role">{role === 'Doctor' ? 'Clinician' : role}</div>
             </div>
           </div>
-          <span className="status-chip">
-            <span className={`status-dot${backendOnline ? '' : ' off'}`} />
-            {backendOnline ? 'API online' : 'API offline'}
-          </span>
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
-          >
-            {theme === 'dark' ? (
-              <>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <circle cx="12" cy="12" r="4" />
-                  <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-                </svg>
-                Light theme
-              </>
-            ) : (
-              <>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z" />
-                </svg>
-                Dark theme
-              </>
-            )}
-          </button>
-          {onLogout && (
-            <button type="button" className="logout-btn" onClick={onLogout}>
-              Sign out
-            </button>
-          )}
+          <div className="sidebar-foot-meta">
+            <span className="status-chip">
+              <span className={`status-dot${backendOnline ? '' : ' off'}`} />
+              {backendOnline ? 'API online' : 'API offline'}
+            </span>
+            <div className="sidebar-icon-actions">
+              <button
+                type="button"
+                className="sidebar-icon-btn"
+                onClick={toggleTheme}
+                aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+                title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+              >
+                {theme === 'dark' ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z" />
+                  </svg>
+                )}
+              </button>
+              {onLogout && (
+                <button
+                  type="button"
+                  className="sidebar-icon-btn"
+                  onClick={onLogout}
+                  aria-label="Sign out"
+                  title="Sign out"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </aside>
       <div className="shell-main">
