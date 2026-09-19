@@ -6,6 +6,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { RolesPage } from '../pages/admin/RolesPage';
+import { AuditLogsPage } from '../pages/admin/AuditLogsPage';
 import { PatientsPage } from '../pages/patients/PatientsPage';
 import { PatientDetailPage } from '../pages/patients/PatientDetailPage';
 import { PatientRegisterPage } from '../pages/patients/PatientRegisterPage';
@@ -39,7 +40,6 @@ export function AppRouter() {
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="profile" element={<ProfilePage />} />
 
-              {/* Register, check-in, booking — all staff roles */}
               <Route element={<ProtectedRoute roles={['Admin', 'Receptionist', 'Doctor', 'Nurse']} />}>
                 <Route path="patients/new" element={<PatientRegisterPage />} />
                 <Route path="register" element={<Navigate to="/patients/new" replace />} />
@@ -47,7 +47,6 @@ export function AppRouter() {
                 <Route path="appointments/new" element={<AppointmentCreatePage />} />
               </Route>
 
-              {/* Clinical documentation */}
               <Route element={<ProtectedRoute roles={['Admin', 'Doctor', 'Nurse']} />}>
                 <Route path="chart" element={<ChartIndexPage />} />
                 <Route path="patients/:patientId/chart" element={<PatientChartPage />} />
@@ -55,19 +54,10 @@ export function AppRouter() {
                 <Route path="vitals" element={<RecordVitalsPage />} />
               </Route>
 
-              {/* Administration */}
               <Route element={<ProtectedRoute roles={['Admin']} />}>
                 <Route path="admin/users" element={<UsersPage />} />
                 <Route path="admin/roles" element={<RolesPage />} />
-                <Route
-                  path="admin/audit"
-                  element={
-                    <Placeholder
-                      title="Audit Logs"
-                      description="Review security and clinical audit events. (Future milestone)"
-                    />
-                  }
-                />
+                <Route path="admin/audit" element={<AuditLogsPage />} />
                 <Route
                   path="reports"
                   element={
