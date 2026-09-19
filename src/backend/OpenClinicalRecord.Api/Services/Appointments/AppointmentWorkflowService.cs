@@ -98,9 +98,11 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
 
             return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Ok(events);
         }
-        catch
+        catch (Exception ex)
         {
-            return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Ok(Array.Empty<AppointmentEventDto>());
+            return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Fail(
+                "Could not load appointment history. " + (ex.InnerException?.Message ?? ex.Message),
+                ServiceErrorKind.Validation);
         }
     }
 
@@ -176,22 +178,10 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        // 1) Save appointment alone (must succeed).
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         try
         {
             _db.Appointments.Add(appt);
-            await _db.SaveChangesAsync(ct);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<AppointmentDto>.Fail(
-                "Could not save appointment. " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
-        }
-
-        // 2) History event is best-effort (must not fail create).
-        try
-        {
             _db.AppointmentEvents.Add(new AppointmentEvent
             {
                 Id = Guid.NewGuid(),
@@ -204,10 +194,14 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
                 CreatedAt = DateTimeOffset.UtcNow
             });
             await _db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
         }
-        catch
+        catch (Exception ex)
         {
-            /* optional history */
+            await tx.RollbackAsync(ct);
+            return ServiceResult<AppointmentDto>.Fail(
+                "Could not save appointment. " + (ex.InnerException?.Message ?? ex.Message),
+                ServiceErrorKind.Validation);
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt, patient));
@@ -274,6 +268,18 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             }
         }
 
+        _db.AppointmentEvents.Add(new AppointmentEvent
+        {
+            Id = Guid.NewGuid(),
+            AppointmentId = appt.Id,
+            FromStatus = fromStatus,
+            ToStatus = toStatus,
+            Reason = NullIfEmpty(request.Reason),
+            ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
+            ActorName = actor.DisplayName,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
         try
         {
             await _db.SaveChangesAsync(ct);
@@ -283,25 +289,6 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             return ServiceResult<AppointmentDto>.Fail(
                 "Could not update appointment. " + (ex.InnerException?.Message ?? ex.Message),
                 ServiceErrorKind.Validation);
-        }
-
-        try
-        {
-            _db.AppointmentEvents.Add(new AppointmentEvent
-            {
-                AppointmentId = appt.Id,
-                FromStatus = fromStatus,
-                ToStatus = toStatus,
-                Reason = NullIfEmpty(request.Reason),
-                ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
-                ActorName = actor.DisplayName,
-                CreatedAt = DateTimeOffset.UtcNow
-            });
-            await _db.SaveChangesAsync(ct);
-        }
-        catch
-        {
-            /* optional */
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt));
@@ -387,6 +374,20 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
 
         appt.UpdatedAt = DateTimeOffset.UtcNow;
 
+        _db.AppointmentEvents.Add(new AppointmentEvent
+        {
+            Id = Guid.NewGuid(),
+            AppointmentId = appt.Id,
+            FromStatus = fromStatus,
+            ToStatus = appt.Status,
+            Reason = string.IsNullOrWhiteSpace(request.Reason)
+                ? $"Rescheduled: {oldSummary} -> {newSummary}"
+                : $"Rescheduled: {oldSummary} -> {newSummary}. {request.Reason.Trim()}",
+            ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
+            ActorName = actor.DisplayName,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
         try
         {
             await _db.SaveChangesAsync(ct);
@@ -396,27 +397,6 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             return ServiceResult<AppointmentDto>.Fail(
                 "Could not reschedule appointment. " + (ex.InnerException?.Message ?? ex.Message),
                 ServiceErrorKind.Validation);
-        }
-
-        try
-        {
-            _db.AppointmentEvents.Add(new AppointmentEvent
-            {
-                AppointmentId = appt.Id,
-                FromStatus = fromStatus,
-                ToStatus = appt.Status,
-                Reason = string.IsNullOrWhiteSpace(request.Reason)
-                    ? $"Rescheduled: {oldSummary} -> {newSummary}"
-                    : $"Rescheduled: {oldSummary} -> {newSummary}. {request.Reason.Trim()}",
-                ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
-                ActorName = actor.DisplayName,
-                CreatedAt = DateTimeOffset.UtcNow
-            });
-            await _db.SaveChangesAsync(ct);
-        }
-        catch
-        {
-            /* optional */
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt));

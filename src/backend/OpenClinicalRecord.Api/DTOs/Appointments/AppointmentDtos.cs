@@ -87,10 +87,17 @@ public class AppointmentEventDto
 public class DashboardStatsDto
 {
     public int AppointmentsToday { get; set; }
+    /// <summary>Today's appointments still Scheduled (not yet waiting/checked in).</summary>
+    public int ScheduledCount { get; set; }
+    /// <summary>Today's appointments with status Waiting only.</summary>
     public int WaitingCount { get; set; }
+    /// <summary>Today's appointments with status CheckedIn only.</summary>
     public int CheckedInCount { get; set; }
+    /// <summary>Today's appointments with status InProgress only.</summary>
+    public int InProgressCount { get; set; }
     public int ActivePatients { get; set; }
     public int VisitsThisWeek { get; set; }
-    public int OpenChartAlerts { get; set; }
+    /// <summary>Distinct patients with at least one recorded allergy (not open alerts).</summary>
+    public int PatientsWithAllergies { get; set; }
     public List<AppointmentDto> TodaysSchedule { get; set; } = new();
 }
