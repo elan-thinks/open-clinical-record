@@ -5,6 +5,7 @@ export interface AuthUser {
   email: string;
   fullName: string;
   roles: AppRole[];
+  mustChangePassword?: boolean;
 }
 
 export interface LoginResult {
@@ -13,4 +14,5 @@ export interface LoginResult {
   email: string;
   fullName: string;
   roles: string[];
+  mustChangePassword?: boolean;
 }
