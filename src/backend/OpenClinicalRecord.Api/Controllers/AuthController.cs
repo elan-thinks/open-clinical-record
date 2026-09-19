@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenClinicalRecord.Api.DTOs.Auth;
 using OpenClinicalRecord.Api.Models.Entities;
 using OpenClinicalRecord.Api.Services;
+using OpenClinicalRecord.Api.Services.Audit;
 
 namespace OpenClinicalRecord.Api.Controllers;
 
@@ -16,25 +17,25 @@ public class AuthController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IJwtTokenService _tokenService;
+    private readonly IAuditService _audit;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        IJwtTokenService tokenService)
+        IJwtTokenService tokenService,
+        IAuditService audit)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _tokenService = tokenService;
+        _audit = audit;
     }
 
-    /// <summary>
-    /// Authenticate with email/password and receive a JWT.
-    /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
@@ -44,17 +45,42 @@ public class AuthController : ControllerBase
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null || !user.IsActive)
         {
+            await _audit.WriteAsync(
+                "Auth.LoginFailed",
+                "Auth",
+                null,
+                actorUserId: null,
+                actorName: request.Email,
+                summary: "Unknown user or inactive account",
+                cancellationToken);
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
         if (!result.Succeeded)
         {
+            await _audit.WriteAsync(
+                "Auth.LoginFailed",
+                "Auth",
+                null,
+                user.Id,
+                user.FullName,
+                result.IsLockedOut ? "Account locked out" : "Invalid password",
+                cancellationToken);
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
         var roles = await _userManager.GetRolesAsync(user);
         var (token, expiresAt) = _tokenService.CreateToken(user, roles);
+
+        await _audit.WriteAsync(
+            "Auth.Login",
+            "Auth",
+            null,
+            user.Id,
+            user.FullName,
+            $"Roles: {string.Join(',', roles)}",
+            cancellationToken);
 
         return Ok(new LoginResponse
         {
@@ -66,9 +92,6 @@ public class AuthController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Returns the current authenticated user.
-    /// </summary>
     [HttpGet("me")]
     [Authorize]
     [ProducesResponseType(typeof(MeResponse), StatusCodes.Status200OK)]
