@@ -4,7 +4,7 @@ import type { NavGroup, RoleNavMap } from '../types/navigation';
 /**
  * Navigation by role. Register patient, book appointment, and check-in are available
  * to all four application roles (internship demo / small clinic ops).
- * Admin-only: Users, Roles.
+ * Admin-only: Users, Roles, Audit.
  */
 export const ROLE_NAV: RoleNavMap = {
   Doctor: [
@@ -92,6 +92,7 @@ export const ROLE_NAV: RoleNavMap = {
       items: [
         { path: '/admin/users', label: 'Users' },
         { path: '/admin/roles', label: 'Roles & Permissions' },
+        { path: '/admin/audit', label: 'Audit logs' },
       ],
     },
     {
@@ -136,6 +137,10 @@ export function isNavActive(itemPath: string, currentPath: string): boolean {
 
   if (itemPath === '/admin/roles') {
     return currentPath.startsWith('/admin/roles');
+  }
+
+  if (itemPath === '/admin/audit') {
+    return currentPath.startsWith('/admin/audit');
   }
 
   return false;
