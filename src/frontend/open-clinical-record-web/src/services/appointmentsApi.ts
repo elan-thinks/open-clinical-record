@@ -30,11 +30,14 @@ export interface CreateAppointmentPayload {
 
 export interface DashboardStats {
   appointmentsToday: number;
+  scheduledCount: number;
   waitingCount: number;
   checkedInCount: number;
+  inProgressCount: number;
   activePatients: number;
   visitsThisWeek: number;
-  openChartAlerts: number;
+  /** Patients with at least one allergy on chart (not "open alerts"). */
+  patientsWithAllergies: number;
   todaysSchedule: Appointment[];
 }
 
@@ -71,7 +74,7 @@ async function parseError(response: Response): Promise<ApiError> {
   }
   if (response.status === 403) {
     return new ApiError(
-      'You do not have permission to book appointments with this account. Sign out, then sign in again with a staff account (Reception, Doctor, Nurse, or Admin).',
+      'You do not have permission for this appointment action with this account. Use Reception, Doctor, or Nurse for status changes; Admin may book/reschedule only.',
       'forbidden',
       403,
     );
@@ -79,62 +82,48 @@ async function parseError(response: Response): Promise<ApiError> {
   if (response.status === 409) {
     let msg = 'That time slot conflicts with another appointment. Choose a different time.';
     try {
-      const data = (await response.json()) as { message?: string };
-      if (data.message) msg = data.message;
+      const body = await response.json();
+      if (body?.message) msg = String(body.message);
     } catch {
       /* ignore */
     }
     return new ApiError(msg, 'conflict', 409);
   }
-  if (response.status >= 500) {
-    let detail = '';
-    try {
-      const data = (await response.json()) as { message?: string; title?: string };
-      detail = data.message || data.title || '';
-    } catch {
-      /* ignore */
-    }
-    return new ApiError(
-      detail
-        ? detail
-        : 'The server could not save this appointment. Restart the API (so database migrations run), then try again.',
-      'unknown',
-      response.status,
-    );
-  }
+  let message = `Request failed (${response.status})`;
   try {
-    const data = (await response.json()) as { message?: string; title?: string };
-    if (data.message) return new ApiError(data.message, 'validation', response.status);
-    if (data.title) return new ApiError(data.title, 'validation', response.status);
+    const body = await response.json();
+    if (body?.message) message = String(body.message);
+    else if (body?.title) message = String(body.title);
   } catch {
     /* ignore */
   }
-  return new ApiError('Something went wrong while saving. Please try again.', 'unknown', response.status);
+  return new ApiError(message, response.status >= 400 && response.status < 500 ? 'validation' : 'unknown', response.status);
 }
 
 export async function listAppointments(date?: string, status?: string): Promise<Appointment[]> {
-  const base = getApiBaseUrl();
   const params = new URLSearchParams();
   if (date) params.set('date', date);
   if (status) params.set('status', status);
-  const qs = params.toString();
-  const res = await fetch(`${base}/api/appointments${qs ? `?${qs}` : ''}`, { headers: authHeaders() });
+  const q = params.toString();
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments${q ? `?${q}` : ''}`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw await parseError(res);
   return (await res.json()) as Appointment[];
 }
 
-export async function createAppointment(body: CreateAppointmentPayload): Promise<Appointment> {
-  const base = getApiBaseUrl();
-  let res: Response;
-  try {
-    res = await fetch(`${base}/api/appointments`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify(body),
-    });
-  } catch {
-    throw new ApiError('Cannot reach the server. Check that the API is running, then try again.', 'network', 0);
-  }
+export async function getAppointment(id: string): Promise<Appointment> {
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments/${id}`, { headers: authHeaders() });
+  if (!res.ok) throw await parseError(res);
+  return (await res.json()) as Appointment;
+}
+
+export async function createAppointment(payload: CreateAppointmentPayload): Promise<Appointment> {
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
   if (!res.ok) throw await parseError(res);
   return (await res.json()) as Appointment;
 }
@@ -144,8 +133,7 @@ export async function updateAppointmentStatus(
   status: string,
   reason?: string,
 ): Promise<Appointment> {
-  const base = getApiBaseUrl();
-  const res = await fetch(`${base}/api/appointments/${id}/status`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments/${id}/status`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify({ status, reason }),
@@ -154,26 +142,27 @@ export async function updateAppointmentStatus(
   return (await res.json()) as Appointment;
 }
 
-export interface AppointmentEvent {
-  id: string;
-  appointmentId: string;
-  fromStatus: string;
-  toStatus: string;
-  reason?: string | null;
-  actorName?: string | null;
-  createdAt: string;
-}
-
-export async function listAppointmentEvents(id: string): Promise<AppointmentEvent[]> {
-  const base = getApiBaseUrl();
-  const res = await fetch(`${base}/api/appointments/${id}/events`, { headers: authHeaders() });
+export async function rescheduleAppointment(
+  id: string,
+  payload: {
+    appointmentDate: string;
+    startTime: string;
+    durationMinutes?: number;
+    providerName?: string;
+    reason?: string;
+  },
+): Promise<Appointment> {
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments/${id}/reschedule`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
   if (!res.ok) throw await parseError(res);
-  return (await res.json()) as AppointmentEvent[];
+  return (await res.json()) as Appointment;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const base = getApiBaseUrl();
-  const res = await fetch(`${base}/api/dashboard/stats`, { headers: authHeaders() });
+  const res = await fetch(`${getApiBaseUrl()}/api/dashboard/stats`, { headers: authHeaders() });
   if (!res.ok) throw await parseError(res);
   return (await res.json()) as DashboardStats;
 }
