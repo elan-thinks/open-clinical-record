@@ -13,11 +13,11 @@ interface PageLoaderProps {
 }
 
 /**
- * Keep a loading flag true for at least `minMs` so the loader stays visible
- * even when the API is very fast.
- * Default ~1.2s for list/page loads. Session restore uses a longer hold.
+ * Optionally keep a loading flag true for at least `minMs`.
+ * Default is 0 — hide as soon as data is ready (no artificial delay).
+ * Only the full-page session restore should pass a longer minMs.
  */
-export function useHoldLoading(isLoading: boolean, minMs = 1200): boolean {
+export function useHoldLoading(isLoading: boolean, minMs = 0): boolean {
   const [held, setHeld] = useState(isLoading);
   const startedAt = useRef<number | null>(isLoading ? Date.now() : null);
 

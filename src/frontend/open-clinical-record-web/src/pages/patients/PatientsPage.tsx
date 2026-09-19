@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient, type PatientStatusFilter } from '../../services/patientsApi';
 import './PatientsPage.css';
-import { PageLoader, useHoldLoading } from '../../components/PageLoader';
+import { PageLoader } from '../../components/PageLoader';
 
 function initials(first: string, last: string): string {
   return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
@@ -31,8 +31,7 @@ export function PatientsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PatientStatusFilter>('active');
-  // Short hold for list loads (default ~1.2s)
-  const showLoader = useHoldLoading(loading, 1200);
+  // No artificial hold — show data as soon as the API responds
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQ(q.trim()), 280);
@@ -56,9 +55,9 @@ export function PatientsPage() {
   }, [load]);
 
   const countLabel = useMemo(() => {
-    if (showLoader) return 'Searching…';
+    if (loading) return 'Searching…';
     return patients.length === 1 ? '1 patient' : `${patients.length} patients`;
-  }, [showLoader, patients.length]);
+  }, [loading, patients.length]);
 
   return (
     <div className="patients-page">
@@ -116,7 +115,7 @@ export function PatientsPage() {
       </div>
 
       <div className="panel">
-        {showLoader ? (
+        {loading ? (
           <PageLoader variant="skeleton" label="Loading patients…" rows={5} />
         ) : patients.length === 0 ? (
           <div className="empty">

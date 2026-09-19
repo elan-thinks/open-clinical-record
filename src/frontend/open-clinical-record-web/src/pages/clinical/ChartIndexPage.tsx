@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient } from '../../services/patientsApi';
 import './PatientChartPage.css';
 import './ClinicalIndexPages.css';
-import { PageLoader, useHoldLoading } from '../../components/PageLoader';
+import { PageLoader } from '../../components/PageLoader';
 
 export function ChartIndexPage() {
   const navigate = useNavigate();
@@ -11,8 +11,7 @@ export function ChartIndexPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState('');
-  // Short hold for list loads (default ~1.2s)
-  const showLoader = useHoldLoading(loading, 1200);
+  // No artificial hold — show data as soon as the API responds
 
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +72,7 @@ export function ChartIndexPage() {
             placeholder="Name, MRN, or phone"
             autoComplete="off"
           />
-          <button type="submit" className="ci-search-btn" disabled={showLoader}>
+          <button type="submit" className="ci-search-btn" disabled={loading}>
             Search
           </button>
         </div>
@@ -82,13 +81,13 @@ export function ChartIndexPage() {
       <div className="panel ci-list-panel">
         <div className="panel-head ci-list-head">
           <div className="panel-title">Patients</div>
-          {!showLoader && (
+          {!loading && (
             <span className="ci-count">
               {patients.length} {patients.length === 1 ? 'result' : 'results'}
             </span>
           )}
         </div>
-        {showLoader ? (
+        {loading ? (
           <PageLoader variant="skeleton" label="Loading charts…" rows={5} />
         ) : patients.length === 0 ? (
           <div className="empty">No patients found. Register a patient first.</div>
