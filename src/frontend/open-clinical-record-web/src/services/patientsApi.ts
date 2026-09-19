@@ -99,7 +99,8 @@ export async function listPatients(
 ): Promise<Patient[]> {
   const base = getApiBaseUrl();
   const params = new URLSearchParams();
-  if (search) params.set('search', search);
+  // Backend PatientsController binds [FromQuery] string? q
+  if (search) params.set('q', search);
   params.set('status', status);
   const qs = params.toString();
   const res = await fetch(`${base}/api/patients?${qs}`, { headers: authHeaders() });
