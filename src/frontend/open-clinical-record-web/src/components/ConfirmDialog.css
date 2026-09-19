@@ -14,23 +14,28 @@
   margin: 0;
   padding: 0;
   cursor: pointer;
-  background: rgba(4, 12, 10, 0.72);
+  background: rgba(4, 12, 10, 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+}
+
+html[data-theme="light"] .ocr-confirm-backdrop {
+  background: rgba(18, 32, 26, 0.35);
 }
 
 .ocr-confirm-panel {
   position: relative;
   width: min(420px, 100%);
-  background: linear-gradient(165deg, var(--surface, #12201c) 0%, #0e1815 100%);
-  border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 18px;
   padding: 26px 24px 20px;
   box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(61, 220, 151, 0.06);
+    0 24px 60px var(--shadow-soft, rgba(0, 0, 0, 0.35)),
+    0 0 0 1px var(--teal-glow);
   outline: none;
   animation: ocr-confirm-in 160ms ease-out;
+  color: var(--text);
 }
 
 @keyframes ocr-confirm-in {
@@ -51,18 +56,18 @@
   display: grid;
   place-items: center;
   margin-bottom: 14px;
-  background: rgba(61, 220, 151, 0.12);
-  color: var(--teal, #3ddc97);
+  background: var(--teal-glow);
+  color: var(--teal);
 }
 
 .ocr-confirm-panel.tone-danger .ocr-confirm-icon {
-  background: rgba(232, 119, 138, 0.14);
-  color: var(--red, #e8778a);
+  background: var(--red-glow);
+  color: var(--red);
 }
 
 .ocr-confirm-panel.tone-warning .ocr-confirm-icon {
-  background: rgba(234, 179, 90, 0.14);
-  color: #eab35a;
+  background: var(--amber-glow);
+  color: var(--amber);
 }
 
 .ocr-confirm-title {
@@ -71,14 +76,14 @@
   font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--text, #e8f0ec);
+  color: var(--text);
 }
 
 .ocr-confirm-desc {
   margin: 0 0 22px;
   font-size: 13.5px;
   line-height: 1.55;
-  color: var(--text-dim, #9db0a6);
+  color: var(--text-dim);
 }
 
 .ocr-confirm-desc ul {
@@ -105,7 +110,7 @@
   padding: 10px 16px;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, color 0.15s ease;
 }
 
 .ocr-confirm-btn:disabled {
@@ -114,19 +119,19 @@
 }
 
 .ocr-confirm-btn.ghost {
-  background: transparent;
-  border-color: var(--line, rgba(255, 255, 255, 0.12));
-  color: var(--text-dim, #9db0a6);
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--text-dim);
 }
 
 .ocr-confirm-btn.ghost:hover:not(:disabled) {
-  color: var(--text, #e8f0ec);
-  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--text);
+  border-color: var(--text-faint);
 }
 
 .ocr-confirm-btn.solid {
-  background: var(--teal, #3ddc97);
-  color: #04140c;
+  background: var(--teal);
+  color: var(--btn-primary-fg, #04140c);
   border-color: transparent;
 }
 
@@ -135,8 +140,8 @@
 }
 
 .ocr-confirm-btn.solid.danger {
-  background: #e8778a;
-  color: #1a0a0e;
+  background: var(--red);
+  color: #fff;
 }
 
 .ocr-confirm-btn.solid.danger:hover:not(:disabled) {
@@ -147,21 +152,36 @@
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-dim, #9db0a6);
+  color: var(--text-dim);
   margin: 12px 0 6px;
   text-align: left;
 }
 
-.ocr-confirm-desc .death-form-input {
+.ocr-confirm-desc .death-form-input,
+.ocr-confirm-desc input.death-form-input,
+.ocr-confirm-desc textarea.death-form-input {
   width: 100%;
   box-sizing: border-box;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--text, #e8f0ec);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
   padding: 10px 12px;
   font-size: 14px;
   font-family: inherit;
+  min-height: 40px;
+}
+
+.ocr-confirm-desc .death-form-input:focus,
+.ocr-confirm-desc input.death-form-input:focus,
+.ocr-confirm-desc textarea.death-form-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-glow);
+  outline: 0;
+}
+
+.ocr-confirm-desc .death-form-input::placeholder {
+  color: var(--text-faint);
 }
 
 .ocr-confirm-desc textarea.death-form-input {
