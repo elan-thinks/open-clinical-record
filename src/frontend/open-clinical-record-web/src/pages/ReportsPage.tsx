@@ -15,6 +15,16 @@ function formatTime(t: string): string {
   return t.length >= 5 ? t.slice(0, 5) : t;
 }
 
+function formatPrettyDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 function csvEscape(value: string): string {
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
   return value;
@@ -30,6 +40,16 @@ function downloadCsv(filename: string, rows: string[][]) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+const STATUS_COLORS: Record<string, string> = {
+  Scheduled: '#5b9fd4',
+  Waiting: '#eab35a',
+  CheckedIn: '#3ddc97',
+  InProgress: '#3ddc97',
+  Completed: '#29a874',
+  Cancelled: '#e8778a',
+  NoShow: '#e8778a',
+};
 
 export function ReportsPage() {
   const today = toIsoDate(new Date());
@@ -65,6 +85,8 @@ export function ReportsPage() {
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   }, [dayAppts]);
 
+  const maxStatus = Math.max(1, ...statusBreakdown.map(([, c]) => c));
+
   function exportDayCsv() {
     const rows: string[][] = [
       ['Time', 'Patient', 'MRN', 'Type', 'Provider', 'Status', 'Reason'],
@@ -97,13 +119,23 @@ export function ReportsPage() {
     downloadCsv(`ocr-summary-${date}.csv`, rows);
   }
 
+  const cards = [
+    { num: loading ? '—' : dayAppts.length, label: 'Appointments', sub: 'selected day', tone: 'teal' },
+    { num: stats?.appointmentsToday ?? '—', label: 'Today', sub: 'clinic-wide', tone: 'blue' },
+    { num: stats?.waitingCount ?? '—', label: 'Waiting', sub: 'queue pressure', tone: 'amber' },
+    { num: stats?.checkedInCount ?? '—', label: 'Checked in', sub: 'ready now', tone: 'teal' },
+    { num: stats?.activePatients ?? '—', label: 'Active patients', sub: 'registry', tone: 'blue' },
+    { num: stats?.visitsThisWeek ?? '—', label: 'Visits week', sub: 'clinical volume', tone: 'amber' },
+  ];
+
   return (
     <div className="reports-page">
-      <div className="page-head">
+      <div className="reports-hero">
         <div>
-          <h1 className="page-title">Reports</h1>
+          <div className="reports-kicker">Operations</div>
+          <h1 className="page-title">Clinic reports</h1>
           <p className="page-sub">
-            Operational summaries for clinic volume — export CSV for offline review.
+            Live volume for <strong>{formatPrettyDate(date)}</strong> — export when you need offline review.
           </p>
         </div>
         <div className="reports-actions">
@@ -111,10 +143,10 @@ export function ReportsPage() {
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
           <button type="button" className="btn-ghost" onClick={exportSummaryCsv} disabled={!stats}>
-            Export summary CSV
+            Summary CSV
           </button>
           <button type="button" className="btn-primary" onClick={exportDayCsv} disabled={dayAppts.length === 0}>
-            Export day schedule CSV
+            Schedule CSV
           </button>
         </div>
       </div>
@@ -123,42 +155,29 @@ export function ReportsPage() {
 
       <div className="reports-toolbar">
         <label className="reports-date">
-          Appointment date
+          <span>Report date</span>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
+        <button type="button" className="btn-ghost" onClick={() => setDate(today)}>
+          Jump to today
+        </button>
       </div>
 
       <div className="reports-stat-row">
-        <div className="reports-stat">
-          <div className="rs-num">{loading ? '—' : dayAppts.length}</div>
-          <div className="rs-label">Appointments (day)</div>
-        </div>
-        <div className="reports-stat">
-          <div className="rs-num">{stats ? stats.appointmentsToday : '—'}</div>
-          <div className="rs-label">Today (clinic)</div>
-        </div>
-        <div className="reports-stat">
-          <div className="rs-num">{stats ? stats.waitingCount : '—'}</div>
-          <div className="rs-label">Waiting / scheduled</div>
-        </div>
-        <div className="reports-stat">
-          <div className="rs-num">{stats ? stats.checkedInCount : '—'}</div>
-          <div className="rs-label">Checked in</div>
-        </div>
-        <div className="reports-stat">
-          <div className="rs-num">{stats ? stats.activePatients : '—'}</div>
-          <div className="rs-label">Active patients</div>
-        </div>
-        <div className="reports-stat">
-          <div className="rs-num">{stats ? stats.visitsThisWeek : '—'}</div>
-          <div className="rs-label">Visits this week</div>
-        </div>
+        {cards.map((c) => (
+          <div key={c.label} className={`reports-stat tone-${c.tone}`}>
+            <div className="rs-num">{c.num}</div>
+            <div className="rs-label">{c.label}</div>
+            <div className="rs-sub">{c.sub}</div>
+          </div>
+        ))}
       </div>
 
       <div className="reports-grid">
-        <div className="panel">
+        <div className="panel reports-panel">
           <div className="panel-head">
-            <div className="panel-title">Status breakdown — {date}</div>
+            <div className="panel-title">Status mix</div>
+            <span className="panel-meta">{dayAppts.length} total</span>
           </div>
           {loading ? (
             <div className="empty">Loading…</div>
@@ -166,24 +185,36 @@ export function ReportsPage() {
             <div className="empty">No appointments for this date.</div>
           ) : (
             <ul className="breakdown-list">
-              {statusBreakdown.map(([status, count]) => (
-                <li key={status}>
-                  <span>{status}</span>
-                  <strong>{count}</strong>
-                </li>
-              ))}
+              {statusBreakdown.map(([status, count]) => {
+                const pct = Math.round((count / maxStatus) * 100);
+                const color = STATUS_COLORS[status] ?? '#6d8577';
+                return (
+                  <li key={status}>
+                    <div className="bd-top">
+                      <span className="bd-status" style={{ color }}>
+                        {status}
+                      </span>
+                      <strong>{count}</strong>
+                    </div>
+                    <div className="bd-bar">
+                      <div className="bd-fill" style={{ width: `${pct}%`, background: color }} />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
 
-        <div className="panel">
+        <div className="panel reports-panel">
           <div className="panel-head">
             <div className="panel-title">Day schedule</div>
+            <span className="panel-meta">{formatPrettyDate(date)}</span>
           </div>
           {loading ? (
             <div className="empty">Loading…</div>
           ) : dayAppts.length === 0 ? (
-            <div className="empty">No rows to show.</div>
+            <div className="empty">No rows to show for this day.</div>
           ) : (
             <div className="reports-table-wrap">
               <table>
@@ -198,13 +229,24 @@ export function ReportsPage() {
                 <tbody>
                   {dayAppts.map((a) => (
                     <tr key={a.id}>
-                      <td>{formatTime(a.startTime)}</td>
+                      <td className="time-cell">{formatTime(a.startTime)}</td>
                       <td>
                         <div className="p-name">{a.patientName}</div>
                         <div className="p-id">{a.medicalRecordNumber}</div>
                       </td>
                       <td>{a.appointmentType}</td>
-                      <td>{a.status}</td>
+                      <td>
+                        <span
+                          className="status-pill"
+                          style={{
+                            color: STATUS_COLORS[a.status] ?? undefined,
+                            borderColor: `${STATUS_COLORS[a.status] ?? '#6d8577'}44`,
+                            background: `${STATUS_COLORS[a.status] ?? '#6d8577'}18`,
+                          }}
+                        >
+                          {a.status}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
