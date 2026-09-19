@@ -37,11 +37,10 @@ public class JwtTokenService : IJwtTokenService
             new(ClaimTypes.Email, user.Email ?? string.Empty)
         };
 
+        // Emit roles only as short "role" so JwtBearer RoleClaimType matches after MapInboundClaims=false.
         foreach (var role in roles.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            // Short claim name is what JwtBearer RoleClaimType = "role" expects.
-            claims.Add(new Claim("role", role));
-            claims.Add(new Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim("role", role.Trim()));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
@@ -54,7 +53,11 @@ public class JwtTokenService : IJwtTokenService
             expires: expiresAt.UtcDateTime,
             signingCredentials: credentials);
 
-        var written = new JwtSecurityTokenHandler().WriteToken(token);
+        // Do not rewrite claim types on write (avoids role claim disappearing / renaming).
+        var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
+        handler.OutboundClaimTypeMap.Clear();
+
+        var written = handler.WriteToken(token);
         return (written, expiresAt);
     }
 }

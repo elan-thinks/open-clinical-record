@@ -54,6 +54,10 @@ public static class ServiceCollectionExtensions
                 options.Password.RequireNonAlphanumeric = false;
                 options.User.RequireUniqueEmail = true;
                 options.SignIn.RequireConfirmedAccount = false;
+                // Align Identity role claim name with JWT short "role" claim.
+                options.ClaimsIdentity.RoleClaimType = "role";
+                options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier;
+                options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Name;
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
@@ -100,7 +104,6 @@ public static class ServiceCollectionExtensions
             })
             .AddJwtBearer(options =>
             {
-                // Keep claim types as issued so role checks match token payload ("role" / ClaimTypes.Role).
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -112,9 +115,35 @@ public static class ServiceCollectionExtensions
                     ValidAudience = jwt.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
                     ClockSkew = TimeSpan.FromMinutes(1),
-                    // JWT often serializes roles as short name "role"
                     RoleClaimType = "role",
                     NameClaimType = ClaimTypes.Name
+                };
+
+                // Guarantee role claims are visible to [Authorize(Roles)] / RequireRole policies.
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = context =>
+                    {
+                        if (context.Principal?.Identity is not ClaimsIdentity identity)
+                            return Task.CompletedTask;
+
+                        var roleValues = identity.FindAll("role")
+                            .Concat(identity.FindAll(ClaimTypes.Role))
+                            .Select(c => c.Value)
+                            .Where(v => !string.IsNullOrWhiteSpace(v))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+
+                        foreach (var role in roleValues)
+                        {
+                            if (!identity.HasClaim("role", role))
+                                identity.AddClaim(new Claim("role", role));
+                            if (!identity.HasClaim(ClaimTypes.Role, role))
+                                identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                        }
+
+                        return Task.CompletedTask;
+                    }
                 };
             });
 
@@ -125,8 +154,23 @@ public static class ServiceCollectionExtensions
             options.AddPolicy("ReceptionistOnly", p => p.RequireRole(AppRoles.Receptionist));
             options.AddPolicy("AdminOnly", p => p.RequireRole(AppRoles.Admin));
             options.AddPolicy("ClinicalStaff", p => p.RequireRole(AppRoles.Doctor, AppRoles.Nurse));
-            options.AddPolicy("StaffCanBook",
-                p => p.RequireRole(AppRoles.Admin, AppRoles.Receptionist, AppRoles.Doctor, AppRoles.Nurse));
+
+            // Any of the four application roles may create/update appointments.
+            options.AddPolicy("StaffCanBook", p => p.RequireAssertion(ctx =>
+            {
+                if (ctx.User.Identity?.IsAuthenticated != true)
+                    return false;
+
+                var roles = ctx.User.FindAll("role")
+                    .Concat(ctx.User.FindAll(ClaimTypes.Role))
+                    .Select(c => c.Value);
+
+                return roles.Any(r =>
+                    string.Equals(r, AppRoles.Admin, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(r, AppRoles.Receptionist, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(r, AppRoles.Doctor, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(r, AppRoles.Nurse, StringComparison.OrdinalIgnoreCase));
+            }));
         });
 
         return services;
