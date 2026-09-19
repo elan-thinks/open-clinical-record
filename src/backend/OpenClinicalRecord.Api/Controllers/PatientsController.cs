@@ -26,34 +26,31 @@ public class PatientsController : ControllerBase
         [FromQuery] string? status,
         CancellationToken cancellationToken)
     {
-        var items = await _patients.ListAsync(q, status, cancellationToken);
-        return Ok(items);
+        var result = await _patients.ListAsync(q, status, cancellationToken);
+        return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _patients.GetAsync(id, cancellationToken);
+        var result = await _patients.GetByIdAsync(id, cancellationToken);
         return ToActionResult(result);
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Receptionist")]
+    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreatePatientRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         var result = await _patients.CreateAsync(request, cancellationToken);
         if (!result.Succeeded) return ToActionResult(result);
-        return CreatedAtAction(nameof(Get), new { id = result.Value!.Id }, result.Value);
+        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
-    [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePatientRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -63,12 +60,10 @@ public class PatientsController : ControllerBase
 
     [HttpPost("{id:guid}/deceased")]
     [Authorize(Roles = "Admin,Doctor,Receptionist")]
-    public async Task<IActionResult> MarkDeceased(
-        Guid id,
-        [FromBody] MarkDeceasedRequest? request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> MarkDeceased(Guid id, [FromBody] MarkDeceasedRequest request, CancellationToken cancellationToken)
     {
-        var result = await _patients.MarkDeceasedAsync(id, request, GetActor(), cancellationToken);
+        var actor = GetActor();
+        var result = await _patients.MarkDeceasedAsync(id, request, actor.UserId, actor.DisplayName, cancellationToken);
         return ToActionResult(result);
     }
 
@@ -76,7 +71,8 @@ public class PatientsController : ControllerBase
     [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> ClearDeceased(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _patients.ClearDeceasedAsync(id, GetActor(), cancellationToken);
+        var actor = GetActor();
+        var result = await _patients.ClearDeceasedAsync(id, actor.UserId, actor.DisplayName, cancellationToken);
         return ToActionResult(result);
     }
 
@@ -89,11 +85,8 @@ public class PatientsController : ControllerBase
 
     private ActorContext GetActor()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var name = User.FindFirstValue("fullName")
-                   ?? User.FindFirstValue(ClaimTypes.Name)
-                   ?? User.Identity?.Name
-                   ?? "Staff";
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        var name = User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name ?? "Staff";
         return new ActorContext(userId, name);
     }
 
