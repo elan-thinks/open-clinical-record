@@ -33,26 +33,19 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
-        {
             return ValidationProblem(ModelState);
-        }
 
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var email = request.Email?.Trim() ?? string.Empty;
+        var user = await _userManager.FindByEmailAsync(email);
         if (user is null || !user.IsActive)
         {
             await _audit.WriteAsync(
-                "Auth.LoginFailed",
-                "Auth",
-                null,
-                actorUserId: null,
-                actorName: request.Email,
-                summary: "Unknown user or inactive account",
-                cancellationToken);
+                "Auth.LoginFailed", "Auth", null,
+                actorUserId: null, actorName: email,
+                summary: "Unknown user or inactive account", cancellationToken);
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
@@ -60,11 +53,8 @@ public class AuthController : ControllerBase
         if (!result.Succeeded)
         {
             await _audit.WriteAsync(
-                "Auth.LoginFailed",
-                "Auth",
-                null,
-                user.Id,
-                user.FullName,
+                "Auth.LoginFailed", "Auth", null,
+                user.Id, user.FullName,
                 result.IsLockedOut ? "Account locked out" : "Invalid password",
                 cancellationToken);
             return Unauthorized(new { message = "Invalid email or password." });
@@ -74,12 +64,9 @@ public class AuthController : ControllerBase
         var (token, expiresAt) = _tokenService.CreateToken(user, roles);
 
         await _audit.WriteAsync(
-            "Auth.Login",
-            "Auth",
-            null,
-            user.Id,
-            user.FullName,
-            $"Roles: {string.Join(',', roles)}",
+            "Auth.Login", "Auth", null,
+            user.Id, user.FullName,
+            $"Roles: {string.Join(',', roles)}; MustChangePassword={user.MustChangePassword}",
             cancellationToken);
 
         return Ok(new LoginResponse
@@ -88,38 +75,72 @@ public class AuthController : ControllerBase
             ExpiresAt = expiresAt,
             Email = user.Email ?? string.Empty,
             FullName = user.FullName,
-            Roles = roles.ToList()
+            Roles = roles.ToList(),
+            MustChangePassword = user.MustChangePassword
         });
     }
 
     [HttpGet("me")]
     [Authorize]
-    [ProducesResponseType(typeof(MeResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Me()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                     ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
-        if (string.IsNullOrEmpty(userId))
-        {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
             return Unauthorized();
-        }
-
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user is null || !user.IsActive)
-        {
-            return Unauthorized();
-        }
 
         var roles = await _userManager.GetRolesAsync(user);
-
         return Ok(new MeResponse
         {
             Id = user.Id,
             Email = user.Email ?? string.Empty,
             FullName = user.FullName,
-            Roles = roles.ToList()
+            Roles = roles.ToList(),
+            MustChangePassword = user.MustChangePassword
         });
+    }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return Unauthorized();
+
+        var result = await _userManager.ChangePasswordAsync(
+            user, request.CurrentPassword, request.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new
+            {
+                message = string.Join("; ", result.Errors.Select(e => e.Description))
+            });
+        }
+
+        user.MustChangePassword = false;
+        await _userManager.UpdateAsync(user);
+
+        await _audit.WriteAsync(
+            "Auth.ChangePassword", "Auth", null,
+            user.Id, user.FullName, "Password changed", default);
+
+        return Ok(new { message = "Password updated successfully.", mustChangePassword = false });
+    }
+
+    private async Task<ApplicationUser?> GetCurrentUserAsync()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        if (string.IsNullOrEmpty(userId))
+            return null;
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null || !user.IsActive)
+            return null;
+        return user;
     }
 }
