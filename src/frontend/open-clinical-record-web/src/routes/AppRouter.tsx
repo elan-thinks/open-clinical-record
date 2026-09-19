@@ -3,7 +3,6 @@ import { AuthProvider } from '../context/AuthContext';
 import { AppLayout } from '../layouts/AppLayout';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LoginPage } from '../pages/LoginPage';
-import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { RolesPage } from '../pages/admin/RolesPage';
 import { AuditLogsPage } from '../pages/admin/AuditLogsPage';
@@ -18,11 +17,8 @@ import { AppointmentsPage } from '../pages/appointments/AppointmentsPage';
 import { AppointmentCreatePage } from '../pages/appointments/AppointmentCreatePage';
 import { CheckInPage } from '../pages/appointments/CheckInPage';
 import { ProfilePage } from '../pages/ProfilePage';
+import { ReportsPage } from '../pages/ReportsPage';
 import { ProtectedRoute } from './ProtectedRoute';
-
-function Placeholder({ title, description }: { title: string; description: string }) {
-  return <PlaceholderPage title={title} description={description} />;
-}
 
 export function AppRouter() {
   return (
@@ -58,15 +54,7 @@ export function AppRouter() {
                 <Route path="admin/users" element={<UsersPage />} />
                 <Route path="admin/roles" element={<RolesPage />} />
                 <Route path="admin/audit" element={<AuditLogsPage />} />
-                <Route
-                  path="reports"
-                  element={
-                    <Placeholder
-                      title="Reports"
-                      description="Operational and clinical summary reports. (Future milestone)"
-                    />
-                  }
-                />
+                <Route path="reports" element={<ReportsPage />} />
               </Route>
             </Route>
           </Route>

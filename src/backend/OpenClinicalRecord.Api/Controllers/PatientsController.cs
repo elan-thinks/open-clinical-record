@@ -34,7 +34,7 @@ public class PatientsController : ControllerBase
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _patients.GetByIdAsync(id, cancellationToken);
+        var result = await _patients.GetAsync(id, cancellationToken);
         return ToActionResult(result);
     }
 
@@ -62,8 +62,7 @@ public class PatientsController : ControllerBase
     [Authorize(Roles = "Admin,Doctor,Receptionist")]
     public async Task<IActionResult> MarkDeceased(Guid id, [FromBody] MarkDeceasedRequest request, CancellationToken cancellationToken)
     {
-        var actor = GetActor();
-        var result = await _patients.MarkDeceasedAsync(id, request, actor.UserId, actor.DisplayName, cancellationToken);
+        var result = await _patients.MarkDeceasedAsync(id, request, GetActor(), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -71,8 +70,7 @@ public class PatientsController : ControllerBase
     [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> ClearDeceased(Guid id, CancellationToken cancellationToken)
     {
-        var actor = GetActor();
-        var result = await _patients.ClearDeceasedAsync(id, actor.UserId, actor.DisplayName, cancellationToken);
+        var result = await _patients.ClearDeceasedAsync(id, GetActor(), cancellationToken);
         return ToActionResult(result);
     }
 
@@ -86,7 +84,10 @@ public class PatientsController : ControllerBase
     private ActorContext GetActor()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
-        var name = User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name ?? "Staff";
+        var name = User.FindFirstValue("fullName")
+                   ?? User.FindFirstValue(ClaimTypes.Name)
+                   ?? User.Identity?.Name
+                   ?? "Staff";
         return new ActorContext(userId, name);
     }
 

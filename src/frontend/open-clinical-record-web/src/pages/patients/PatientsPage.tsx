@@ -87,6 +87,7 @@ export function PatientsPage() {
               ['all', 'All'],
               ['active', 'Active'],
               ['inactive', 'Inactive'],
+              ['deceased', 'Deceased'],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -149,10 +150,14 @@ export function PatientsPage() {
                   <td>
                     <span
                       className={`status-badge ${
-                        p.isActive ? 'status-active' : 'status-inactive'
+                        p.status === 'Deceased'
+                          ? 'status-inactive'
+                          : p.isActive
+                            ? 'status-active'
+                            : 'status-inactive'
                       }`}
                     >
-                      {p.isActive ? 'Active' : 'Inactive'}
+                      {p.status || (p.isActive ? 'Active' : 'Inactive')}
                     </span>
                   </td>
                   <td>
