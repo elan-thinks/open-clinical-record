@@ -99,6 +99,47 @@ public class AuthController : ControllerBase
         });
     }
 
+    /// <summary>Update display name for the signed-in user (any role).</summary>
+    [HttpPatch("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return Unauthorized();
+
+        var name = request.FullName.Trim();
+        if (name.Length < 2)
+            return BadRequest(new { message = "Full name must be at least 2 characters." });
+
+        user.FullName = name;
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new
+            {
+                message = string.Join("; ", result.Errors.Select(e => e.Description))
+            });
+        }
+
+        await _audit.WriteAsync(
+            "Auth.UpdateProfile", "Auth", null,
+            user.Id, user.FullName, "Display name updated", default);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return Ok(new MeResponse
+        {
+            Id = user.Id,
+            Email = user.Email ?? string.Empty,
+            FullName = user.FullName,
+            Roles = roles.ToList(),
+            MustChangePassword = user.MustChangePassword
+        });
+    }
+
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
