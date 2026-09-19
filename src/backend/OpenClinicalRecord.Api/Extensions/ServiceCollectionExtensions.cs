@@ -9,6 +9,7 @@ using OpenClinicalRecord.Api.Models.Entities;
 using OpenClinicalRecord.Api.Models.Enums;
 using OpenClinicalRecord.Api.Services;
 using OpenClinicalRecord.Api.Services.Appointments;
+using OpenClinicalRecord.Api.Services.Audit;
 using OpenClinicalRecord.Api.Services.Clinical;
 using OpenClinicalRecord.Api.Services.Patients;
 
@@ -147,6 +148,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAppointmentWorkflowService, AppointmentWorkflowService>();
         services.AddScoped<IClinicalChartService, ClinicalChartService>();
         services.AddScoped<IPatientService, PatientService>();
+        services.AddScoped<IAuditService, AuditService>();
         return services;
     }
 }
