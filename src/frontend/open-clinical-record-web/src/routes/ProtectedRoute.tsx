@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { PageLoader } from '../components/PageLoader';
+import { PageLoader, useHoldLoading } from '../components/PageLoader';
 
 interface ProtectedRouteProps {
   /** If set, user must have at least one of these roles. */
@@ -9,8 +9,9 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const { user, isLoading, primaryRole } = useAuth();
+  const showLoader = useHoldLoading(isLoading, 1400);
 
-  if (isLoading) {
+  if (showLoader) {
     return (
       <PageLoader variant="session" label="Restoring your session…" />
     );
@@ -27,7 +28,6 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
     }
   }
 
-  // Force password change flow if required
   if (user.mustChangePassword && window.location.pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />;
   }

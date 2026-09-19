@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient } from '../../services/patientsApi';
 import './PatientChartPage.css';
 import './ClinicalIndexPages.css';
-import { PageLoader } from '../../components/PageLoader';
+import { PageLoader, useHoldLoading } from '../../components/PageLoader';
 
 export function ChartIndexPage() {
   const navigate = useNavigate();
@@ -11,6 +11,7 @@ export function ChartIndexPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState('');
+  const showLoader = useHoldLoading(loading, 1200);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,7 +50,7 @@ export function ChartIndexPage() {
       <header className="ci-header">
         <h1 className="ci-title">Medical Chart</h1>
         <p className="ci-lead">
-          Open a patient's full clinical chart — overview, history, vitals, visits, and notes in one place.
+          Open a patient&apos;s full clinical chart — overview, history, vitals, visits, and notes in one place.
         </p>
         <p className="ci-hint">
           For visit-only documentation and consultation forms, use <strong>Medical Records</strong> instead.
@@ -71,7 +72,7 @@ export function ChartIndexPage() {
             placeholder="Name, MRN, or phone"
             autoComplete="off"
           />
-          <button type="submit" className="ci-search-btn" disabled={loading}>
+          <button type="submit" className="ci-search-btn" disabled={showLoader}>
             Search
           </button>
         </div>
@@ -80,13 +81,13 @@ export function ChartIndexPage() {
       <div className="panel ci-list-panel">
         <div className="panel-head ci-list-head">
           <div className="panel-title">Patients</div>
-          {!loading && (
+          {!showLoader && (
             <span className="ci-count">
               {patients.length} {patients.length === 1 ? 'result' : 'results'}
             </span>
           )}
         </div>
-        {loading ? (
+        {showLoader ? (
           <PageLoader variant="skeleton" label="Loading charts…" rows={5} />
         ) : patients.length === 0 ? (
           <div className="empty">No patients found. Register a patient first.</div>
