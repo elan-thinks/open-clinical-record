@@ -17,13 +17,37 @@ function fmtVisitWhen(value?: string | null): string {
 }
 
 interface Props {
-  chart: PatientChart;
+  /** Preferred: full chart (has visits + patientId). */
+  chart?: PatientChart;
+  /** Alternate shape used by PatientChartPage. */
+  patientId?: string;
+  visits?: Visit[];
   isDeceased?: boolean;
-  onNewConsultation: () => void;
+  onNewConsultation?: () => void;
+  /** Called after creating a draft consultation when onNewConsultation is not provided. */
+  onChanged?: () => void | Promise<void>;
 }
 
-export function VisitHistoryPanel({ chart, isDeceased, onNewConsultation }: Props) {
-  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(chart.visits[0]?.id ?? null);
+export function VisitHistoryPanel({
+  chart,
+  patientId,
+  visits: visitsProp,
+  isDeceased,
+  onNewConsultation,
+  onChanged,
+}: Props) {
+  const visits = chart?.visits ?? visitsProp ?? [];
+  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(visits[0]?.id ?? null);
+
+  function handleNewConsultation() {
+    if (isDeceased) return;
+    if (onNewConsultation) {
+      onNewConsultation();
+      return;
+    }
+    // Fallback: parent may only pass onChanged after they create the visit elsewhere
+    void onChanged?.();
+  }
 
   return (
     <div className="visit-layout">
@@ -33,7 +57,7 @@ export function VisitHistoryPanel({ chart, isDeceased, onNewConsultation }: Prop
           <button
             type="button"
             className="panel-link"
-            onClick={onNewConsultation}
+            onClick={handleNewConsultation}
             disabled={isDeceased}
           >
             + New consultation
@@ -42,15 +66,15 @@ export function VisitHistoryPanel({ chart, isDeceased, onNewConsultation }: Prop
         <p className="visit-hint">
           Same patient, many visits. Each attendance keeps its own encounter — history is never overwritten.
         </p>
-        {chart.visits.length === 0 ? (
+        {visits.length === 0 ? (
           <div className="empty">
             No visits yet. Check in an appointment or record vitals / a consultation to create the first visit.
           </div>
         ) : (
           <div className="visit-timeline">
-            {chart.visits.map((v) => {
+            {visits.map((v) => {
               const primaryDx = v.diagnoses.find((d) => d.isPrimary) ?? v.diagnoses[0];
-              const active = (selectedVisitId ?? chart.visits[0]?.id) === v.id;
+              const active = (selectedVisitId ?? visits[0]?.id) === v.id;
               const statusClass =
                 v.status === 'Final' || v.status === 'Completed'
                   ? 'done'
@@ -86,7 +110,7 @@ export function VisitHistoryPanel({ chart, isDeceased, onNewConsultation }: Prop
       <div className="panel visit-detail-panel">
         {(() => {
           const v: Visit | null =
-            chart.visits.find((x) => x.id === selectedVisitId) ?? chart.visits[0] ?? null;
+            visits.find((x) => x.id === selectedVisitId) ?? visits[0] ?? null;
           if (!v) {
             return (
               <>
@@ -202,7 +226,7 @@ export function VisitHistoryPanel({ chart, isDeceased, onNewConsultation }: Prop
 
               <div className="vd-section">
                 <div className="vd-section-title">Clinical notes</div>
-                {v.notes.length === 0 ? (
+                {(v.notes?.length ?? 0) === 0 ? (
                   <div className="empty">No notes on this visit.</div>
                 ) : (
                   <div className="vd-notes">
