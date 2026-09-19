@@ -97,7 +97,7 @@ export function AppointmentCreatePage() {
       <p className="page-sub">Create an appointment for an existing patient.</p>
 
       {notice && (
-        <div className={`notice-banner ${notice.tone}`} role="alert">
+        <div className={`notice-banner ${notice.tone}`} role="alert" data-flash="true">
           <div className="notice-title">{notice.title}</div>
           <p className="notice-body">{notice.body}</p>
           {notice.tone === 'auth' && (
