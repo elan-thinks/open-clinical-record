@@ -182,8 +182,6 @@ public sealed class PatientService : IPatientService
         if (string.Equals(patient.Status, "Deceased", StringComparison.OrdinalIgnoreCase))
             return ServiceResult<PatientDto>.Ok(ToDto(patient));
 
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
-
         var prior = await _db.PatientDeathRecords
             .Where(r => r.PatientId == id && r.IsActive)
             .ToListAsync(ct);
@@ -234,7 +232,6 @@ public sealed class PatientService : IPatientService
         }
 
         await _db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
         return ServiceResult<PatientDto>.Ok(ToDto(patient));
     }
 
