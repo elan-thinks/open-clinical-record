@@ -34,6 +34,83 @@ public static class IdentityDataSeeder
         await EnsureUserAsync(userManager, "desk@clinic.local", "Reception Desk", AppRoles.Receptionist, seedPassword);
 
         logger?.LogInformation("Identity roles and seed users are ready.");
+
+        await EnsureDemoPatientsAsync(db, logger);
+    }
+
+    /// <summary>
+    /// Seeds up to 20 demo patients when the Patients table has fewer than 20 rows.
+    /// Safe to re-run: does nothing once the count is already >= 20.
+    /// </summary>
+    private static async Task EnsureDemoPatientsAsync(AppDbContext db, ILogger? logger)
+    {
+        try
+        {
+            var existing = await db.Patients.CountAsync();
+            if (existing >= 20)
+            {
+                logger?.LogInformation("Demo patients already present ({Count}). Skipping patient seed.", existing);
+                return;
+            }
+
+            var demos = new (string First, string Last, string Sex, int Year, int Month, int Day, string Phone, string? City, string? Notes)[]
+            {
+                ("Marta", "Bekele", "Female", 1984, 4, 14, "+251 911 234 567", "Addis Ababa", "Regular follow-up for hypertension"),
+                ("Dawit", "Tesfaye", "Male", 1978, 11, 3, "+251 912 345 678", "Addis Ababa", null),
+                ("Selam", "Abebe", "Female", 1992, 7, 22, "+251 913 456 789", "Bahir Dar", "Prefers Amharic"),
+                ("Yonas", "Hailu", "Male", 2001, 1, 9, "+251 914 567 890", "Hawassa", null),
+                ("Hiwot", "Girma", "Female", 1965, 9, 30, "+251 915 678 901", "Addis Ababa", "Diabetes type 2"),
+                ("Abebe", "Kebede", "Male", 1955, 2, 18, "+251 916 789 012", "Dire Dawa", null),
+                ("Tigist", "Assefa", "Female", 1988, 6, 5, "+251 917 890 123", "Mekelle", "Pregnant — antenatal"),
+                ("Bereket", "Mulugeta", "Male", 1995, 12, 12, "+251 918 901 234", "Addis Ababa", null),
+                ("Meron", "Tadesse", "Female", 1972, 3, 27, "+251 919 012 345", "Gondar", "Asthma"),
+                ("Fikru", "Worku", "Male", 1980, 8, 8, "+251 910 123 456", "Adama", null),
+                ("Rahel", "Demissie", "Female", 1999, 5, 15, "+251 911 222 333", "Addis Ababa", null),
+                ("Solomon", "Getachew", "Male", 1960, 10, 1, "+251 912 333 444", "Jimma", "Chronic kidney disease"),
+                ("Bethlehem", "Alemu", "Female", 2005, 4, 20, "+251 913 444 555", "Addis Ababa", "Pediatric transfer"),
+                ("Elias", "Negash", "Male", 1990, 7, 7, "+251 914 555 666", "Bahir Dar", null),
+                ("Kidist", "Habte", "Female", 1983, 1, 25, "+251 915 666 777", "Addis Ababa", "CBHI member"),
+                ("Mesfin", "Berhanu", "Male", 1975, 9, 14, "+251 916 777 888", "Hawassa", null),
+                ("Sara", "Yilma", "Female", 1997, 11, 11, "+251 917 888 999", "Addis Ababa", null),
+                ("Getnet", "Asfaw", "Male", 1950, 6, 2, "+251 918 999 000", "Dire Dawa", "Inactive — moved abroad"),
+                ("Liya", "Mekonnen", "Female", 2008, 3, 3, "+251 919 000 111", "Addis Ababa", null),
+                ("Daniel", "Zewde", "Male", 1986, 12, 28, "+251 910 111 222", "Mekelle", "Seasonal allergies"),
+            };
+
+            var toAdd = 20 - existing;
+            var startIndex = existing; // continue MRN sequence
+            var now = DateTimeOffset.UtcNow;
+
+            for (var i = 0; i < toAdd && i < demos.Length; i++)
+            {
+                var d = demos[i];
+                var isInactive = string.Equals(d.First, "Getnet", StringComparison.OrdinalIgnoreCase);
+                var patient = new Patient
+                {
+                    Id = Guid.NewGuid(),
+                    MedicalRecordNumber = $"OCR-{(startIndex + i + 1):D6}",
+                    FirstName = d.First,
+                    LastName = d.Last,
+                    DateOfBirth = new DateOnly(d.Year, d.Month, d.Day),
+                    Sex = d.Sex,
+                    Status = isInactive ? "Inactive" : "Active",
+                    IsActive = !isInactive,
+                    Phone = d.Phone,
+                    City = d.City ?? "Addis Ababa",
+                    PreferredLanguage = "Amharic",
+                    Notes = d.Notes,
+                    CreatedAt = now.AddDays(-(toAdd - i))
+                };
+                db.Patients.Add(patient);
+            }
+
+            await db.SaveChangesAsync();
+            logger?.LogInformation("Seeded {Count} demo patient(s) (total target 20).", toAdd);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "Could not seed demo patients. Register them manually if needed.");
+        }
     }
 
     private static async Task EnsureSchemaAsync(AppDbContext db, ILogger? logger)
