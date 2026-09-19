@@ -20,6 +20,14 @@
   --red:#e8778a;
   --red-glow:rgba(232,119,138,.13);
   --sidebar-width:226px;
+  --status-scheduled:#5b9fd4;
+  --status-waiting:#eab35a;
+  --status-checked-in:#3ddc97;
+  --status-in-progress:#3ddc97;
+  --status-completed:#29a874;
+  --status-cancelled:#e8778a;
+  --status-no-show:#e8778a;
+  --status-critical:#e8778a;
   --btn-primary-fg:#04140c;
   --shadow-soft:rgba(0,0,0,.35);
   --mobile-header-bg:rgba(12,19,16,.94);
@@ -45,6 +53,14 @@ html[data-theme="light"]{
   --btn-primary-fg:#ffffff;
   --shadow-soft:rgba(18,32,26,.12);
   --mobile-header-bg:rgba(255,255,255,.92);
+  --status-scheduled:#2f7ab8;
+  --status-waiting:#b87a12;
+  --status-checked-in:#1fa86a;
+  --status-in-progress:#1fa86a;
+  --status-completed:#178a56;
+  --status-cancelled:#c94a5e;
+  --status-no-show:#c94a5e;
+  --status-critical:#c94a5e;
   color-scheme:light;
 }
 
