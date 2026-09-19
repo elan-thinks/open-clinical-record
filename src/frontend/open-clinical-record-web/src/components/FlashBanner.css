@@ -1,0 +1,56 @@
+.flash-banner {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  scroll-margin-top: 20px;
+  scroll-margin-bottom: 20px;
+}
+
+.flash-banner.flash-error {
+  background: var(--red-glow);
+  border: 1px solid rgba(232, 119, 138, 0.28);
+}
+
+.flash-banner.flash-success {
+  background: var(--teal-glow);
+  border: 1px solid rgba(61, 220, 151, 0.25);
+}
+
+.flash-banner.flash-warning {
+  background: var(--amber-glow);
+  border: 1px solid rgba(234, 179, 90, 0.35);
+}
+
+.flash-banner.flash-info {
+  background: rgba(91, 159, 212, 0.12);
+  border: 1px solid rgba(91, 159, 212, 0.28);
+}
+
+.flash-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.flash-error .flash-title { color: var(--red); }
+.flash-success .flash-title { color: var(--teal); }
+.flash-warning .flash-title { color: #eab35a; }
+.flash-info .flash-title { color: #5b9fd4; }
+
+.flash-body {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.flash-error .flash-body { color: var(--red); }
+.flash-success .flash-body { color: var(--teal); }
+
+.flash-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
