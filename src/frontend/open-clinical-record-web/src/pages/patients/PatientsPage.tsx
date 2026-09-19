@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient, type PatientStatusFilter } from '../../services/patientsApi';
 import './PatientsPage.css';
@@ -26,45 +26,44 @@ export function PatientsPage() {
   const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [q, setQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PatientStatusFilter>('active');
 
-  const load = useCallback(
-    async (search?: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        setPatients(await listPatients(search, filter));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load patients');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [filter],
-  );
+  // Live search: wait ~280ms after typing stops
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQ(q.trim()), 280);
+    return () => window.clearTimeout(t);
+  }, [q]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setPatients(await listPatients(debouncedQ || undefined, filter));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load patients');
+    } finally {
+      setLoading(false);
+    }
+  }, [filter, debouncedQ]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const countLabel = useMemo(() => {
-    if (loading) return 'Loading...';
+    if (loading) return 'Searching…';
     return patients.length === 1 ? '1 patient' : `${patients.length} patients`;
   }, [loading, patients.length]);
-
-  async function onSearch(e: FormEvent) {
-    e.preventDefault();
-    await load(q);
-  }
 
   return (
     <div className="patients-page">
       <div className="page-head">
         <div>
           <h1 className="page-title">Patients</h1>
-          <p className="page-sub">Search, register, and open patient records - {countLabel}</p>
+          <p className="page-sub">Search as you type · register · open records — {countLabel}</p>
         </div>
         <button type="button" className="btn-primary" onClick={() => navigate('/patients/new')}>
           + Register patient
@@ -73,13 +72,25 @@ export function PatientsPage() {
 
       {error && <div className="error-banner">{error}</div>}
 
-      <form className="toolbar" onSubmit={onSearch}>
+      <div className="toolbar">
         <div className="search-box">
           <input
-            placeholder="Search by name, ID, phone..."
+            placeholder="Type name, MRN, or phone…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            autoComplete="off"
+            aria-label="Search patients"
           />
+          {q && (
+            <button
+              type="button"
+              className="search-clear"
+              onClick={() => setQ('')}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
         </div>
         <div className="filter-pills">
           {(
@@ -100,16 +111,17 @@ export function PatientsPage() {
             </button>
           ))}
         </div>
-        <button type="submit" className="btn-ghost">
-          Search
-        </button>
-      </form>
+      </div>
 
       <div className="panel">
         {loading ? (
-          <div className="empty">Loading patients...</div>
+          <div className="empty">Loading patients…</div>
         ) : patients.length === 0 ? (
-          <div className="empty">No patients found. Register a patient to get started.</div>
+          <div className="empty">
+            {debouncedQ
+              ? `No patients match “${debouncedQ}”.`
+              : 'No patients found. Register a patient to get started.'}
+          </div>
         ) : (
           <table>
             <thead>

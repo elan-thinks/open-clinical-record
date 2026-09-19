@@ -79,6 +79,25 @@ export async function updateUserRoles(id: string, roles: string[]): Promise<User
   return (await response.json()) as UserListItem;
 }
 
+export async function updateUserProfile(id: string, fullName: string): Promise<UserListItem> {
+  const response = await fetch(`${getApiBaseUrl()}/api/users/${id}/profile`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({ fullName }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  return (await response.json()) as UserListItem;
+}
+
+export async function resetUserPassword(id: string, newPassword: string): Promise<void> {
+  const response = await fetch(`${getApiBaseUrl()}/api/users/${id}/reset-password`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ newPassword }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+}
+
 export async function listRoles(): Promise<RoleItem[]> {
   const response = await fetch(`${getApiBaseUrl()}/api/roles`, {
     headers: authHeaders(),

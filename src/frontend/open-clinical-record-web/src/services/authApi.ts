@@ -56,6 +56,48 @@ export async function fetchMe(token: string): Promise<AuthUser> {
   };
 }
 
+export async function updateProfileRequest(fullName: string): Promise<AuthUser> {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in.');
+
+  const response = await fetch(`${getApiBaseUrl()}/api/auth/profile`, {
+    method: 'PATCH',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ fullName }),
+  });
+
+  if (!response.ok) {
+    let message = 'Could not update profile.';
+    try {
+      const body = (await response.json()) as { message?: string };
+      if (body.message) message = body.message;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(message);
+  }
+
+  const body = (await response.json()) as {
+    id: string;
+    email: string;
+    fullName: string;
+    roles: string[];
+    mustChangePassword?: boolean;
+  };
+
+  return {
+    id: body.id,
+    email: body.email,
+    fullName: body.fullName,
+    roles: body.roles as AuthUser['roles'],
+    mustChangePassword: body.mustChangePassword ?? false,
+  };
+}
+
 export async function changePasswordRequest(
   currentPassword: string,
   newPassword: string,
