@@ -104,7 +104,7 @@ public class ClinicalChartController : ControllerBase
     }
 
     [HttpPost("allergies")]
-    [Authorize(Roles = "Admin,Doctor,Nurse")]
+    [Authorize(Roles = "Doctor,Nurse")]
     public async Task<IActionResult> AddAllergy(Guid patientId, [FromBody] CreateAllergyRequest request, CancellationToken cancellationToken)
     {
         if (!await PatientExists(patientId, cancellationToken))
@@ -137,7 +137,7 @@ public class ClinicalChartController : ControllerBase
     }
 
     [HttpPost("history")]
-    [Authorize(Roles = "Admin,Doctor,Nurse")]
+    [Authorize(Roles = "Doctor,Nurse")]
     public async Task<IActionResult> AddHistory(Guid patientId, [FromBody] CreateHistoryItemRequest request, CancellationToken cancellationToken)
     {
         if (!await PatientExists(patientId, cancellationToken))
@@ -172,7 +172,7 @@ public class ClinicalChartController : ControllerBase
     }
 
     [HttpPost("visits")]
-    [Authorize(Roles = "Admin,Doctor,Nurse")]
+    [Authorize(Roles = "Doctor,Nurse")]
     public async Task<IActionResult> CreateVisit(Guid patientId, [FromBody] CreateVisitRequest request, CancellationToken cancellationToken)
     {
         if (!await PatientExists(patientId, cancellationToken))
@@ -181,12 +181,16 @@ public class ClinicalChartController : ControllerBase
         }
 
         var (userId, fullName) = GetCurrentUser();
+        // Phase 1: blank status defaults to Draft (not Completed/Final).
+        var rawStatus = string.IsNullOrWhiteSpace(request.Status) ? "Draft" : request.Status.Trim();
+        if (string.Equals(rawStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+            rawStatus = "Final";
         var visit = new ClinicalVisit
         {
             PatientId = patientId,
             VisitDate = DateTimeOffset.UtcNow,
             VisitType = string.IsNullOrWhiteSpace(request.VisitType) ? "Consultation" : request.VisitType.Trim(),
-            Status = string.IsNullOrWhiteSpace(request.Status) ? "Completed" : request.Status.Trim(),
+            Status = rawStatus,
             ChiefComplaint = NullIfEmpty(request.ChiefComplaint),
             Plan = NullIfEmpty(request.Plan),
             Instructions = NullIfEmpty(request.Instructions),
