@@ -104,7 +104,7 @@ export function PatientChartPage() {
 
   const load = useCallback(async () => {
     if (!patientId) return;
-    setLoading(true;
+    setLoading(true);
     setError(null);
     try {
       const [c, appts] = await Promise.all([
