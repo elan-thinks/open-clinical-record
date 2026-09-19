@@ -18,6 +18,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   primaryRole: ReturnType<typeof primaryRole> | null;
 }
 
@@ -69,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: result.email,
       fullName: result.fullName,
       roles: result.roles as AuthUser['roles'],
+      mustChangePassword: result.mustChangePassword ?? false,
     };
 
     try {
@@ -81,6 +83,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveSession(result.accessToken, nextUser);
     setToken(result.accessToken);
     setUser(nextUser);
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const existing = getToken();
+    if (!existing) return;
+    try {
+      const me = await fetchMe(existing);
+      setUser(me);
+      saveSession(existing, me);
+    } catch {
+      /* keep current session */
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -96,9 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       logout,
+      refreshUser,
       primaryRole: user ? primaryRole(user.roles) : null,
     }),
-    [user, token, isLoading, login, logout],
+    [user, token, isLoading, login, refreshUser, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
