@@ -44,7 +44,7 @@ public class AppointmentsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Receptionist")]
+    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
     public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -53,11 +53,8 @@ public class AppointmentsController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = result.Value!.Id }, result.Value);
     }
 
-    /// <summary>
-    /// Routine appointment lifecycle. Admin is excluded (operational role).
-    /// </summary>
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = "Receptionist,Doctor,Nurse")]
+    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
     public async Task<IActionResult> UpdateStatus(
         Guid id,
         [FromBody] UpdateAppointmentStatusRequest request,
@@ -67,12 +64,8 @@ public class AppointmentsController : ControllerBase
         return ToActionResult(result);
     }
 
-    /// <summary>
-    /// First-class reschedule: changes date/time while recording an event.
-    /// Allowed for Scheduled, Waiting, Cancelled, NoShow — not CheckedIn/InProgress/Completed.
-    /// </summary>
     [HttpPatch("{id:guid}/reschedule")]
-    [Authorize(Roles = "Admin,Receptionist")]
+    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
     public async Task<IActionResult> Reschedule(
         Guid id,
         [FromBody] RescheduleAppointmentRequest request,

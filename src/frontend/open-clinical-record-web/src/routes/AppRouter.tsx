@@ -30,7 +30,6 @@ export function AppRouter() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Any authenticated staff */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />
@@ -40,8 +39,8 @@ export function AppRouter() {
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="profile" element={<ProfilePage />} />
 
-              {/* Front desk: registration, check-in, booking */}
-              <Route element={<ProtectedRoute roles={['Admin', 'Receptionist']} />}>
+              {/* Register, check-in, booking — all staff roles */}
+              <Route element={<ProtectedRoute roles={['Admin', 'Receptionist', 'Doctor', 'Nurse']} />}>
                 <Route path="patients/new" element={<PatientRegisterPage />} />
                 <Route path="register" element={<Navigate to="/patients/new" replace />} />
                 <Route path="checkin" element={<CheckInPage />} />
