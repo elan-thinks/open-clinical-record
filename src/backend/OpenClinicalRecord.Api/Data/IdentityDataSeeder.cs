@@ -80,11 +80,11 @@ public static class IdentityDataSeeder
                 ex);
         }
 
-        // Safety net: hand-written migrations sometimes lag behind local DBs.
-        await EnsureAppointmentTablesAsync(db, logger);
+        // Safety net when local DB is behind hand-written / lagging migrations.
+        await EnsureClinicalTablesAsync(db, logger);
     }
 
-    private static async Task EnsureAppointmentTablesAsync(AppDbContext db, ILogger? logger)
+    private static async Task EnsureClinicalTablesAsync(AppDbContext db, ILogger? logger)
     {
         try
         {
@@ -123,19 +123,48 @@ public static class IdentityDataSeeder
                 );
                 """);
 
+            // Required for mark-deceased / clear-deceased flows.
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE TABLE IF NOT EXISTS "PatientDeathRecords" (
+                    "Id" uuid NOT NULL,
+                    "PatientId" uuid NOT NULL,
+                    "DateOfDeath" date NULL,
+                    "Note" character varying(500) NULL,
+                    "RecordedByUserId" character varying(450) NULL,
+                    "RecordedByName" character varying(200) NULL,
+                    "RecordedAt" timestamp with time zone NOT NULL,
+                    "ClearedAt" timestamp with time zone NULL,
+                    "ClearedByUserId" character varying(450) NULL,
+                    "ClearedByName" character varying(200) NULL,
+                    "IsActive" boolean NOT NULL DEFAULT TRUE,
+                    CONSTRAINT "PK_PatientDeathRecords" PRIMARY KEY ("Id")
+                );
+                """);
+
             await db.Database.ExecuteSqlRawAsync(
                 """
                 CREATE INDEX IF NOT EXISTS "IX_Appointments_AppointmentDate" ON "Appointments" ("AppointmentDate");
                 CREATE INDEX IF NOT EXISTS "IX_Appointments_PatientId" ON "Appointments" ("PatientId");
                 CREATE INDEX IF NOT EXISTS "IX_Appointments_Status" ON "Appointments" ("Status");
                 CREATE INDEX IF NOT EXISTS "IX_AppointmentEvents_AppointmentId" ON "AppointmentEvents" ("AppointmentId");
+                CREATE INDEX IF NOT EXISTS "IX_PatientDeathRecords_PatientId" ON "PatientDeathRecords" ("PatientId");
                 """);
 
-            logger?.LogInformation("Appointment tables verified (CREATE IF NOT EXISTS)." );
+            // Unique active death record per patient (Postgres partial unique index).
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS "UX_PatientDeathRecords_ActivePatient"
+                ON "PatientDeathRecords" ("PatientId")
+                WHERE "IsActive" = TRUE;
+                """);
+
+            logger?.LogInformation(
+                "Clinical tables verified (Appointments, AppointmentEvents, PatientDeathRecords).");
         }
         catch (Exception ex)
         {
-            logger?.LogWarning(ex, "Could not ensure appointment tables. Create may fail until schema is fixed.");
+            logger?.LogWarning(ex, "Could not ensure clinical tables. Some features may fail until schema is fixed.");
         }
     }
 

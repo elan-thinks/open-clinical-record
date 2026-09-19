@@ -182,56 +182,91 @@ public sealed class PatientService : IPatientService
         if (string.Equals(patient.Status, "Deceased", StringComparison.OrdinalIgnoreCase))
             return ServiceResult<PatientDto>.Ok(ToDto(patient));
 
-        var prior = await _db.PatientDeathRecords
-            .Where(r => r.PatientId == id && r.IsActive)
-            .ToListAsync(ct);
-        foreach (var r in prior)
+        try
         {
-            r.IsActive = false;
-            r.ClearedAt = DateTimeOffset.UtcNow;
-            r.ClearedByUserId = actor.UserId;
-            r.ClearedByName = actor.DisplayName;
-        }
+            var prior = await _db.PatientDeathRecords
+                .Where(r => r.PatientId == id && r.IsActive)
+                .ToListAsync(ct);
+            foreach (var r in prior)
+            {
+                r.IsActive = false;
+                r.ClearedAt = DateTimeOffset.UtcNow;
+                r.ClearedByUserId = actor.UserId;
+                r.ClearedByName = actor.DisplayName;
+            }
 
-        _db.PatientDeathRecords.Add(new PatientDeathRecord
+            _db.PatientDeathRecords.Add(new PatientDeathRecord
+            {
+                Id = Guid.NewGuid(),
+                PatientId = id,
+                DateOfDeath = request?.DateOfDeath,
+                Note = string.IsNullOrWhiteSpace(request?.Note) ? null : request!.Note.Trim(),
+                RecordedByUserId = actor.UserId,
+                RecordedByName = actor.DisplayName,
+                RecordedAt = DateTimeOffset.UtcNow,
+                IsActive = true
+            });
+        }
+        catch (Exception ex) when (IsMissingRelation(ex))
         {
-            PatientId = id,
-            DateOfDeath = request?.DateOfDeath,
-            Note = string.IsNullOrWhiteSpace(request?.Note) ? null : request!.Note.Trim(),
-            RecordedByUserId = actor.UserId,
-            RecordedByName = actor.DisplayName,
-            RecordedAt = DateTimeOffset.UtcNow,
-            IsActive = true
-        });
+            return ServiceResult<PatientDto>.Fail(
+                "Death-record table is missing. Restart the API so schema can be created, or run: dotnet ef database update",
+                ServiceErrorKind.Validation);
+        }
 
         patient.Status = "Deceased";
         patient.IsActive = false;
         patient.UpdatedAt = DateTimeOffset.UtcNow;
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var future = await _db.Appointments
-            .Where(a => a.PatientId == id
-                        && a.AppointmentDate >= today
-                        && (a.Status == "Scheduled" || a.Status == "Waiting" || a.Status == "CheckedIn"))
-            .ToListAsync(ct);
-        foreach (var a in future)
+        try
         {
-            var from = a.Status;
-            a.Status = "Cancelled";
-            a.UpdatedAt = DateTimeOffset.UtcNow;
-            _db.AppointmentEvents.Add(new AppointmentEvent
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var future = await _db.Appointments
+                .Where(a => a.PatientId == id
+                            && a.AppointmentDate >= today
+                            && (a.Status == "Scheduled" || a.Status == "Waiting" || a.Status == "CheckedIn"))
+                .ToListAsync(ct);
+            foreach (var a in future)
             {
-                AppointmentId = a.Id,
-                FromStatus = from,
-                ToStatus = "Cancelled",
-                Reason = "Patient marked deceased",
-                ActorUserId = actor.UserId,
-                ActorName = actor.DisplayName,
-                CreatedAt = DateTimeOffset.UtcNow
-            });
+                var from = a.Status;
+                a.Status = "Cancelled";
+                a.UpdatedAt = DateTimeOffset.UtcNow;
+                try
+                {
+                    _db.AppointmentEvents.Add(new AppointmentEvent
+                    {
+                        Id = Guid.NewGuid(),
+                        AppointmentId = a.Id,
+                        FromStatus = from,
+                        ToStatus = "Cancelled",
+                        Reason = "Patient marked deceased",
+                        ActorUserId = actor.UserId,
+                        ActorName = actor.DisplayName,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    });
+                }
+                catch
+                {
+                    /* optional history */
+                }
+            }
+        }
+        catch
+        {
+            /* appointments optional if table lag */
         }
 
-        await _db.SaveChangesAsync(ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<PatientDto>.Fail(
+                "Could not mark patient deceased. " + (ex.InnerException?.Message ?? ex.Message),
+                ServiceErrorKind.Validation);
+        }
+
         return ServiceResult<PatientDto>.Ok(ToDto(patient));
     }
 
@@ -241,21 +276,39 @@ public sealed class PatientService : IPatientService
         if (patient is null)
             return ServiceResult<PatientDto>.Fail("Patient not found.", ServiceErrorKind.NotFound);
 
-        var active = await _db.PatientDeathRecords
-            .Where(r => r.PatientId == id && r.IsActive)
-            .ToListAsync(ct);
-        foreach (var r in active)
+        try
         {
-            r.IsActive = false;
-            r.ClearedAt = DateTimeOffset.UtcNow;
-            r.ClearedByUserId = actor.UserId;
-            r.ClearedByName = actor.DisplayName;
+            var active = await _db.PatientDeathRecords
+                .Where(r => r.PatientId == id && r.IsActive)
+                .ToListAsync(ct);
+            foreach (var r in active)
+            {
+                r.IsActive = false;
+                r.ClearedAt = DateTimeOffset.UtcNow;
+                r.ClearedByUserId = actor.UserId;
+                r.ClearedByName = actor.DisplayName;
+            }
+        }
+        catch (Exception ex) when (IsMissingRelation(ex))
+        {
+            // Table missing — still allow status clear.
         }
 
         patient.Status = "Active";
         patient.IsActive = true;
         patient.UpdatedAt = DateTimeOffset.UtcNow;
-        await _db.SaveChangesAsync(ct);
+
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<PatientDto>.Fail(
+                "Could not clear deceased status. " + (ex.InnerException?.Message ?? ex.Message),
+                ServiceErrorKind.Validation);
+        }
+
         return ServiceResult<PatientDto>.Ok(ToDto(patient));
     }
 
@@ -265,26 +318,42 @@ public sealed class PatientService : IPatientService
         if (!exists)
             return ServiceResult<DeathRecordDto>.Fail("Patient not found.", ServiceErrorKind.NotFound);
 
-        var record = await _db.PatientDeathRecords.AsNoTracking()
-            .Where(r => r.PatientId == id)
-            .OrderByDescending(r => r.RecordedAt)
-            .Select(r => new DeathRecordDto
-            {
-                Id = r.Id,
-                PatientId = r.PatientId,
-                DateOfDeath = r.DateOfDeath,
-                Note = r.Note,
-                RecordedByName = r.RecordedByName,
-                RecordedAt = r.RecordedAt,
-                IsActive = r.IsActive,
-                ClearedAt = r.ClearedAt,
-                ClearedByName = r.ClearedByName
-            })
-            .FirstOrDefaultAsync(ct);
+        try
+        {
+            var record = await _db.PatientDeathRecords.AsNoTracking()
+                .Where(r => r.PatientId == id)
+                .OrderByDescending(r => r.RecordedAt)
+                .Select(r => new DeathRecordDto
+                {
+                    Id = r.Id,
+                    PatientId = r.PatientId,
+                    DateOfDeath = r.DateOfDeath,
+                    Note = r.Note,
+                    RecordedByName = r.RecordedByName,
+                    RecordedAt = r.RecordedAt,
+                    IsActive = r.IsActive,
+                    ClearedAt = r.ClearedAt,
+                    ClearedByName = r.ClearedByName
+                })
+                .FirstOrDefaultAsync(ct);
 
-        if (record is null)
+            if (record is null)
+                return ServiceResult<DeathRecordDto>.Fail("No death record.", ServiceErrorKind.NotFound);
+            return ServiceResult<DeathRecordDto>.Ok(record);
+        }
+        catch (Exception ex) when (IsMissingRelation(ex))
+        {
             return ServiceResult<DeathRecordDto>.Fail("No death record.", ServiceErrorKind.NotFound);
-        return ServiceResult<DeathRecordDto>.Ok(record);
+        }
+    }
+
+    private static bool IsMissingRelation(Exception ex)
+    {
+        var msg = (ex.InnerException?.Message ?? ex.Message) ?? string.Empty;
+        return msg.Contains("does not exist", StringComparison.OrdinalIgnoreCase)
+               || msg.Contains("42P01", StringComparison.OrdinalIgnoreCase)
+               || msg.Contains("PatientDeathRecords", StringComparison.OrdinalIgnoreCase)
+                  && msg.Contains("relation", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? ValidateDemographics(DateOnly? dob, string? sex, string? status)
