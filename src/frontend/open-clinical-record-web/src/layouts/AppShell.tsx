@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AppRole } from '../types/auth';
 import { getNavForRole, navIcon } from '../utils/navigation';
 import { NavIcon } from './NavIcon';
+import { useTheme } from '../context/ThemeContext';
 import './AppShell.css';
 
 interface AppShellProps {
@@ -47,6 +48,7 @@ export function AppShell({
   const groups = getNavForRole(role);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return currentPath === '/dashboard';
@@ -132,6 +134,30 @@ export function AppShell({
             <span className={`status-dot${backendOnline ? '' : ' off'}`} />
             {backendOnline ? 'API online' : 'API offline'}
           </span>
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+          >
+            {theme === 'dark' ? (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+                </svg>
+                Light theme
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z" />
+                </svg>
+                Dark theme
+              </>
+            )}
+          </button>
           {onLogout && (
             <button type="button" className="logout-btn" onClick={onLogout}>
               Sign out
