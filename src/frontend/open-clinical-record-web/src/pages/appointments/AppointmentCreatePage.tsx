@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient } from '../../services/patientsApi';
-import { createAppointment } from '../../services/appointmentsApi';
+import { ApiError, createAppointment } from '../../services/appointmentsApi';
+import { useAuth } from '../../context/AuthContext';
 import './AppointmentCreatePage.css';
 
 const SLOTS = [
@@ -11,8 +12,38 @@ const SLOTS = [
 
 const TYPES = ['Consultation', 'Follow-up', 'New complaint', 'Procedure', 'Other'];
 
+type Notice = { title: string; body: string; tone: 'error' | 'auth' };
+
+function noticeFromError(err: unknown): Notice {
+  if (err instanceof ApiError) {
+    if (err.code === 'forbidden' || err.code === 'unauthorized') {
+      return {
+        title: err.code === 'unauthorized' ? 'Please sign in again' : 'Permission needed',
+        body: err.message,
+        tone: 'auth',
+      };
+    }
+    if (err.code === 'conflict') {
+      return { title: 'Time slot unavailable', body: err.message, tone: 'error' };
+    }
+    if (err.code === 'network') {
+      return { title: 'Connection problem', body: err.message, tone: 'error' };
+    }
+    return { title: 'Could not create appointment', body: err.message, tone: 'error' };
+  }
+  if (err instanceof Error) {
+    return { title: 'Could not create appointment', body: err.message, tone: 'error' };
+  }
+  return {
+    title: 'Could not create appointment',
+    body: 'Something went wrong. Please try again.',
+    tone: 'error',
+  };
+}
+
 export function AppointmentCreatePage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [patientId, setPatientId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -22,19 +53,19 @@ export function AppointmentCreatePage() {
   const [reason, setReason] = useState('');
   const [providerName, setProviderName] = useState('');
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
 
   useEffect(() => {
     void listPatients(undefined, 'active')
       .then(setPatients)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load patients'));
+      .catch((err) => setNotice(noticeFromError(err)));
   }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
+    setNotice(null);
     if (!patientId) {
-      setError('Select a patient.');
+      setNotice({ title: 'Patient required', body: 'Select a patient before creating the appointment.', tone: 'error' });
       return;
     }
     setSaving(true);
@@ -50,7 +81,7 @@ export function AppointmentCreatePage() {
       });
       navigate('/appointments');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create appointment');
+      setNotice(noticeFromError(err));
     } finally {
       setSaving(false);
     }
@@ -65,7 +96,26 @@ export function AppointmentCreatePage() {
       <h1 className="page-title">New appointment</h1>
       <p className="page-sub">Create an appointment for an existing patient.</p>
 
-      {error && <div className="error-banner">{error}</div>}
+      {notice && (
+        <div className={`notice-banner ${notice.tone}`} role="alert">
+          <div className="notice-title">{notice.title}</div>
+          <p className="notice-body">{notice.body}</p>
+          {notice.tone === 'auth' && (
+            <div className="notice-actions">
+              <button
+                type="button"
+                className="notice-btn"
+                onClick={() => {
+                  logout();
+                  navigate('/login', { replace: true });
+                }}
+              >
+                Sign out and try again
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <form onSubmit={onSubmit}>
         <div className="panel" style={{ marginBottom: 14 }}>

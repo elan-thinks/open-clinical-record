@@ -38,6 +38,20 @@ export interface DashboardStats {
   todaysSchedule: Appointment[];
 }
 
+export type ApiErrorCode = 'unauthorized' | 'forbidden' | 'conflict' | 'validation' | 'network' | 'unknown';
+
+export class ApiError extends Error {
+  readonly code: ApiErrorCode;
+  readonly status: number;
+
+  constructor(message: string, code: ApiErrorCode, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
 function authHeaders(): HeadersInit {
   const token = getToken();
   return {
@@ -47,21 +61,39 @@ function authHeaders(): HeadersInit {
   };
 }
 
-async function parseError(response: Response): Promise<string> {
+async function parseError(response: Response): Promise<ApiError> {
   if (response.status === 401) {
-    return 'Session expired or not signed in. Sign out and sign in again.';
+    return new ApiError(
+      'Your session has expired. Please sign in again to continue.',
+      'unauthorized',
+      401,
+    );
   }
   if (response.status === 403) {
-    return 'You are not allowed to perform this action with your current role. Sign out and sign in again (token must include your role).';
+    return new ApiError(
+      'You do not have permission to book appointments with this account. Sign out, then sign in again with a staff account (Reception, Doctor, Nurse, or Admin).',
+      'forbidden',
+      403,
+    );
+  }
+  if (response.status === 409) {
+    let msg = 'That time slot conflicts with another appointment. Choose a different time.';
+    try {
+      const data = (await response.json()) as { message?: string };
+      if (data.message) msg = data.message;
+    } catch {
+      /* ignore */
+    }
+    return new ApiError(msg, 'conflict', 409);
   }
   try {
     const data = (await response.json()) as { message?: string; title?: string };
-    if (data.message) return data.message;
-    if (data.title) return data.title;
+    if (data.message) return new ApiError(data.message, 'validation', response.status);
+    if (data.title) return new ApiError(data.title, 'validation', response.status);
   } catch {
     /* ignore */
   }
-  return `Request failed (${response.status})`;
+  return new ApiError('Something went wrong while saving. Please try again.', 'unknown', response.status);
 }
 
 export async function listAppointments(date?: string, status?: string): Promise<Appointment[]> {
@@ -71,18 +103,23 @@ export async function listAppointments(date?: string, status?: string): Promise<
   if (status) params.set('status', status);
   const qs = params.toString();
   const res = await fetch(`${base}/api/appointments${qs ? `?${qs}` : ''}`, { headers: authHeaders() });
-  if (!res.ok) throw new Error(await parseError(res));
+  if (!res.ok) throw await parseError(res);
   return (await res.json()) as Appointment[];
 }
 
 export async function createAppointment(body: CreateAppointmentPayload): Promise<Appointment> {
   const base = getApiBaseUrl();
-  const res = await fetch(`${base}/api/appointments`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(await parseError(res));
+  let res: Response;
+  try {
+    res = await fetch(`${base}/api/appointments`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError('Cannot reach the server. Check that the API is running, then try again.', 'network', 0);
+  }
+  if (!res.ok) throw await parseError(res);
   return (await res.json()) as Appointment;
 }
 
@@ -97,7 +134,7 @@ export async function updateAppointmentStatus(
     headers: authHeaders(),
     body: JSON.stringify({ status, reason }),
   });
-  if (!res.ok) throw new Error(await parseError(res));
+  if (!res.ok) throw await parseError(res);
   return (await res.json()) as Appointment;
 }
 
@@ -114,13 +151,13 @@ export interface AppointmentEvent {
 export async function listAppointmentEvents(id: string): Promise<AppointmentEvent[]> {
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/appointments/${id}/events`, { headers: authHeaders() });
-  if (!res.ok) throw new Error(await parseError(res));
+  if (!res.ok) throw await parseError(res);
   return (await res.json()) as AppointmentEvent[];
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/dashboard/stats`, { headers: authHeaders() });
-  if (!res.ok) throw new Error(await parseError(res));
+  if (!res.ok) throw await parseError(res);
   return (await res.json()) as DashboardStats;
 }
