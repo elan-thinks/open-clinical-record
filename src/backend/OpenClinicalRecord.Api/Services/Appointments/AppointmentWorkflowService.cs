@@ -58,12 +58,13 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
             query = query.Where(a => a.Status == status);
 
-        return await query
+        // Materialize first — EF cannot translate custom Map() into SQL.
+        var rows = await query
             .OrderBy(a => a.AppointmentDate)
             .ThenBy(a => a.StartTime)
             .Take(200)
-            .Select(a => Map(a))
             .ToListAsync(ct);
+        return rows.Select(Map).ToList();
     }
 
     public async Task<ServiceResult<AppointmentDto>> GetAsync(Guid id, CancellationToken ct)
