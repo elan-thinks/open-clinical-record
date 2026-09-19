@@ -10,6 +10,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddApplicationDatabase(builder.Configuration);
 builder.Services.AddApplicationIdentity();
 builder.Services.AddApplicationJwtAuth(builder.Configuration);
+builder.Services.AddApplicationServices();
 
 const string CorsPolicyName = "LocalDevCors";
 builder.Services.AddCors(options =>
