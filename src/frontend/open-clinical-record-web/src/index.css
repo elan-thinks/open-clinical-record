@@ -34,7 +34,6 @@ button{color:inherit;}
 a{color:inherit;text-decoration:none;}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
 
-/* Shared OCR v3 page language */
 .page-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0;}
 .page-sub{font-size:13px;color:var(--text-faint);margin:4px 0 0;line-height:1.5;}
 .page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;}
@@ -62,7 +61,6 @@ table{width:100%;border-collapse:collapse;min-width:620px;}th{font-size:10.5px;t
 .placeholder-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;}.placeholder-card h2{font-family:'Space Grotesk',sans-serif;margin:0 0 6px;font-size:18px;}.placeholder-card p{color:var(--text-dim);font-size:13px;line-height:1.55;margin:0;}
 .admin-page,.patients-page,.patient-detail,.chart-page{max-width:1120px;}
 
-/* When a message appears, auto-scroll leaves it fully visible */
 .error-banner,
 .success-banner,
 .notice-banner,
@@ -75,3 +73,51 @@ table{width:100%;border-collapse:collapse;min-width:620px;}th{font-size:10.5px;t
 }
 
 @media(max-width:700px){.page-head{flex-direction:column;}.form-grid{grid-template-columns:1fr;}.form-group.full{grid-column:auto;}}
+
+/* Deceased tab detail layout */
+.chart-page .deceased-tab { display: flex; flex-direction: column; gap: 0; }
+.chart-page .death-status-pill {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
+  border-radius: 999px; font-size: 12.5px; font-weight: 600; margin-bottom: 18px;
+  background: rgba(220, 80, 80, 0.12); color: #f0a0a0; border: 1px solid rgba(220, 80, 80, 0.25);
+}
+.chart-page .death-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #e06060;
+  box-shadow: 0 0 8px rgba(224, 96, 96, 0.6);
+}
+.chart-page .death-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px 20px; margin-bottom: 20px;
+}
+.chart-page .death-field {
+  display: flex; flex-direction: column; gap: 4px; padding: 12px 14px;
+  border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.chart-page .death-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-faint, #6b7f76);
+}
+.chart-page .death-value { font-size: 14.5px; font-weight: 600; color: var(--text, #e8f0ec); }
+.chart-page .death-sub { font-size: 12px; color: var(--text-dim, #9db0a6); }
+.chart-page .death-notes-block {
+  margin-bottom: 18px; padding: 14px 16px; border-radius: 12px;
+  background: rgba(61, 220, 151, 0.04); border: 1px solid rgba(61, 220, 151, 0.12);
+}
+.chart-page .death-notes-body {
+  margin: 8px 0 0; font-size: 14px; line-height: 1.55; color: var(--text, #e8f0ec); white-space: pre-wrap;
+}
+.chart-page .death-impact { margin-bottom: 16px; }
+.chart-page .death-impact-list {
+  margin: 8px 0 0; padding-left: 18px; color: var(--text-dim, #9db0a6); font-size: 13.5px; line-height: 1.55;
+}
+.chart-page .death-impact-list li { margin-bottom: 4px; }
+.chart-page .death-cleared-box {
+  margin-bottom: 14px; padding: 12px 14px; border-radius: 10px;
+  background: rgba(255, 200, 80, 0.08); border: 1px solid rgba(255, 200, 80, 0.2);
+  font-size: 13.5px; color: var(--text-dim, #9db0a6);
+}
+.chart-page .death-clear-hint { margin-bottom: 12px; max-width: 520px; }
+.chart-page .death-form-label {
+  display: block; font-size: 12px; font-weight: 600; color: var(--text-dim, #9db0a6); margin: 10px 0 6px;
+}
+.chart-page .death-form-input { width: 100%; margin-bottom: 4px; box-sizing: border-box; }
