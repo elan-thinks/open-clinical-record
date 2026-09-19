@@ -48,6 +48,12 @@ function authHeaders(): HeadersInit {
 }
 
 async function parseError(response: Response): Promise<string> {
+  if (response.status === 401) {
+    return 'Session expired or not signed in. Sign out and sign in again.';
+  }
+  if (response.status === 403) {
+    return 'You are not allowed to perform this action with your current role. Sign out and sign in again (token must include your role).';
+  }
   try {
     const data = (await response.json()) as { message?: string; title?: string };
     if (data.message) return data.message;
