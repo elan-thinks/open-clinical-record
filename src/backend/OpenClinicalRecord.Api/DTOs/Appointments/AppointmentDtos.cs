@@ -49,6 +49,21 @@ public class UpdateAppointmentStatusRequest
 {
     [Required, MaxLength(32)]
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>Required when transitioning to Cancelled; optional otherwise.</summary>
+    [MaxLength(500)]
+    public string? Reason { get; set; }
+}
+
+public class AppointmentEventDto
+{
+    public Guid Id { get; set; }
+    public Guid AppointmentId { get; set; }
+    public string FromStatus { get; set; } = string.Empty;
+    public string ToStatus { get; set; } = string.Empty;
+    public string? Reason { get; set; }
+    public string? ActorName { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 }
 
 public class DashboardStatsDto
