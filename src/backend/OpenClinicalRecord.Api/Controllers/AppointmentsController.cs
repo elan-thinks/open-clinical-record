@@ -44,7 +44,7 @@ public class AppointmentsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
+    [Authorize(Policy = "StaffCanBook")]
     public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -54,7 +54,7 @@ public class AppointmentsController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
+    [Authorize(Policy = "StaffCanBook")]
     public async Task<IActionResult> UpdateStatus(
         Guid id,
         [FromBody] UpdateAppointmentStatusRequest request,
@@ -65,7 +65,7 @@ public class AppointmentsController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reschedule")]
-    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
+    [Authorize(Policy = "StaffCanBook")]
     public async Task<IActionResult> Reschedule(
         Guid id,
         [FromBody] RescheduleAppointmentRequest request,
@@ -78,7 +78,9 @@ public class AppointmentsController : ControllerBase
 
     private ActorContext GetActor()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue("sub")
+                     ?? string.Empty;
         var name = User.FindFirstValue("fullName")
                    ?? User.FindFirstValue(ClaimTypes.Name)
                    ?? User.Identity?.Name
