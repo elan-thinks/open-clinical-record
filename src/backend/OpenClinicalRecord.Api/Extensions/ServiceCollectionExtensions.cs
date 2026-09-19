@@ -13,6 +13,7 @@ using OpenClinicalRecord.Api.Services;
 using OpenClinicalRecord.Api.Services.Appointments;
 using OpenClinicalRecord.Api.Services.Audit;
 using OpenClinicalRecord.Api.Services.Clinical;
+using OpenClinicalRecord.Api.Services.Dashboard;
 using OpenClinicalRecord.Api.Services.Patients;
 
 namespace OpenClinicalRecord.Api.Extensions;
@@ -166,9 +167,20 @@ public static class ServiceCollectionExtensions
             options.AddPolicy("ClinicalStaff",
                 p => p.RequireAssertion(c => HasAnyRole(c, AppRoles.Doctor, AppRoles.Nurse)));
 
+            // Book / create appointments (desk + clinical + admin for ops)
             options.AddPolicy("StaffCanBook",
                 p => p.RequireAssertion(c => HasAnyRole(c,
                     AppRoles.Admin, AppRoles.Receptionist, AppRoles.Doctor, AppRoles.Nurse)));
+
+            // Status transitions (check-in, complete, cancel…) — Admin excluded (Phase 1)
+            options.AddPolicy("CanChangeAppointmentStatus",
+                p => p.RequireAssertion(c => HasAnyRole(c,
+                    AppRoles.Receptionist, AppRoles.Doctor, AppRoles.Nurse)));
+
+            // Reschedule slot — desk + admin
+            options.AddPolicy("CanRescheduleAppointment",
+                p => p.RequireAssertion(c => HasAnyRole(c,
+                    AppRoles.Admin, AppRoles.Receptionist)));
 
             options.AddPolicy("CanManagePatients",
                 p => p.RequireAssertion(c => HasAnyRole(c,
@@ -210,6 +222,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClinicalChartService, ClinicalChartService>();
         services.AddScoped<IPatientService, PatientService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         return services;
     }
 }

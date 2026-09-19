@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OpenClinicalRecord.Api.Data;
 using OpenClinicalRecord.Api.Models.Entities;
 using OpenClinicalRecord.Api.Services.Common;
@@ -34,8 +35,13 @@ public interface IAuditService
 public sealed class AuditService : IAuditService
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<AuditService> _logger;
 
-    public AuditService(AppDbContext db) => _db = db;
+    public AuditService(AppDbContext db, ILogger<AuditService> logger)
+    {
+        _db = db;
+        _logger = logger;
+    }
 
     public Task WriteAsync(
         string action,
@@ -65,7 +71,7 @@ public sealed class AuditService : IAuditService
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(action) || string.IsNullOrWhiteSpace(entityType))
-            return;
+            throw new ArgumentException("Audit action and entityType are required.");
 
         _db.AuditEvents.Add(new AuditEvent
         {
@@ -78,18 +84,17 @@ public sealed class AuditService : IAuditService
             CreatedAt = DateTimeOffset.UtcNow
         });
 
+        // Fail closed: do not pretend the audit was written if persistence fails.
         try
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch
+        catch (Exception ex)
         {
-            foreach (var entry in _db.ChangeTracker.Entries<AuditEvent>()
-                         .Where(e => e.State == EntityState.Added)
-                         .ToList())
-            {
-                entry.State = EntityState.Detached;
-            }
+            _logger.LogError(ex,
+                "Audit write failed for {Action} on {EntityType}/{EntityId}",
+                action, entityType, entityId);
+            throw;
         }
     }
 

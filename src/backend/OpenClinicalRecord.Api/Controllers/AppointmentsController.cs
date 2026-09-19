@@ -57,7 +57,6 @@ public class AppointmentsController : ControllerBase
         {
             var result = await _appointments.CreateAsync(request, GetActor(), cancellationToken);
             if (!result.Succeeded) return ToActionResult(result);
-            // Prefer 201 with body; avoid CreatedAtAction route issues.
             return StatusCode(StatusCodes.Status201Created, result.Value);
         }
         catch (Exception ex)
@@ -70,8 +69,9 @@ public class AppointmentsController : ControllerBase
         }
     }
 
+    /// <summary>Status transitions — Admin is not allowed (Phase 1).</summary>
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Policy = "StaffCanBook")]
+    [Authorize(Policy = "CanChangeAppointmentStatus")]
     public async Task<IActionResult> UpdateStatus(
         Guid id,
         [FromBody] UpdateAppointmentStatusRequest request,
@@ -93,7 +93,7 @@ public class AppointmentsController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reschedule")]
-    [Authorize(Policy = "StaffCanBook")]
+    [Authorize(Policy = "CanRescheduleAppointment")]
     public async Task<IActionResult> Reschedule(
         Guid id,
         [FromBody] RescheduleAppointmentRequest request,
