@@ -61,6 +61,7 @@ public sealed class ClinicalChartService : IClinicalChartService
             .Include(v => v.VitalSigns)
             .Include(v => v.Diagnoses)
             .Include(v => v.Notes)
+            .AsSplitQuery()
             .OrderByDescending(v => v.VisitDate)
             .Take(50)
             .ToListAsync(ct);
@@ -90,6 +91,7 @@ public sealed class ClinicalChartService : IClinicalChartService
             .Include(v => v.VitalSigns)
             .Include(v => v.Diagnoses)
             .Include(v => v.Notes)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(v => v.Id == visitId && v.PatientId == patientId, ct);
 
         if (visit is null)
@@ -113,7 +115,8 @@ public sealed class ClinicalChartService : IClinicalChartService
             PatientId = patientId,
             Substance = request.Substance.Trim(),
             Reaction = string.IsNullOrWhiteSpace(request.Reaction) ? null : request.Reaction.Trim(),
-            Severity = string.IsNullOrWhiteSpace(request.Severity) ? "Unknown" : request.Severity.Trim()
+            Severity = string.IsNullOrWhiteSpace(request.Severity) ? "Unknown" : request.Severity.Trim(),
+            CreatedAt = DateTimeOffset.UtcNow
         };
         _db.PatientAllergies.Add(entity);
         await _db.SaveChangesAsync(ct);
@@ -143,7 +146,8 @@ public sealed class ClinicalChartService : IClinicalChartService
             Category = string.IsNullOrWhiteSpace(request.Category) ? "Condition" : request.Category.Trim(),
             Description = request.Description.Trim(),
             OnsetDate = request.OnsetDate,
-            IsActive = true
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow
         };
         _db.MedicalHistoryItems.Add(entity);
         await _db.SaveChangesAsync(ct);
@@ -196,12 +200,10 @@ public sealed class ClinicalChartService : IClinicalChartService
             ClinicianUserId = actor.UserId,
             ClinicianName = actor.DisplayName,
             CheckInAt = DateTimeOffset.UtcNow,
-            FinalizedAt = status == "Final" ? DateTimeOffset.UtcNow : null,
-            FinalizedByUserId = status == "Final" ? actor.UserId : null,
-            FinalizedByName = status == "Final" ? actor.DisplayName : null
+            CreatedAt = DateTimeOffset.UtcNow
         };
 
-        if (HasAnyVital(request))
+        if (HasAnyVitals(request))
         {
             visit.VitalSigns = new VitalSigns
             {
@@ -218,23 +220,16 @@ public sealed class ClinicalChartService : IClinicalChartService
             };
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosis))
+        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosisDescription)
+            || !string.IsNullOrWhiteSpace(request.PrimaryDiagnosisCode))
         {
             visit.Diagnoses.Add(new Diagnosis
             {
                 IsPrimary = true,
                 Code = NullIfEmpty(request.PrimaryDiagnosisCode),
-                Description = request.PrimaryDiagnosis.Trim()
-            });
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.SecondaryDiagnosis))
-        {
-            visit.Diagnoses.Add(new Diagnosis
-            {
-                IsPrimary = false,
-                Code = NullIfEmpty(request.SecondaryDiagnosisCode),
-                Description = request.SecondaryDiagnosis.Trim()
+                Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosisDescription)
+                    ? (request.PrimaryDiagnosisCode ?? "Diagnosis")
+                    : request.PrimaryDiagnosisDescription.Trim()
             });
         }
 
@@ -245,8 +240,17 @@ public sealed class ClinicalChartService : IClinicalChartService
                 NoteType = "Progress",
                 Content = request.ClinicalNote.Trim(),
                 AuthorUserId = actor.UserId,
-                AuthorName = actor.DisplayName
+                AuthorName = actor.DisplayName,
+                CreatedAt = DateTimeOffset.UtcNow
             });
+        }
+
+        if (string.Equals(status, "Final", StringComparison.OrdinalIgnoreCase))
+        {
+            visit.FinalizedAt = DateTimeOffset.UtcNow;
+            visit.FinalizedByUserId = actor.UserId;
+            visit.FinalizedByName = actor.DisplayName;
+            visit.CheckOutAt = DateTimeOffset.UtcNow;
         }
 
         _db.ClinicalVisits.Add(visit);
@@ -256,6 +260,7 @@ public sealed class ClinicalChartService : IClinicalChartService
             .Include(v => v.VitalSigns)
             .Include(v => v.Diagnoses)
             .Include(v => v.Notes)
+            .AsSplitQuery()
             .FirstAsync(v => v.Id == visit.Id, ct);
 
         return ServiceResult<VisitDto>.Ok(MapVisit(loaded));
@@ -264,13 +269,6 @@ public sealed class ClinicalChartService : IClinicalChartService
     public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
         Guid patientId, Guid visitId, DocumentVisitRequest request, ActorContext actor, CancellationToken ct)
     {
-        var patient = await GetPatientAsync(patientId, ct);
-        if (patient is null)
-            return ServiceResult<VisitDto>.Fail("Patient not found.", ServiceErrorKind.NotFound);
-        if (IsDeceased(patient))
-            return ServiceResult<VisitDto>.Fail(
-                "Cannot modify clinical data for a deceased patient.", ServiceErrorKind.Validation);
-
         var visit = await _db.ClinicalVisits
             .Include(v => v.VitalSigns)
             .Include(v => v.Diagnoses)
@@ -280,13 +278,10 @@ public sealed class ClinicalChartService : IClinicalChartService
         if (visit is null)
             return ServiceResult<VisitDto>.Fail("Visit not found for this patient.", ServiceErrorKind.NotFound);
 
-        if (string.Equals(visit.Status, "Final", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(visit.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
-        {
+        if (string.Equals(visit.Status, "Final", StringComparison.OrdinalIgnoreCase))
             return ServiceResult<VisitDto>.Fail(
-                "Cannot document a finalized or cancelled visit. Create a new visit instead.",
+                "This visit is finalized and cannot be edited. Open a new visit for new documentation.",
                 ServiceErrorKind.Validation);
-        }
 
         if (!string.IsNullOrWhiteSpace(request.ChiefComplaint))
             visit.ChiefComplaint = request.ChiefComplaint.Trim();
@@ -294,62 +289,50 @@ public sealed class ClinicalChartService : IClinicalChartService
             visit.Plan = request.Plan.Trim();
         if (!string.IsNullOrWhiteSpace(request.Instructions))
             visit.Instructions = request.Instructions.Trim();
+        if (!string.IsNullOrWhiteSpace(request.EpisodeLabel))
+            visit.EpisodeLabel = request.EpisodeLabel.Trim();
+        if (!string.IsNullOrWhiteSpace(request.Location))
+            visit.Location = request.Location.Trim();
+        if (!string.IsNullOrWhiteSpace(request.Department))
+            visit.Department = request.Department.Trim();
 
-        if (HasAnyVitalDoc(request))
+        if (HasAnyVitals(request))
         {
             if (visit.VitalSigns is null)
             {
                 visit.VitalSigns = new VitalSigns
                 {
                     VisitId = visit.Id,
-                    BloodPressure = NullIfEmpty(request.BloodPressure),
-                    Pulse = request.Pulse,
-                    TemperatureC = request.TemperatureC,
-                    RespiratoryRate = request.RespiratoryRate,
-                    Spo2 = request.Spo2,
-                    WeightKg = request.WeightKg,
-                    HeightCm = request.HeightCm,
                     RecordedByUserId = actor.UserId,
                     RecordedByName = actor.DisplayName,
                     RecordedAt = DateTimeOffset.UtcNow
                 };
             }
-            else
+            if (request.BloodPressure is not null) visit.VitalSigns.BloodPressure = NullIfEmpty(request.BloodPressure);
+            if (request.Pulse.HasValue) visit.VitalSigns.Pulse = request.Pulse;
+            if (request.TemperatureC.HasValue) visit.VitalSigns.TemperatureC = request.TemperatureC;
+            if (request.RespiratoryRate.HasValue) visit.VitalSigns.RespiratoryRate = request.RespiratoryRate;
+            if (request.Spo2.HasValue) visit.VitalSigns.Spo2 = request.Spo2;
+            if (request.WeightKg.HasValue) visit.VitalSigns.WeightKg = request.WeightKg;
+            if (request.HeightCm.HasValue) visit.VitalSigns.HeightCm = request.HeightCm;
+            visit.VitalSigns.RecordedByUserId = actor.UserId;
+            visit.VitalSigns.RecordedByName = actor.DisplayName;
+            visit.VitalSigns.RecordedAt = DateTimeOffset.UtcNow;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosisDescription)
+            || !string.IsNullOrWhiteSpace(request.PrimaryDiagnosisCode))
+        {
+            var primary = visit.Diagnoses.FirstOrDefault(d => d.IsPrimary);
+            if (primary is null)
             {
-                if (!string.IsNullOrWhiteSpace(request.BloodPressure))
-                    visit.VitalSigns.BloodPressure = request.BloodPressure.Trim();
-                if (request.Pulse.HasValue) visit.VitalSigns.Pulse = request.Pulse;
-                if (request.TemperatureC.HasValue) visit.VitalSigns.TemperatureC = request.TemperatureC;
-                if (request.RespiratoryRate.HasValue) visit.VitalSigns.RespiratoryRate = request.RespiratoryRate;
-                if (request.Spo2.HasValue) visit.VitalSigns.Spo2 = request.Spo2;
-                if (request.WeightKg.HasValue) visit.VitalSigns.WeightKg = request.WeightKg;
-                if (request.HeightCm.HasValue) visit.VitalSigns.HeightCm = request.HeightCm;
-                visit.VitalSigns.RecordedByUserId = actor.UserId;
-                visit.VitalSigns.RecordedByName = actor.DisplayName;
-                visit.VitalSigns.RecordedAt = DateTimeOffset.UtcNow;
+                primary = new Diagnosis { VisitId = visit.Id, IsPrimary = true };
+                visit.Diagnoses.Add(primary);
             }
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosis))
-        {
-            visit.Diagnoses.Add(new Diagnosis
-            {
-                VisitId = visit.Id,
-                IsPrimary = true,
-                Code = NullIfEmpty(request.PrimaryDiagnosisCode),
-                Description = request.PrimaryDiagnosis.Trim()
-            });
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.SecondaryDiagnosis))
-        {
-            visit.Diagnoses.Add(new Diagnosis
-            {
-                VisitId = visit.Id,
-                IsPrimary = false,
-                Code = NullIfEmpty(request.SecondaryDiagnosisCode),
-                Description = request.SecondaryDiagnosis.Trim()
-            });
+            primary.Code = NullIfEmpty(request.PrimaryDiagnosisCode) ?? primary.Code;
+            primary.Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosisDescription)
+                ? (string.IsNullOrEmpty(primary.Description) ? (request.PrimaryDiagnosisCode ?? "Diagnosis") : primary.Description)
+                : request.PrimaryDiagnosisDescription.Trim();
         }
 
         if (!string.IsNullOrWhiteSpace(request.ClinicalNote))
@@ -357,18 +340,19 @@ public sealed class ClinicalChartService : IClinicalChartService
             visit.Notes.Add(new ClinicalNote
             {
                 VisitId = visit.Id,
-                NoteType = "Progress",
+                NoteType = string.IsNullOrWhiteSpace(request.NoteType) ? "Progress" : request.NoteType.Trim(),
                 Content = request.ClinicalNote.Trim(),
                 AuthorUserId = actor.UserId,
-                AuthorName = actor.DisplayName
+                AuthorName = actor.DisplayName,
+                CreatedAt = DateTimeOffset.UtcNow
             });
         }
 
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
-            var next = NormalizeVisitStatus(request.Status, visit.VisitType);
-            visit.Status = next;
-            if (next == "Final")
+            var newStatus = NormalizeVisitStatus(request.Status, visit.VisitType);
+            visit.Status = newStatus;
+            if (string.Equals(newStatus, "Final", StringComparison.OrdinalIgnoreCase))
             {
                 visit.FinalizedAt = DateTimeOffset.UtcNow;
                 visit.FinalizedByUserId = actor.UserId;
@@ -377,47 +361,46 @@ public sealed class ClinicalChartService : IClinicalChartService
             }
         }
 
+        visit.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(ct);
 
         var loaded = await _db.ClinicalVisits.AsNoTracking()
             .Include(v => v.VitalSigns)
             .Include(v => v.Diagnoses)
             .Include(v => v.Notes)
+            .AsSplitQuery()
             .FirstAsync(v => v.Id == visit.Id, ct);
 
         return ServiceResult<VisitDto>.Ok(MapVisit(loaded));
     }
 
     private async Task<Patient?> GetPatientAsync(Guid patientId, CancellationToken ct) =>
-        await _db.Patients.FirstOrDefaultAsync(p => p.Id == patientId, ct);
+        await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.Id == patientId, ct);
 
-    private static bool IsDeceased(Patient patient) =>
-        string.Equals(patient.Status, "Deceased", StringComparison.OrdinalIgnoreCase);
+    private static bool IsDeceased(Patient p) =>
+        string.Equals(p.Status, "Deceased", StringComparison.OrdinalIgnoreCase);
 
     private static string NormalizeVisitStatus(string? status, string visitType)
     {
-        if (string.IsNullOrWhiteSpace(status)) return "Draft";
+        if (string.IsNullOrWhiteSpace(status))
+            return "Draft";
         var s = status.Trim();
-        if (string.Equals(s, "Completed", StringComparison.OrdinalIgnoreCase)) return "Final";
-        if (string.Equals(s, "InProgress", StringComparison.OrdinalIgnoreCase)) return "Draft";
-        if (string.Equals(s, "Draft", StringComparison.OrdinalIgnoreCase)) return "Draft";
         if (string.Equals(s, "Final", StringComparison.OrdinalIgnoreCase)) return "Final";
         if (string.Equals(s, "Cancelled", StringComparison.OrdinalIgnoreCase)) return "Cancelled";
         return "Draft";
     }
 
-    private static bool HasAnyVital(CreateVisitRequest r) =>
+    private static bool HasAnyVitals(CreateVisitRequest r) =>
         !string.IsNullOrWhiteSpace(r.BloodPressure)
         || r.Pulse.HasValue || r.TemperatureC.HasValue || r.RespiratoryRate.HasValue
         || r.Spo2.HasValue || r.WeightKg.HasValue || r.HeightCm.HasValue;
 
-    private static bool HasAnyVitalDoc(DocumentVisitRequest r) =>
+    private static bool HasAnyVitals(DocumentVisitRequest r) =>
         !string.IsNullOrWhiteSpace(r.BloodPressure)
         || r.Pulse.HasValue || r.TemperatureC.HasValue || r.RespiratoryRate.HasValue
         || r.Spo2.HasValue || r.WeightKg.HasValue || r.HeightCm.HasValue;
 
-    private static string? NullIfEmpty(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static string? NullIfEmpty(string? v) => string.IsNullOrWhiteSpace(v) ? null : v.Trim();
 
     private static VisitDto MapVisit(ClinicalVisit v) => new()
     {
@@ -451,14 +434,14 @@ public sealed class ClinicalChartService : IClinicalChartService
             RecordedByName = v.VitalSigns.RecordedByName,
             RecordedAt = v.VitalSigns.RecordedAt
         },
-        Diagnoses = v.Diagnoses.Select(d => new DiagnosisDto
+        Diagnoses = (v.Diagnoses ?? Array.Empty<Diagnosis>()).Select(d => new DiagnosisDto
         {
             Id = d.Id,
             IsPrimary = d.IsPrimary,
             Code = d.Code,
             Description = d.Description
         }).ToList(),
-        Notes = v.Notes.Select(n => new ClinicalNoteDto
+        Notes = (v.Notes ?? Array.Empty<ClinicalNote>()).Select(n => new ClinicalNoteDto
         {
             Id = n.Id,
             NoteType = n.NoteType,
