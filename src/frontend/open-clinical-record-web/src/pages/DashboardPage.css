@@ -47,6 +47,7 @@
 
 .dashboard-page .search-box:hover {
   border-color: var(--teal-dim);
+  color: var(--teal);
 }
 
 .dashboard-page .icon-btn {
@@ -61,6 +62,11 @@
   color: var(--text-dim);
   position: relative;
   cursor: pointer;
+}
+
+.dashboard-page .icon-btn:hover {
+  color: var(--teal);
+  border-color: var(--teal-dim);
 }
 
 .dashboard-page .icon-btn .dot {
@@ -483,7 +489,15 @@
 }
 
 .dashboard-page .quick-btn .qi {
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(61, 220, 151, 0.1);
+  color: var(--teal);
+  flex-shrink: 0;
 }
 
 .dashboard-page .perm-bar {
