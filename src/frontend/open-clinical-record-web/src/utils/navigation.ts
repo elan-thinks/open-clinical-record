@@ -1,6 +1,11 @@
 import type { AppRole } from '../types/auth';
 import type { NavGroup, RoleNavMap } from '../types/navigation';
 
+/**
+ * Navigation by role. Register patient, book appointment, and check-in are available
+ * to all four application roles (internship demo / small clinic ops).
+ * Admin-only: Users, Roles.
+ */
 export const ROLE_NAV: RoleNavMap = {
   Doctor: [
     {
@@ -11,9 +16,12 @@ export const ROLE_NAV: RoleNavMap = {
       label: 'Patient care',
       items: [
         { path: '/patients', label: 'Patients' },
+        { path: '/patients/new', label: 'Register patient' },
         { path: '/chart', label: 'Medical Chart' },
         { path: '/records', label: 'Medical Records' },
         { path: '/appointments', label: 'Appointments' },
+        { path: '/appointments/new', label: 'New appointment' },
+        { path: '/checkin', label: 'Check-in / Queue' },
       ],
     },
     {
@@ -30,10 +38,13 @@ export const ROLE_NAV: RoleNavMap = {
       label: 'Patient care',
       items: [
         { path: '/patients', label: 'Patients' },
+        { path: '/patients/new', label: 'Register patient' },
         { path: '/chart', label: 'Medical Chart' },
         { path: '/vitals', label: 'Record vitals' },
         { path: '/records', label: 'Medical Records' },
         { path: '/appointments', label: 'Appointments' },
+        { path: '/appointments/new', label: 'New appointment' },
+        { path: '/checkin', label: 'Check-in / Queue' },
       ],
     },
     {
@@ -50,8 +61,9 @@ export const ROLE_NAV: RoleNavMap = {
       label: 'Front desk',
       items: [
         { path: '/patients', label: 'Patients' },
+        { path: '/patients/new', label: 'Register patient' },
         { path: '/appointments', label: 'Appointments' },
-        { path: '/patients/new', label: 'Registration' },
+        { path: '/appointments/new', label: 'New appointment' },
         { path: '/checkin', label: 'Check-in / Queue' },
       ],
     },
@@ -66,13 +78,20 @@ export const ROLE_NAV: RoleNavMap = {
       items: [{ path: '/dashboard', label: 'Dashboard' }],
     },
     {
+      label: 'Operations',
+      items: [
+        { path: '/patients', label: 'Patients' },
+        { path: '/patients/new', label: 'Register patient' },
+        { path: '/appointments', label: 'Appointments' },
+        { path: '/appointments/new', label: 'New appointment' },
+        { path: '/checkin', label: 'Check-in / Queue' },
+      ],
+    },
+    {
       label: 'Administration',
       items: [
         { path: '/admin/users', label: 'Users' },
         { path: '/admin/roles', label: 'Roles & Permissions' },
-        { path: '/patients', label: 'Patients' },
-        { path: '/checkin', label: 'Check-in / Queue' },
-        { path: '/appointments', label: 'Appointments' },
       ],
     },
     {
@@ -94,10 +113,6 @@ export function primaryRole(roles: string[]): AppRole {
   return 'Doctor';
 }
 
-/**
- * Whether a nav item should appear active for the current location.
- * Uses exact match for most items; prefix match for nested patient/chart routes.
- */
 export function isNavActive(itemPath: string, currentPath: string): boolean {
   if (itemPath === currentPath) return true;
 
@@ -135,6 +150,7 @@ export function navIcon(path: string): string {
     '/appointments': 'cal',
     '/vitals': 'pulse',
     '/patients/new': 'plus',
+    '/appointments/new': 'plus',
     '/register': 'plus',
     '/checkin': 'list',
     '/reports': 'chart',
