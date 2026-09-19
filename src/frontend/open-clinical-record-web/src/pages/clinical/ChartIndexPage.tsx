@@ -11,7 +11,7 @@ export function ChartIndexPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState('');
-  const showLoader = useHoldLoading(loading, 1200);
+  const showLoader = useHoldLoading(loading, 2800);
 
   useEffect(() => {
     let cancelled = false;

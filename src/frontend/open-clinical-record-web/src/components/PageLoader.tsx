@@ -15,9 +15,9 @@ interface PageLoaderProps {
 /**
  * Keep a loading flag true for at least `minMs` so the cute loader
  * stays on screen even when the API is very fast.
- * Default ~1.2s — feels intentional without feeling slow.
+ * Default ~2.8s — enough time to enjoy the animation.
  */
-export function useHoldLoading(isLoading: boolean, minMs = 1200): boolean {
+export function useHoldLoading(isLoading: boolean, minMs = 2800): boolean {
   const [held, setHeld] = useState(isLoading);
   const startedAt = useRef<number | null>(isLoading ? Date.now() : null);
 

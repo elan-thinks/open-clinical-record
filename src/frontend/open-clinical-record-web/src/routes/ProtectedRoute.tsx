@@ -9,7 +9,8 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const { user, isLoading, primaryRole } = useAuth();
-  const showLoader = useHoldLoading(isLoading, 1400);
+  // ~3s so the session pulse has time to shine
+  const showLoader = useHoldLoading(isLoading, 3200);
 
   if (showLoader) {
     return (
