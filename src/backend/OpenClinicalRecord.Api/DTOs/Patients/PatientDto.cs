@@ -22,3 +22,22 @@ public class PatientDto
     public bool IsActive { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
+
+public class MarkDeceasedRequest
+{
+    public DateOnly? DateOfDeath { get; set; }
+    public string? Note { get; set; }
+}
+
+public class DeathRecordDto
+{
+    public Guid Id { get; set; }
+    public Guid PatientId { get; set; }
+    public DateOnly? DateOfDeath { get; set; }
+    public string? Note { get; set; }
+    public string? RecordedByName { get; set; }
+    public DateTimeOffset RecordedAt { get; set; }
+    public bool IsActive { get; set; }
+    public DateTimeOffset? ClearedAt { get; set; }
+    public string? ClearedByName { get; set; }
+}
