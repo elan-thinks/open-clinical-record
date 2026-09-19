@@ -86,6 +86,22 @@ async function parseError(response: Response): Promise<ApiError> {
     }
     return new ApiError(msg, 'conflict', 409);
   }
+  if (response.status >= 500) {
+    let detail = '';
+    try {
+      const data = (await response.json()) as { message?: string; title?: string };
+      detail = data.message || data.title || '';
+    } catch {
+      /* ignore */
+    }
+    return new ApiError(
+      detail
+        ? detail
+        : 'The server could not save this appointment. Restart the API (so database migrations run), then try again.',
+      'unknown',
+      response.status,
+    );
+  }
   try {
     const data = (await response.json()) as { message?: string; title?: string };
     if (data.message) return new ApiError(data.message, 'validation', response.status);
