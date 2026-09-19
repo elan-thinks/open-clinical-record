@@ -220,16 +220,16 @@ public sealed class ClinicalChartService : IClinicalChartService
             };
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosisDescription)
+        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
             || !string.IsNullOrWhiteSpace(request.PrimaryDiagnosisCode))
         {
             visit.Diagnoses.Add(new Diagnosis
             {
                 IsPrimary = true,
                 Code = NullIfEmpty(request.PrimaryDiagnosisCode),
-                Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosisDescription)
+                Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
                     ? (request.PrimaryDiagnosisCode ?? "Diagnosis")
-                    : request.PrimaryDiagnosisDescription.Trim()
+                    : request.PrimaryDiagnosis.Trim()
             });
         }
 
@@ -320,7 +320,7 @@ public sealed class ClinicalChartService : IClinicalChartService
             visit.VitalSigns.RecordedAt = DateTimeOffset.UtcNow;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosisDescription)
+        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
             || !string.IsNullOrWhiteSpace(request.PrimaryDiagnosisCode))
         {
             var primary = visit.Diagnoses.FirstOrDefault(d => d.IsPrimary);
@@ -330,9 +330,9 @@ public sealed class ClinicalChartService : IClinicalChartService
                 visit.Diagnoses.Add(primary);
             }
             primary.Code = NullIfEmpty(request.PrimaryDiagnosisCode) ?? primary.Code;
-            primary.Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosisDescription)
+            primary.Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
                 ? (string.IsNullOrEmpty(primary.Description) ? (request.PrimaryDiagnosisCode ?? "Diagnosis") : primary.Description)
-                : request.PrimaryDiagnosisDescription.Trim();
+                : request.PrimaryDiagnosis.Trim();
         }
 
         if (!string.IsNullOrWhiteSpace(request.ClinicalNote))
