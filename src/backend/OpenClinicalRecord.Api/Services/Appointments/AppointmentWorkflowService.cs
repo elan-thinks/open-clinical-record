@@ -13,10 +13,11 @@ public interface IAppointmentWorkflowService
     Task<ServiceResult<IReadOnlyList<AppointmentEventDto>>> ListEventsAsync(Guid id, CancellationToken ct);
     Task<ServiceResult<AppointmentDto>> CreateAsync(CreateAppointmentRequest request, ActorContext actor, CancellationToken ct);
     Task<ServiceResult<AppointmentDto>> UpdateStatusAsync(Guid id, UpdateAppointmentStatusRequest request, ActorContext actor, CancellationToken ct);
+    Task<ServiceResult<AppointmentDto>> RescheduleAsync(Guid id, RescheduleAppointmentRequest request, ActorContext actor, CancellationToken ct);
 }
 
 /// <summary>
-/// Appointment lifecycle: create, status transitions, check-in → Draft visit.
+/// Appointment lifecycle: create, status transitions, check-in → Draft visit, reschedule.
 /// </summary>
 public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
 {
@@ -252,6 +253,103 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
                 });
             }
         }
+
+        await _db.SaveChangesAsync(ct);
+        return ServiceResult<AppointmentDto>.Ok(Map(appt));
+    }
+
+    public async Task<ServiceResult<AppointmentDto>> RescheduleAsync(
+        Guid id,
+        RescheduleAppointmentRequest request,
+        ActorContext actor,
+        CancellationToken ct)
+    {
+        var appt = await _db.Appointments.Include(a => a.Patient)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (appt is null)
+            return ServiceResult<AppointmentDto>.Fail("Appointment not found.", ServiceErrorKind.NotFound);
+
+        if (string.Equals(appt.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(appt.Status, "CheckedIn", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(appt.Status, "InProgress", StringComparison.OrdinalIgnoreCase))
+        {
+            return ServiceResult<AppointmentDto>.Fail(
+                $"Cannot reschedule an appointment in status '{appt.Status}'. Cancel or complete the visit workflow instead.",
+                ServiceErrorKind.Validation);
+        }
+
+        if (appt.Patient is not null
+            && string.Equals(appt.Patient.Status, "Deceased", StringComparison.OrdinalIgnoreCase))
+        {
+            return ServiceResult<AppointmentDto>.Fail(
+                "Cannot reschedule appointments for a deceased patient.",
+                ServiceErrorKind.Validation);
+        }
+
+        var duration = request.DurationMinutes <= 0 ? appt.DurationMinutes : request.DurationMinutes;
+        if (duration <= 0) duration = 30;
+
+        var provider = string.IsNullOrWhiteSpace(request.ProviderName)
+            ? appt.ProviderName
+            : request.ProviderName.Trim();
+
+        if (!string.IsNullOrWhiteSpace(provider))
+        {
+            var endMinutes = request.StartTime.Hour * 60 + request.StartTime.Minute + duration;
+            var sameDay = await _db.Appointments.AsNoTracking()
+                .Where(a => a.Id != id
+                            && a.AppointmentDate == request.AppointmentDate
+                            && a.ProviderName == provider
+                            && a.Status != "Cancelled"
+                            && a.Status != "NoShow"
+                            && a.Status != "Completed")
+                .ToListAsync(ct);
+
+            foreach (var existing in sameDay)
+            {
+                var eStart = existing.StartTime.Hour * 60 + existing.StartTime.Minute;
+                var eEnd = eStart + existing.DurationMinutes;
+                var nStart = request.StartTime.Hour * 60 + request.StartTime.Minute;
+                if (nStart < eEnd && endMinutes > eStart)
+                {
+                    return ServiceResult<AppointmentDto>.Fail(
+                        $"Time conflict with existing appointment at {existing.StartTime:HH\\:mm} for {provider}.",
+                        ServiceErrorKind.Conflict);
+                }
+            }
+        }
+
+        var oldSummary =
+            $"{appt.AppointmentDate:yyyy-MM-dd} {appt.StartTime:HH\\:mm} ({appt.DurationMinutes} min)";
+        var newSummary =
+            $"{request.AppointmentDate:yyyy-MM-dd} {request.StartTime:HH\\:mm} ({duration} min)";
+
+        var fromStatus = appt.Status;
+        appt.AppointmentDate = request.AppointmentDate;
+        appt.StartTime = request.StartTime;
+        appt.DurationMinutes = duration;
+        if (!string.IsNullOrWhiteSpace(provider))
+            appt.ProviderName = provider;
+        if (string.Equals(fromStatus, "Cancelled", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fromStatus, "NoShow", StringComparison.OrdinalIgnoreCase))
+        {
+            appt.Status = "Scheduled";
+        }
+
+        appt.UpdatedAt = DateTimeOffset.UtcNow;
+
+        _db.AppointmentEvents.Add(new AppointmentEvent
+        {
+            AppointmentId = appt.Id,
+            FromStatus = fromStatus,
+            ToStatus = appt.Status,
+            Reason = string.IsNullOrWhiteSpace(request.Reason)
+                ? $"Rescheduled: {oldSummary} → {newSummary}"
+                : $"Rescheduled: {oldSummary} → {newSummary}. {request.Reason.Trim()}",
+            ActorUserId = actor.UserId,
+            ActorName = actor.DisplayName,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
 
         await _db.SaveChangesAsync(ct);
         return ServiceResult<AppointmentDto>.Ok(Map(appt));
