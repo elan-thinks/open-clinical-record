@@ -33,11 +33,14 @@ public class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Name, user.FullName),
+            new("fullName", user.FullName),
             new(ClaimTypes.Email, user.Email ?? string.Empty)
         };
 
-        foreach (var role in roles)
+        foreach (var role in roles.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase))
         {
+            // Short claim name is what JwtBearer RoleClaimType = "role" expects.
+            claims.Add(new Claim("role", role));
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
