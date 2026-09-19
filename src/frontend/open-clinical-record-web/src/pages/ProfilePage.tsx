@@ -1,8 +1,17 @@
+import { useState, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { changePasswordRequest } from '../services/authApi';
 import './ProfilePage.css';
 
 export function ProfilePage() {
-  const { user, primaryRole } = useAuth();
+  const { user, primaryRole, refreshUser } = useAuth();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   if (!user) {
     return (
@@ -26,10 +35,47 @@ export function ProfilePage() {
     Admin: 'System administration — users, roles, and configuration.',
   };
 
+  async function onChangePassword(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    if (newPassword !== confirmPassword) {
+      setError('New password and confirmation do not match.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError('New password must be at least 8 characters.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await changePasswordRequest(currentPassword, newPassword, confirmPassword);
+      setSuccess('Password updated. Use your new password the next time you sign in.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      await refreshUser?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="profile-page">
       <h1 className="page-title">Profile</h1>
-      <p className="page-sub">Your account details for this session.</p>
+      <p className="page-sub">Account details and security settings for this session.</p>
+
+      {user.mustChangePassword && (
+        <div className="profile-banner" role="status">
+          <span className="banner-icon" aria-hidden>!</span>
+          <div>
+            <strong>Temporary password</strong>
+            <p>Admin assigned a temporary password. Set a new one below so your account stays secure.</p>
+          </div>
+        </div>
+      )}
 
       <div className="profile-card">
         <div className="profile-top">
@@ -63,6 +109,94 @@ export function ProfilePage() {
         {primaryRole && (
           <p className="hint">{roleHints[primaryRole] ?? 'Signed in to Open Clinical Record.'}</p>
         )}
+      </div>
+
+      <div className="profile-card security-card">
+        <div className="security-head">
+          <div className="security-icon" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="section-title">Change password</h2>
+            <p className="section-sub">
+              Available for every role — Doctor, Nurse, Receptionist, and Admin.
+            </p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="profile-alert error" role="alert">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="profile-alert success" role="status">
+            {success}
+          </div>
+        )}
+
+        <form className="profile-pw-form" onSubmit={onChangePassword}>
+          <label className="pw-label">
+            Current password
+            <div className="pw-field">
+              <input
+                type={showPw ? 'text' : 'password'}
+                className="pw-input"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="Enter current password"
+              />
+            </div>
+          </label>
+          <label className="pw-label">
+            New password
+            <div className="pw-field">
+              <input
+                type={showPw ? 'text' : 'password'}
+                className="pw-input"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+              />
+            </div>
+          </label>
+          <label className="pw-label">
+            Confirm new password
+            <div className="pw-field">
+              <input
+                type={showPw ? 'text' : 'password'}
+                className="pw-input"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Repeat new password"
+              />
+            </div>
+          </label>
+
+          <label className="show-pw">
+            <input
+              type="checkbox"
+              checked={showPw}
+              onChange={(e) => setShowPw(e.target.checked)}
+            />
+            Show passwords
+          </label>
+
+          <button type="submit" className="pw-submit" disabled={saving}>
+            {saving ? 'Updating…' : 'Save new password'}
+          </button>
+        </form>
       </div>
     </div>
   );
