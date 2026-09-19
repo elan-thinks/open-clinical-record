@@ -37,7 +37,7 @@ public class ClinicalChartController : ControllerBase
     }
 
     [HttpPost("allergies")]
-    [Authorize(Roles = "Doctor,Nurse")]
+    [Authorize(Policy = "ClinicalStaff")]
     public async Task<IActionResult> AddAllergy(
         Guid patientId,
         [FromBody] CreateAllergyRequest request,
@@ -49,7 +49,7 @@ public class ClinicalChartController : ControllerBase
     }
 
     [HttpPost("history")]
-    [Authorize(Roles = "Doctor,Nurse")]
+    [Authorize(Policy = "ClinicalStaff")]
     public async Task<IActionResult> AddHistory(
         Guid patientId,
         [FromBody] CreateHistoryItemRequest request,
@@ -61,7 +61,7 @@ public class ClinicalChartController : ControllerBase
     }
 
     [HttpPost("visits")]
-    [Authorize(Roles = "Doctor,Nurse")]
+    [Authorize(Policy = "ClinicalStaff")]
     public async Task<IActionResult> CreateVisit(
         Guid patientId,
         [FromBody] CreateVisitRequest request,
@@ -73,7 +73,7 @@ public class ClinicalChartController : ControllerBase
     }
 
     [HttpPatch("visits/{visitId:guid}")]
-    [Authorize(Roles = "Doctor,Nurse")]
+    [Authorize(Policy = "ClinicalStaff")]
     public async Task<IActionResult> DocumentVisit(
         Guid patientId,
         Guid visitId,
@@ -86,7 +86,8 @@ public class ClinicalChartController : ControllerBase
 
     private ActorContext GetActor()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue("sub");
         var name = User.FindFirstValue("fullName")
                    ?? User.FindFirstValue(ClaimTypes.Name)
                    ?? User.Identity?.Name

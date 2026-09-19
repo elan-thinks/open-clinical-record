@@ -54,7 +54,6 @@ public static class ServiceCollectionExtensions
                 options.Password.RequireNonAlphanumeric = false;
                 options.User.RequireUniqueEmail = true;
                 options.SignIn.RequireConfirmedAccount = false;
-                // Align Identity role claim name with JWT short "role" claim.
                 options.ClaimsIdentity.RoleClaimType = "role";
                 options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier;
                 options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Name;
@@ -119,7 +118,6 @@ public static class ServiceCollectionExtensions
                     NameClaimType = ClaimTypes.Name
                 };
 
-                // Guarantee role claims are visible to [Authorize(Roles)] / RequireRole policies.
                 options.Events = new JwtBearerEvents
                 {
                     OnTokenValidated = context =>
@@ -149,28 +147,41 @@ public static class ServiceCollectionExtensions
 
         services.AddAuthorization(options =>
         {
-            options.AddPolicy("DoctorOnly", p => p.RequireRole(AppRoles.Doctor));
-            options.AddPolicy("NurseOnly", p => p.RequireRole(AppRoles.Nurse));
-            options.AddPolicy("ReceptionistOnly", p => p.RequireRole(AppRoles.Receptionist));
-            options.AddPolicy("AdminOnly", p => p.RequireRole(AppRoles.Admin));
-            options.AddPolicy("ClinicalStaff", p => p.RequireRole(AppRoles.Doctor, AppRoles.Nurse));
-
-            // Any of the four application roles may create/update appointments.
-            options.AddPolicy("StaffCanBook", p => p.RequireAssertion(ctx =>
+            // Assertion helpers: robust against JWT role claim shape.
+            static bool HasAnyRole(AuthorizationHandlerContext ctx, params string[] allowed)
             {
-                if (ctx.User.Identity?.IsAuthenticated != true)
-                    return false;
-
+                if (ctx.User.Identity?.IsAuthenticated != true) return false;
                 var roles = ctx.User.FindAll("role")
                     .Concat(ctx.User.FindAll(ClaimTypes.Role))
                     .Select(c => c.Value);
+                return roles.Any(r => allowed.Any(a =>
+                    string.Equals(r, a, StringComparison.OrdinalIgnoreCase)));
+            }
 
-                return roles.Any(r =>
-                    string.Equals(r, AppRoles.Admin, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(r, AppRoles.Receptionist, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(r, AppRoles.Doctor, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(r, AppRoles.Nurse, StringComparison.OrdinalIgnoreCase));
-            }));
+            options.AddPolicy("DoctorOnly", p => p.RequireAssertion(c => HasAnyRole(c, AppRoles.Doctor)));
+            options.AddPolicy("NurseOnly", p => p.RequireAssertion(c => HasAnyRole(c, AppRoles.Nurse)));
+            options.AddPolicy("ReceptionistOnly", p => p.RequireAssertion(c => HasAnyRole(c, AppRoles.Receptionist)));
+            options.AddPolicy("AdminOnly", p => p.RequireAssertion(c => HasAnyRole(c, AppRoles.Admin)));
+
+            options.AddPolicy("ClinicalStaff",
+                p => p.RequireAssertion(c => HasAnyRole(c, AppRoles.Doctor, AppRoles.Nurse)));
+
+            options.AddPolicy("StaffCanBook",
+                p => p.RequireAssertion(c => HasAnyRole(c,
+                    AppRoles.Admin, AppRoles.Receptionist, AppRoles.Doctor, AppRoles.Nurse)));
+
+            options.AddPolicy("CanManagePatients",
+                p => p.RequireAssertion(c => HasAnyRole(c,
+                    AppRoles.Admin, AppRoles.Receptionist, AppRoles.Doctor, AppRoles.Nurse)));
+
+            // Mark deceased: clinical + front desk + admin (not Nurse alone — policy choice).
+            options.AddPolicy("CanMarkDeceased",
+                p => p.RequireAssertion(c => HasAnyRole(c,
+                    AppRoles.Admin, AppRoles.Doctor, AppRoles.Receptionist)));
+
+            // Clear deceased is more restricted.
+            options.AddPolicy("CanClearDeceased",
+                p => p.RequireAssertion(c => HasAnyRole(c, AppRoles.Admin, AppRoles.Doctor)));
         });
 
         return services;

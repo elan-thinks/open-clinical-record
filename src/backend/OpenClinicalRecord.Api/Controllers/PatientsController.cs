@@ -39,7 +39,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
+    [Authorize(Policy = "CanManagePatients")]
     [ProducesResponseType(typeof(PatientDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> Create([FromBody] CreatePatientRequest request, CancellationToken cancellationToken)
     {
@@ -50,7 +50,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Receptionist,Doctor,Nurse")]
+    [Authorize(Policy = "CanManagePatients")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePatientRequest request, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -59,7 +59,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/deceased")]
-    [Authorize(Roles = "Admin,Doctor,Receptionist")]
+    [Authorize(Policy = "CanMarkDeceased")]
     public async Task<IActionResult> MarkDeceased(Guid id, [FromBody] MarkDeceasedRequest request, CancellationToken cancellationToken)
     {
         var result = await _patients.MarkDeceasedAsync(id, request, GetActor(), cancellationToken);
@@ -67,7 +67,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/deceased/clear")]
-    [Authorize(Roles = "Admin,Doctor")]
+    [Authorize(Policy = "CanClearDeceased")]
     public async Task<IActionResult> ClearDeceased(Guid id, CancellationToken cancellationToken)
     {
         var result = await _patients.ClearDeceasedAsync(id, GetActor(), cancellationToken);
@@ -83,7 +83,9 @@ public class PatientsController : ControllerBase
 
     private ActorContext GetActor()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue("sub")
+                     ?? string.Empty;
         var name = User.FindFirstValue("fullName")
                    ?? User.FindFirstValue(ClaimTypes.Name)
                    ?? User.Identity?.Name
