@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Icon, type IconName } from '../components/Icon';
 import { getDashboardStats, type DashboardStats, type Appointment } from '../services/appointmentsApi';
 import './DashboardPage.css';
 
@@ -51,7 +52,7 @@ function primaryRole(roles: string[] | undefined): string {
   return r[0] ?? 'User';
 }
 
-type QuickAction = { icon: string; label: string; path: string };
+type QuickAction = { icon: IconName; label: string; path: string };
 
 function roleConfig(role: string, name: string, stats: DashboardStats | null) {
   const appt = stats?.appointmentsToday ?? 0;
@@ -79,10 +80,10 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
         { num: visits, label: 'Visits this week', sub: 'clinical activity', color: '#3ddc97', pct: visits ? 75 : 20 },
       ],
       quick: [
-        { icon: '❤️', label: 'Record vitals', path: '/vitals' },
-        { icon: '📋', label: 'Open chart', path: '/chart' },
-        { icon: '🔍', label: 'Find patient', path: '/patients' },
-        { icon: '📅', label: 'Appointments', path: '/appointments' },
+        { icon: 'heart', label: 'Record vitals', path: '/vitals' },
+        { icon: 'doc', label: 'Open chart', path: '/chart' },
+        { icon: 'search', label: 'Find patient', path: '/patients' },
+        { icon: 'cal', label: 'Appointments', path: '/appointments' },
       ] as QuickAction[],
       perm: (
         <>
@@ -123,10 +124,10 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
         { num: patients, label: 'Active patients', sub: 'in registry', color: '#5b9fd4', pct: patients ? 70 : 20 },
       ],
       quick: [
-        { icon: '➕', label: 'Register patient', path: '/patients/new' },
-        { icon: '📅', label: 'New appointment', path: '/appointments/new' },
-        { icon: '✅', label: 'Check-in queue', path: '/appointments' },
-        { icon: '🔍', label: 'Find patient', path: '/patients' },
+        { icon: 'plus', label: 'Register patient', path: '/patients/new' },
+        { icon: 'cal', label: 'New appointment', path: '/appointments/new' },
+        { icon: 'check', label: 'Check-in queue', path: '/appointments' },
+        { icon: 'search', label: 'Find patient', path: '/patients' },
       ] as QuickAction[],
       perm: (
         <>
@@ -166,10 +167,10 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
         { num: checked, label: 'Checked in', sub: 'right now', color: '#3ddc97', pct: checked ? 75 : 10 },
       ],
       quick: [
-        { icon: '👥', label: 'Users', path: '/admin/users' },
-        { icon: '🛡️', label: 'Roles', path: '/admin/roles' },
-        { icon: '📋', label: 'Patients', path: '/patients' },
-        { icon: '📊', label: 'Reports', path: '/reports' },
+        { icon: 'users', label: 'Users', path: '/admin/users' },
+        { icon: 'shield', label: 'Roles', path: '/admin/roles' },
+        { icon: 'person', label: 'Patients', path: '/patients' },
+        { icon: 'chart', label: 'Reports', path: '/reports' },
       ] as QuickAction[],
       perm: (
         <>
@@ -214,10 +215,10 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
       { num: visits, label: 'Visits this week', sub: 'consultations', color: '#5b9fd4', pct: visits ? 70 : 20 },
     ],
     quick: [
-      { icon: '📋', label: 'Open chart', path: '/chart' },
-      { icon: '📅', label: 'Appointments', path: '/appointments' },
-      { icon: '🔍', label: 'Find patient', path: '/patients' },
-      { icon: '➕', label: 'New appointment', path: '/appointments/new' },
+      { icon: 'doc', label: 'Open chart', path: '/chart' },
+      { icon: 'cal', label: 'Appointments', path: '/appointments' },
+      { icon: 'search', label: 'Find patient', path: '/patients' },
+      { icon: 'plus', label: 'New appointment', path: '/appointments/new' },
     ] as QuickAction[],
     perm: (
       <>
@@ -309,11 +310,11 @@ export function DashboardPage() {
         </div>
         <div className="top-actions">
           <button type="button" className="search-box" onClick={() => navigate('/patients')}>
-            <span aria-hidden>🔍</span>
+            <Icon name="search" size={15} />
             <span>Search patients…</span>
           </button>
           <div className="icon-btn" title="Notifications">
-            <span aria-hidden>🔔</span>
+            <Icon name="bell" size={16} />
             <div className="dot" />
           </div>
         </div>
@@ -448,7 +449,9 @@ export function DashboardPage() {
           <div className="quick-grid">
             {cfg.quick.map((q) => (
               <button key={q.path + q.label} type="button" className="quick-btn" onClick={() => navigate(q.path)}>
-                <span className="qi">{q.icon}</span>
+                <span className="qi">
+                  <Icon name={q.icon} size={16} />
+                </span>
                 {q.label}
               </button>
             ))}
