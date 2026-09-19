@@ -8,10 +8,12 @@ namespace OpenClinicalRecord.Api.Tests;
 
 /// <summary>
 /// Phase 4: appointment transitions, reschedule, deceased booking block.
+/// Uses unique times/providers so parallel tests do not hit shared InMemory conflicts.
 /// </summary>
 public class AppointmentWorkflowTests : IClassFixture<OcrWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private static int _slotSeq;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
     public AppointmentWorkflowTests(OcrWebApplicationFactory factory)
@@ -54,17 +56,23 @@ public class AppointmentWorkflowTests : IClassFixture<OcrWebApplicationFactory>
         return doc.RootElement.GetProperty("id").GetGuid();
     }
 
-    private async Task<Guid> CreateAppointmentAsync(string token, Guid patientId, DateOnly? date = null)
+    private async Task<Guid> CreateAppointmentAsync(string token, Guid patientId)
     {
-        var d = date ?? DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(1));
+        var n = Interlocked.Increment(ref _slotSeq);
+        var d = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(1 + (n % 20)));
+        var hour = 8 + (n % 8);
+        var minute = (n * 7) % 60;
+        var start = $"{hour:D2}:{minute:D2}:00";
+        var provider = $"Dr Test {n}";
+
         var res = await _client.SendAsync(Req(HttpMethod.Post, "/api/appointments", token, new
         {
             patientId,
             appointmentDate = d.ToString("yyyy-MM-dd"),
-            startTime = "09:00:00",
+            startTime = start,
             durationMinutes = 30,
             appointmentType = "Consultation",
-            providerName = "Dr Test"
+            providerName = provider
         }));
         Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
         using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
@@ -94,8 +102,7 @@ public class AppointmentWorkflowTests : IClassFixture<OcrWebApplicationFactory>
         using var doc = JsonDocument.Parse(await chart.Content.ReadAsStringAsync());
         var visits = doc.RootElement.GetProperty("visits");
         Assert.True(visits.GetArrayLength() >= 1);
-        var status = visits[0].GetProperty("status").GetString();
-        Assert.Equal("Draft", status);
+        Assert.Equal("Draft", visits[0].GetProperty("status").GetString());
     }
 
     [Fact]
@@ -162,12 +169,14 @@ public class AppointmentWorkflowTests : IClassFixture<OcrWebApplicationFactory>
             new { note = "Phase4 test" }));
         Assert.True(dead.IsSuccessStatusCode, await dead.Content.ReadAsStringAsync());
 
+        var n = Interlocked.Increment(ref _slotSeq);
         var book = await _client.SendAsync(Req(HttpMethod.Post, "/api/appointments", desk, new
         {
             patientId,
-            appointmentDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(2)).ToString("yyyy-MM-dd"),
-            startTime = "10:00:00",
-            durationMinutes = 30
+            appointmentDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(30)).ToString("yyyy-MM-dd"),
+            startTime = $"{8 + (n % 8):D2}:15:00",
+            durationMinutes = 30,
+            providerName = $"Dr DeceasedBlock {n}"
         }));
         Assert.Equal(HttpStatusCode.BadRequest, book.StatusCode);
     }
@@ -179,7 +188,8 @@ public class AppointmentWorkflowTests : IClassFixture<OcrWebApplicationFactory>
         var patientId = await RegisterPatientAsync(desk);
         var apptId = await CreateAppointmentAsync(desk, patientId);
 
-        var newDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(5)).ToString("yyyy-MM-dd");
+        var n = Interlocked.Increment(ref _slotSeq);
+        var newDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(40 + (n % 5))).ToString("yyyy-MM-dd");
         var res = await _client.SendAsync(Req(
             HttpMethod.Patch,
             $"/api/appointments/{apptId}/reschedule",
@@ -189,7 +199,8 @@ public class AppointmentWorkflowTests : IClassFixture<OcrWebApplicationFactory>
                 appointmentDate = newDate,
                 startTime = "14:30:00",
                 durationMinutes = 45,
-                reason = "Patient preferred afternoon"
+                reason = "Patient preferred afternoon",
+                providerName = $"Dr Resched {n}"
             }));
         Assert.True(res.IsSuccessStatusCode, await res.Content.ReadAsStringAsync());
 
@@ -215,15 +226,17 @@ public class AppointmentWorkflowTests : IClassFixture<OcrWebApplicationFactory>
         var apptId = await CreateAppointmentAsync(desk, patientId);
         await PatchStatusAsync(desk, apptId, "CheckedIn");
 
+        var n = Interlocked.Increment(ref _slotSeq);
         var res = await _client.SendAsync(Req(
             HttpMethod.Patch,
             $"/api/appointments/{apptId}/reschedule",
             desk,
             new
             {
-                appointmentDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(7)).ToString("yyyy-MM-dd"),
+                appointmentDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(50)).ToString("yyyy-MM-dd"),
                 startTime = "11:00:00",
-                durationMinutes = 30
+                durationMinutes = 30,
+                providerName = $"Dr Blocked {n}"
             }));
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
     }
