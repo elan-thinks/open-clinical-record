@@ -8,6 +8,9 @@ using OpenClinicalRecord.Api.Data;
 using OpenClinicalRecord.Api.Models.Entities;
 using OpenClinicalRecord.Api.Models.Enums;
 using OpenClinicalRecord.Api.Services;
+using OpenClinicalRecord.Api.Services.Appointments;
+using OpenClinicalRecord.Api.Services.Clinical;
+using OpenClinicalRecord.Api.Services.Patients;
 
 namespace OpenClinicalRecord.Api.Extensions;
 
@@ -64,7 +67,6 @@ public static class ServiceCollectionExtensions
 
         var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
-        // Prefer dedicated env var over config file
         var keyFromEnv = Environment.GetEnvironmentVariable(JwtKeyEnvVar);
         if (!string.IsNullOrWhiteSpace(keyFromEnv))
         {
@@ -78,7 +80,6 @@ public static class ServiceCollectionExtensions
                 $"Set environment variable {JwtKeyEnvVar} or configuration Jwt:Key.");
         }
 
-        // Re-bind so IOptions picks up env override
         services.PostConfigure<JwtOptions>(opts =>
         {
             if (!string.IsNullOrWhiteSpace(keyFromEnv))
@@ -139,5 +140,13 @@ public static class ServiceCollectionExtensions
 
         parts.Add($"Password={password}");
         return string.Join(';', parts);
+    }
+
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        services.AddScoped<IAppointmentWorkflowService, AppointmentWorkflowService>();
+        services.AddScoped<IClinicalChartService, ClinicalChartService>();
+        services.AddScoped<IPatientService, PatientService>();
+        return services;
     }
 }
