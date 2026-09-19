@@ -69,7 +69,9 @@ export function ProfilePage() {
 
       {user.mustChangePassword && (
         <div className="profile-banner" role="status">
-          <span className="banner-icon" aria-hidden>!</span>
+          <span className="banner-icon" aria-hidden>
+            !
+          </span>
           <div>
             <strong>Temporary password</strong>
             <p>Admin assigned a temporary password. Set a new one below so your account stays secure.</p>
@@ -184,18 +186,23 @@ export function ProfilePage() {
             </div>
           </label>
 
-          <label className="show-pw">
-            <input
-              type="checkbox"
-              checked={showPw}
-              onChange={(e) => setShowPw(e.target.checked)}
-            />
-            Show passwords
-          </label>
+          <div className="pw-form-footer">
+            <button
+              type="button"
+              className={`pw-toggle${showPw ? ' on' : ''}`}
+              onClick={() => setShowPw((v) => !v)}
+              aria-pressed={showPw}
+            >
+              <span className="pw-toggle-track" aria-hidden>
+                <span className="pw-toggle-thumb" />
+              </span>
+              {showPw ? 'Hide passwords' : 'Show passwords'}
+            </button>
 
-          <button type="submit" className="pw-submit" disabled={saving}>
-            {saving ? 'Updating…' : 'Save new password'}
-          </button>
+            <button type="submit" className="pw-submit" disabled={saving}>
+              {saving ? 'Updating…' : 'Save new password'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
