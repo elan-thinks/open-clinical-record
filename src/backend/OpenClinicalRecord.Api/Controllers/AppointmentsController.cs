@@ -64,12 +64,11 @@ public class AppointmentsController : ControllerBase
             _logger.LogError(ex, "Failed to create appointment for patient {PatientId}", request.PatientId);
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = "Could not create appointment. " + (ex.InnerException?.Message ?? ex.Message)
+                message = "Could not create appointment."
             });
         }
     }
 
-    /// <summary>Status transitions — Admin is not allowed (Phase 1).</summary>
     [HttpPatch("{id:guid}/status")]
     [Authorize(Policy = "CanChangeAppointmentStatus")]
     public async Task<IActionResult> UpdateStatus(
@@ -87,7 +86,7 @@ public class AppointmentsController : ControllerBase
             _logger.LogError(ex, "Failed to update appointment {Id} status", id);
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = "Could not update appointment. " + (ex.InnerException?.Message ?? ex.Message)
+                message = "Could not update appointment."
             });
         }
     }
@@ -110,7 +109,7 @@ public class AppointmentsController : ControllerBase
             _logger.LogError(ex, "Failed to reschedule appointment {Id}", id);
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = "Could not reschedule appointment. " + (ex.InnerException?.Message ?? ex.Message)
+                message = "Could not reschedule appointment."
             });
         }
     }
@@ -135,6 +134,7 @@ public class AppointmentsController : ControllerBase
             ServiceErrorKind.NotFound => NotFound(new { message = result.Error }),
             ServiceErrorKind.Conflict => Conflict(new { message = result.Error }),
             ServiceErrorKind.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { message = result.Error }),
+            ServiceErrorKind.Internal => StatusCode(StatusCodes.Status500InternalServerError, new { message = result.Error }),
             _ => BadRequest(new { message = result.Error })
         };
     }
