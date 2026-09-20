@@ -11,7 +11,6 @@ export function ChartIndexPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState('');
-  // No artificial hold — show data as soon as the API responds
 
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +49,7 @@ export function ChartIndexPage() {
       <header className="ci-header">
         <h1 className="ci-title">Medical Chart</h1>
         <p className="ci-lead">
-          Open a patient&apos;s full clinical chart — overview, history, vitals, visits, and notes in one place.
+          Open a patient's full clinical chart — overview, history, vitals, visits, and notes in one place.
         </p>
         <p className="ci-hint">
           For visit-only documentation and consultation forms, use <strong>Medical Records</strong> instead.
@@ -92,28 +91,30 @@ export function ChartIndexPage() {
         ) : patients.length === 0 ? (
           <div className="empty">No patients found. Register a patient first.</div>
         ) : (
-          <ul className="ci-patient-list">
-            {patients.map((p) => (
-              <li key={p.id} className="ci-patient-row">
-                <div className="ci-patient-main">
-                  <div className="ci-patient-name">
-                    {p.firstName} {p.lastName}
+          <div className="ci-list-scroll">
+            <ul className="ci-patient-list">
+              {patients.map((p) => (
+                <li key={p.id} className="ci-patient-row">
+                  <div className="ci-patient-main">
+                    <div className="ci-patient-name">
+                      {p.firstName} {p.lastName}
+                    </div>
+                    <div className="ci-patient-meta">
+                      <span>{p.medicalRecordNumber}</span>
+                      {p.phone ? <span>{p.phone}</span> : null}
+                    </div>
                   </div>
-                  <div className="ci-patient-meta">
-                    <span>{p.medicalRecordNumber}</span>
-                    {p.phone ? <span>{p.phone}</span> : null}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn-primary ci-action-primary"
-                  onClick={() => navigate(`/patients/${p.id}/chart`)}
-                >
-                  Open chart
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <button
+                    type="button"
+                    className="btn-primary ci-action-primary"
+                    onClick={() => navigate(`/patients/${p.id}/chart`)}
+                  >
+                    Open chart
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </div>
