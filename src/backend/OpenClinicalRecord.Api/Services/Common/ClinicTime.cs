@@ -15,6 +15,18 @@ public static class ClinicTime
     public static DateOnly ToClinicDate(DateTimeOffset value) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(value, Zone).DateTime);
 
+    /// <summary>
+    /// Start of the given clinic calendar day as a UTC DateTimeOffset.
+    /// Safe to use inside EF queries (compare column to this constant — do not call ToClinicDate in LINQ).
+    /// </summary>
+    public static DateTimeOffset StartOfClinicDayUtc(DateOnly clinicDate)
+    {
+        var localMidnight = clinicDate.ToDateTime(TimeOnly.MinValue);
+        var unspecified = DateTime.SpecifyKind(localMidnight, DateTimeKind.Unspecified);
+        var utc = TimeZoneInfo.ConvertTimeToUtc(unspecified, Zone);
+        return new DateTimeOffset(utc, TimeSpan.Zero);
+    }
+
     private static TimeZoneInfo ResolveZone()
     {
         try

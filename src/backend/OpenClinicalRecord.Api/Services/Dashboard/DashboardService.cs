@@ -21,6 +21,8 @@ public sealed class DashboardService : IDashboardService
         var today = ClinicTime.Today;
         // Week starts Monday in clinic local calendar
         var weekStart = today.AddDays(-((int)today.DayOfWeek + 6) % 7);
+        // Precompute UTC bound so EF translates VisitDate >= constant (no ClinicTime.* in the expression tree)
+        var weekStartUtc = ClinicTime.StartOfClinicDayUtc(weekStart);
 
         var todays = await _db.Appointments.AsNoTracking()
             .Include(a => a.Patient)
@@ -30,8 +32,10 @@ public sealed class DashboardService : IDashboardService
 
         var activePatients = await _db.Patients.AsNoTracking()
             .CountAsync(p => p.IsActive && p.Status != "Deceased", ct);
+
         var visitsWeek = await _db.ClinicalVisits.AsNoTracking()
-            .CountAsync(v => ClinicTime.ToClinicDate(v.VisitDate) >= weekStart, ct);
+            .CountAsync(v => v.VisitDate >= weekStartUtc, ct);
+
         var patientsWithAllergies = await _db.PatientAllergies.AsNoTracking()
             .Select(a => a.PatientId).Distinct().CountAsync(ct);
 
