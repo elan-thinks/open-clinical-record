@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using OpenClinicalRecord.Api.Models.Entities;
 using OpenClinicalRecord.Api.Models.Enums;
 
@@ -35,12 +36,29 @@ public static class IdentityDataSeeder
 
         logger?.LogInformation("Identity roles and seed users are ready.");
 
-        await EnsureDemoPatientsAsync(db, logger);
+        // Demo patients only in Development, or when OCR_SEED_DEMO_DATA=true (never implied in Production).
+        var env = sp.GetRequiredService<IHostEnvironment>();
+        var seedDemoFlag = Environment.GetEnvironmentVariable("OCR_SEED_DEMO_DATA");
+        var allowDemo =
+            env.IsDevelopment()
+            || string.Equals(seedDemoFlag, "true", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(seedDemoFlag, "1", StringComparison.OrdinalIgnoreCase);
+
+        if (allowDemo)
+        {
+            await EnsureDemoPatientsAsync(db, logger);
+        }
+        else
+        {
+            logger?.LogInformation(
+                "Skipping demo patient seed (not Development and OCR_SEED_DEMO_DATA is not true).");
+        }
     }
 
     /// <summary>
     /// Seeds up to 20 demo patients when the Patients table has fewer than 20 rows.
     /// Safe to re-run: does nothing once the count is already >= 20.
+    /// Only called when Development or OCR_SEED_DEMO_DATA=true.
     /// </summary>
     private static async Task EnsureDemoPatientsAsync(AppDbContext db, ILogger? logger)
     {
@@ -78,7 +96,7 @@ public static class IdentityDataSeeder
             };
 
             var toAdd = 20 - existing;
-            var startIndex = existing; // continue MRN sequence
+            var startIndex = existing;
             var now = DateTimeOffset.UtcNow;
 
             for (var i = 0; i < toAdd && i < demos.Length; i++)
@@ -157,7 +175,6 @@ public static class IdentityDataSeeder
                 ex);
         }
 
-        // Safety net when local DB is behind hand-written / lagging migrations.
         await EnsureClinicalTablesAsync(db, logger);
     }
 
@@ -200,7 +217,6 @@ public static class IdentityDataSeeder
                 );
                 """);
 
-            // Required for mark-deceased / clear-deceased flows.
             await db.Database.ExecuteSqlRawAsync(
                 """
                 CREATE TABLE IF NOT EXISTS "PatientDeathRecords" (
@@ -228,7 +244,6 @@ public static class IdentityDataSeeder
                 CREATE INDEX IF NOT EXISTS "IX_PatientDeathRecords_PatientId" ON "PatientDeathRecords" ("PatientId");
                 """);
 
-            // Unique active death record per patient (Postgres partial unique index).
             await db.Database.ExecuteSqlRawAsync(
                 """
                 CREATE UNIQUE INDEX IF NOT EXISTS "UX_PatientDeathRecords_ActivePatient"
