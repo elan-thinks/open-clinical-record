@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
 *,
 *::before,
 *::after {
@@ -17,7 +19,9 @@
   --teal-dim: #29a874;
   --teal-glow: rgba(61, 220, 151, 0.16);
   --amber: #eab35a;
+  --amber-glow: rgba(234, 179, 90, 0.14);
   --red: #e8778a;
+  --red-glow: rgba(232, 119, 138, 0.13);
   --info: #5b9fd4;
   --status-success: var(--teal);
   --status-warning: var(--amber);
@@ -82,4 +86,30 @@ button {
   background: rgba(232, 119, 138, 0.12);
   color: var(--red);
   font-size: 13px;
+}
+
+.admin-btn {
+  background: var(--teal);
+  color: #04140c;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.admin-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-error {
+  color: var(--red);
+  font-size: 13px;
+  margin: 0 0 12px;
 }
