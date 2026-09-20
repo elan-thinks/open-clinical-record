@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OpenClinicalRecord.Api.Data;
 using OpenClinicalRecord.Api.DTOs.Appointments;
+using OpenClinicalRecord.Api.Services.Common;
 
 namespace OpenClinicalRecord.Api.Services.Dashboard;
 
@@ -17,8 +18,9 @@ public sealed class DashboardService : IDashboardService
 
     public async Task<DashboardStatsDto> GetStatsAsync(CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var weekStart = today.AddDays(-(int)today.DayOfWeek);
+        var today = ClinicTime.Today;
+        // Week starts Monday in clinic local calendar
+        var weekStart = today.AddDays(-((int)today.DayOfWeek + 6) % 7);
 
         var todays = await _db.Appointments.AsNoTracking()
             .Include(a => a.Patient)
@@ -29,7 +31,7 @@ public sealed class DashboardService : IDashboardService
         var activePatients = await _db.Patients.AsNoTracking()
             .CountAsync(p => p.IsActive && p.Status != "Deceased", ct);
         var visitsWeek = await _db.ClinicalVisits.AsNoTracking()
-            .CountAsync(v => DateOnly.FromDateTime(v.VisitDate.UtcDateTime) >= weekStart, ct);
+            .CountAsync(v => ClinicTime.ToClinicDate(v.VisitDate) >= weekStart, ct);
         var patientsWithAllergies = await _db.PatientAllergies.AsNoTracking()
             .Select(a => a.PatientId).Distinct().CountAsync(ct);
 

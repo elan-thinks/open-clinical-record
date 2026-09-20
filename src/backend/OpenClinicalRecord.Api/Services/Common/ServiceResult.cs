@@ -22,7 +22,9 @@ public enum ServiceErrorKind
     NotFound,
     Validation,
     Conflict,
-    Forbidden
+    Forbidden,
+    /// <summary>Infrastructure / unexpected failure → HTTP 500.</summary>
+    Internal
 }
 
 /// <summary>
