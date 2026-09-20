@@ -79,7 +79,7 @@
 .clinical-index .ci-search-btn {
   flex: 0 0 auto;
   background: var(--teal);
-  color: #04140c;
+  color: var(--btn-primary-fg);
   border: none;
   padding: 11px 20px;
   border-radius: 10px;
@@ -202,6 +202,15 @@
 .clinical-index .ci-action-ghost:hover {
   color: var(--text);
   border-color: var(--text-faint);
+}
+
+/* List scrolls inside panel, not the whole page */
+.clinical-index .ci-list-scroll {
+  max-height: min(62vh, 640px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+  padding: 0 4px;
 }
 
 @media (max-width: 640px) {
