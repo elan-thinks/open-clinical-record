@@ -183,7 +183,7 @@
 
 .register-page .btn-primary {
   background: var(--teal);
-  color: #04140c;
+  color: var(--btn-primary-fg);
   border: 0;
   font-weight: 600;
 }
@@ -206,6 +206,74 @@
 .register-page .btn-secondary:hover {
   color: var(--text);
   border-color: #2a3b30;
+}
+
+/* Modern split phone: country code | number */
+.register-page .phone-split {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.register-page .phone-split:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-glow);
+}
+
+.register-page .phone-split.error {
+  border-color: var(--red);
+}
+
+.register-page .phone-split.error:focus-within {
+  box-shadow: 0 0 0 3px var(--red-glow);
+}
+
+.register-page .phone-code {
+  flex: 0 0 auto;
+  min-width: 108px;
+  max-width: 128px;
+  border: none;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 10px 8px 10px 10px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236d8577' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+.register-page .phone-code:focus {
+  box-shadow: none;
+}
+
+.register-page .phone-number {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.register-page .phone-number::placeholder {
+  color: var(--text-faint);
 }
 
 @media (max-width: 700px) {
