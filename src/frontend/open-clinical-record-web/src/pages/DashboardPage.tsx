@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Icon, type IconName } from '../components/Icon';
 import { getDashboardStats, type DashboardStats, type Appointment } from '../services/appointmentsApi';
 import './DashboardPage.css';
 
@@ -51,7 +52,7 @@ function primaryRole(roles: string[] | undefined): string {
   return r[0] ?? 'User';
 }
 
-type QuickAction = { icon: string; label: string; path: string };
+type QuickAction = { icon: IconName; label: string; path: string };
 
 function roleConfig(role: string, name: string, stats: DashboardStats | null) {
   const appt = stats?.appointmentsToday ?? 0;
@@ -73,16 +74,16 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
       schedTitle: 'Work queue — need support',
       actTitle: 'Care activity',
       stats: [
-        { num: waiting, label: 'Need vitals', sub: 'waiting now', tone: 'warning', pct: waiting ? 55 : 10 },
-        { num: checked, label: 'Checked in', sub: 'ready for support', tone: 'success', pct: checked ? 70 : 15 },
-        { num: appt, label: "Today's appointments", sub: 'on clinic list', tone: 'info', pct: appt ? 80 : 20 },
-        { num: visits, label: 'Visits this week', sub: 'clinical activity', tone: 'success', pct: visits ? 75 : 20 },
+        { num: waiting, label: 'Need vitals', sub: 'waiting now', color: '#eab35a', pct: waiting ? 55 : 10 },
+        { num: checked, label: 'Checked in', sub: 'ready for support', color: '#3ddc97', pct: checked ? 70 : 15 },
+        { num: appt, label: "Today's appointments", sub: 'on clinic list', color: '#5b9fd4', pct: appt ? 80 : 20 },
+        { num: visits, label: 'Visits this week', sub: 'clinical activity', color: '#3ddc97', pct: visits ? 75 : 20 },
       ],
       quick: [
-        { icon: '❤️', label: 'Record vitals', path: '/vitals' },
-        { icon: '📋', label: 'Open chart', path: '/chart' },
-        { icon: '🔍', label: 'Find patient', path: '/patients' },
-        { icon: '📅', label: 'Appointments', path: '/appointments' },
+        { icon: 'heart', label: 'Record vitals', path: '/vitals' },
+        { icon: 'doc', label: 'Open chart', path: '/chart' },
+        { icon: 'search', label: 'Find patient', path: '/patients' },
+        { icon: 'cal', label: 'Appointments', path: '/appointments' },
       ] as QuickAction[],
       perm: (
         <>
@@ -117,16 +118,16 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
       schedTitle: "Today's schedule",
       actTitle: 'Front desk activity',
       stats: [
-        { num: appt, label: "Today's appointments", sub: 'scheduled', tone: 'warning', pct: appt ? 65 : 15 },
-        { num: checked, label: 'Checked in', sub: 'waiting now', tone: 'success', pct: checked ? 85 : 15 },
-        { num: waiting, label: 'Waiting', sub: 'need check-in action', tone: 'warning', pct: waiting ? 90 : 10 },
-        { num: patients, label: 'Active patients', sub: 'in registry', tone: 'info', pct: patients ? 70 : 20 },
+        { num: appt, label: "Today's appointments", sub: 'scheduled', color: '#eab35a', pct: appt ? 65 : 15 },
+        { num: checked, label: 'Checked in', sub: 'waiting now', color: '#3ddc97', pct: checked ? 85 : 15 },
+        { num: waiting, label: 'Waiting', sub: 'need check-in action', color: '#eab35a', pct: waiting ? 90 : 10 },
+        { num: patients, label: 'Active patients', sub: 'in registry', color: '#5b9fd4', pct: patients ? 70 : 20 },
       ],
       quick: [
-        { icon: '➕', label: 'Register patient', path: '/patients/new' },
-        { icon: '📅', label: 'New appointment', path: '/appointments/new' },
-        { icon: '✅', label: 'Check-in queue', path: '/appointments' },
-        { icon: '🔍', label: 'Find patient', path: '/patients' },
+        { icon: 'plus', label: 'Register patient', path: '/patients/new' },
+        { icon: 'cal', label: 'New appointment', path: '/appointments/new' },
+        { icon: 'check', label: 'Check-in queue', path: '/appointments' },
+        { icon: 'search', label: 'Find patient', path: '/patients' },
       ] as QuickAction[],
       perm: (
         <>
@@ -160,16 +161,16 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
       schedTitle: "Today's clinic load",
       actTitle: 'System activity',
       stats: [
-        { num: patients, label: 'Active patients', sub: 'registry', tone: 'success', pct: patients ? 80 : 20 },
-        { num: appt, label: 'Appointments today', sub: 'clinic-wide', tone: 'info', pct: appt ? 70 : 15 },
-        { num: visits, label: 'Visits this week', sub: 'volume', tone: 'warning', pct: visits ? 60 : 15 },
-        { num: checked, label: 'Checked in', sub: 'right now', tone: 'success', pct: checked ? 75 : 10 },
+        { num: patients, label: 'Active patients', sub: 'registry', color: '#3ddc97', pct: patients ? 80 : 20 },
+        { num: appt, label: 'Appointments today', sub: 'clinic-wide', color: '#5b9fd4', pct: appt ? 70 : 15 },
+        { num: visits, label: 'Visits this week', sub: 'volume', color: '#eab35a', pct: visits ? 60 : 15 },
+        { num: checked, label: 'Checked in', sub: 'right now', color: '#3ddc97', pct: checked ? 75 : 10 },
       ],
       quick: [
-        { icon: '👥', label: 'Users', path: '/admin/users' },
-        { icon: '🛡️', label: 'Roles', path: '/admin/roles' },
-        { icon: '📋', label: 'Patients', path: '/patients' },
-        { icon: '📊', label: 'Reports', path: '/reports' },
+        { icon: 'users', label: 'Users', path: '/admin/users' },
+        { icon: 'shield', label: 'Roles', path: '/admin/roles' },
+        { icon: 'person', label: 'Patients', path: '/patients' },
+        { icon: 'chart', label: 'Reports', path: '/reports' },
       ] as QuickAction[],
       perm: (
         <>
@@ -208,16 +209,16 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
     schedTitle: 'My schedule today',
     actTitle: 'Clinical activity',
     stats: [
-      { num: appt, label: 'Appointments', sub: 'today', tone: 'success', pct: appt ? 75 : 15 },
-      { num: checked, label: 'Checked in', sub: 'ready to see', tone: 'success', pct: checked ? 85 : 15 },
-      { num: waiting, label: 'Waiting', sub: 'in queue', tone: 'warning', pct: waiting ? 50 : 10 },
-      { num: visits, label: 'Visits this week', sub: 'consultations', tone: 'info', pct: visits ? 70 : 20 },
+      { num: appt, label: 'Appointments', sub: 'today', color: '#3ddc97', pct: appt ? 75 : 15 },
+      { num: checked, label: 'Checked in', sub: 'ready to see', color: '#3ddc97', pct: checked ? 85 : 15 },
+      { num: waiting, label: 'Waiting', sub: 'in queue', color: '#eab35a', pct: waiting ? 50 : 10 },
+      { num: visits, label: 'Visits this week', sub: 'consultations', color: '#5b9fd4', pct: visits ? 70 : 20 },
     ],
     quick: [
-      { icon: '📋', label: 'Open chart', path: '/chart' },
-      { icon: '📅', label: 'Appointments', path: '/appointments' },
-      { icon: '🔍', label: 'Find patient', path: '/patients' },
-      { icon: '➕', label: 'New appointment', path: '/appointments/new' },
+      { icon: 'doc', label: 'Open chart', path: '/chart' },
+      { icon: 'cal', label: 'Appointments', path: '/appointments' },
+      { icon: 'search', label: 'Find patient', path: '/patients' },
+      { icon: 'plus', label: 'New appointment', path: '/appointments/new' },
     ] as QuickAction[],
     perm: (
       <>
@@ -241,7 +242,7 @@ function roleConfig(role: string, name: string, stats: DashboardStats | null) {
   };
 }
 
-function StatRing({ tone, pct }: { tone: string; pct: number }) {
+function StatRing({ color, pct }: { color: string; pct: number }) {
   return (
     <div className="ring">
       <svg width="56" height="56" viewBox="0 0 56 56">
@@ -251,7 +252,7 @@ function StatRing({ tone, pct }: { tone: string; pct: number }) {
           cx="28"
           cy="28"
           r="24"
-          stroke={`var(--status-${tone})`}
+          stroke={color}
           strokeDasharray={CIRC}
           strokeDashoffset={ringOffset(pct)}
         />
@@ -260,11 +261,11 @@ function StatRing({ tone, pct }: { tone: string; pct: number }) {
   );
 }
 
-function timelineTone(status: string): string {
-  if (status === 'CheckedIn' || status === 'Completed' || status === 'InProgress') return 'success';
-  if (status === 'Waiting') return 'warning';
-  if (status === 'Cancelled' || status === 'NoShow') return 'danger';
-  return 'info';
+function timelineColor(status: string): string {
+  if (status === 'CheckedIn' || status === 'Completed' || status === 'InProgress') return '#3ddc97';
+  if (status === 'Waiting') return '#eab35a';
+  if (status === 'Cancelled' || status === 'NoShow') return '#e8778a';
+  return '#5b9fd4';
 }
 
 function timelineBlocks(schedule: Appointment[]) {
@@ -276,7 +277,7 @@ function timelineBlocks(schedule: Appointment[]) {
     const mins = (parts[0] ?? 8) * 60 + (parts[1] ?? 0);
     const left = Math.max(0, ((mins - startMin) / span) * 100);
     const width = Math.max(4, (Math.min(a.durationMinutes || 30, 90) / span) * 100);
-    return { id: a.id, left, width, tone: timelineTone(a.status) };
+    return { id: a.id, left, width, color: timelineColor(a.status) };
   });
 }
 
@@ -309,11 +310,11 @@ export function DashboardPage() {
         </div>
         <div className="top-actions">
           <button type="button" className="search-box" onClick={() => navigate('/patients')}>
-            <span aria-hidden>🔍</span>
+            <Icon name="search" size={15} />
             <span>Search patients…</span>
           </button>
           <div className="icon-btn" title="Notifications">
-            <span aria-hidden>🔔</span>
+            <Icon name="bell" size={16} />
             <div className="dot" />
           </div>
         </div>
@@ -334,9 +335,9 @@ export function DashboardPage() {
       <div className="stat-row">
         {cfg.stats.map((s) => (
           <div key={s.label} className="stat-card">
-            <StatRing tone={s.tone} pct={s.pct} />
+            <StatRing color={s.color} pct={s.pct} />
             <div className="stat-meta">
-              <div className="stat-num" style={{ color: `var(--status-${s.tone})` }}>
+              <div className="stat-num" style={{ color: s.color }}>
                 {stats ? s.num : '—'}
               </div>
               <div className="stat-label">{s.label}</div>
@@ -366,8 +367,8 @@ export function DashboardPage() {
             {blocks.map((b) => (
               <div
                 key={b.id}
-                className={`timeline-block tone-${b.tone}`}
-                style={{ left: `${b.left}%`, width: `${b.width}%` }}
+                className="timeline-block"
+                style={{ left: `${b.left}%`, width: `${b.width}%`, background: b.color }}
               />
             ))}
           </div>
@@ -448,7 +449,9 @@ export function DashboardPage() {
           <div className="quick-grid">
             {cfg.quick.map((q) => (
               <button key={q.path + q.label} type="button" className="quick-btn" onClick={() => navigate(q.path)}>
-                <span className="qi">{q.icon}</span>
+                <span className="qi">
+                  <Icon name={q.icon} size={16} />
+                </span>
                 {q.label}
               </button>
             ))}
