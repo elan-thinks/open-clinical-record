@@ -20,7 +20,7 @@ export function ProfilePage() {
   if (!user) {
     return (
       <div className="profile-page">
-        <div className="empty">Not signed in.</div>
+        <div className="profile-empty">Not signed in.</div>
       </div>
     );
   }
@@ -28,11 +28,13 @@ export function ProfilePage() {
   const displayName = fullName.trim() || user.fullName;
   const initials = displayName
     .split(/\s+/)
+    .filter(Boolean)
     .map((p) => p[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
 
+  const roleLabel = primaryRole ?? user.roles[0] ?? 'User';
   const roleHints: Record<string, string> = {
     Doctor: 'Clinical care — charts, consultations, diagnoses, and notes.',
     Nurse: 'Observations and vitals — support the care team at the bedside.',
@@ -89,8 +91,12 @@ export function ProfilePage() {
 
   return (
     <div className="profile-page">
-      <h1 className="page-title">Profile</h1>
-      <p className="page-sub">Manage your account — available to every role.</p>
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">User profile</h1>
+          <p className="page-sub">Account details, role, and password for your OCR login.</p>
+        </div>
+      </div>
 
       {user.mustChangePassword && (
         <div className="profile-banner" role="status">
@@ -98,54 +104,77 @@ export function ProfilePage() {
             !
           </span>
           <div>
-            <strong>Temporary password</strong>
-            <p>Set a new password below so your account stays secure.</p>
+            <strong>Temporary password in use</strong>
+            <p>Set a new password in the security section below before continuing clinical work.</p>
           </div>
         </div>
       )}
 
-      <div className="profile-card">
-        <div className="profile-top">
-          <div className="avatar">{initials || 'U'}</div>
+      <section className="profile-panel">
+        <div className="profile-head">
+          <div className="avatar-lg" aria-hidden>
+            {initials || 'U'}
+          </div>
           <div>
-            <div className="name">{displayName}</div>
-            <div className="email">{user.email}</div>
-            <div className="role-badge">{primaryRole ?? user.roles[0] ?? 'User'}</div>
+            <div className="p-name">{displayName}</div>
+            <div className="p-role">
+              {roleLabel}
+              <span className="role-dot" aria-hidden />
+              Active
+            </div>
           </div>
         </div>
 
-        <form className="profile-edit-form" onSubmit={onSaveProfile}>
-          <h2 className="section-title">Account details</h2>
-          <div className="info-grid editable">
-            <label className="info-item">
-              <span>Full name</span>
+        <div className="info-grid">
+          <div className="info-item">
+            <label>Email</label>
+            <div className="val">{user.email}</div>
+          </div>
+          <div className="info-item">
+            <label>Role</label>
+            <div className="val">{user.roles.join(' · ') || roleLabel}</div>
+          </div>
+          <div className="info-item">
+            <label>Display name</label>
+            <div className="val">{user.fullName}</div>
+          </div>
+          <div className="info-item">
+            <label>Account</label>
+            <div className="val mono" title={user.id}>
+              {user.id.slice(0, 8)}…
+            </div>
+          </div>
+        </div>
+
+        {primaryRole && <p className="role-hint">{roleHints[primaryRole] ?? 'Signed in to Open Clinical Record.'}</p>}
+      </section>
+
+      <section className="profile-panel">
+        <h2 className="section-title">Update profile</h2>
+        <form className="profile-form" onSubmit={onSaveProfile}>
+          <div className="form-grid">
+            <div className="field">
+              <label className="label" htmlFor="profile-name">
+                Display name
+              </label>
               <input
+                id="profile-name"
+                className="input"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 minLength={2}
                 maxLength={120}
-                placeholder="Your display name"
+                placeholder="Your name as shown in the app"
+                autoComplete="name"
               />
-            </label>
-            <div className="info-item">
-              <label>Email</label>
-              <div className="val">{user.email}</div>
-              <span className="field-hint">Email is used for sign-in and cannot be changed here.</span>
             </div>
-            <div className="info-item">
-              <label>Roles</label>
-              <div className="val role-chips">
-                {user.roles.map((r) => (
-                  <span key={r} className="mini-chip">
-                    {r}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="info-item">
-              <label>User ID</label>
-              <div className="val mono">{user.id}</div>
+            <div className="field">
+              <label className="label" htmlFor="profile-email">
+                Email
+              </label>
+              <input id="profile-email" className="input" value={user.email} disabled readOnly title="Email is used for sign-in" />
+              <span className="field-hint">Used for sign-in — contact an admin to change it.</span>
             </div>
           </div>
 
@@ -155,31 +184,21 @@ export function ProfilePage() {
             </div>
           )}
 
-          <div className="profile-form-actions">
-            <button type="submit" className="pw-submit" disabled={profileSaving || fullName.trim() === user.fullName}>
-              {profileSaving ? 'Saving…' : 'Save name'}
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={profileSaving || fullName.trim() === (user.fullName ?? '').trim()}
+            >
+              {profileSaving ? 'Saving…' : 'Save changes'}
             </button>
           </div>
         </form>
+      </section>
 
-        {primaryRole && (
-          <p className="hint">{roleHints[primaryRole] ?? 'Signed in to Open Clinical Record.'}</p>
-        )}
-      </div>
-
-      <div className="profile-card security-card">
-        <div className="security-head">
-          <div className="security-icon" aria-hidden>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="5" y="11" width="14" height="10" rx="2" />
-              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="section-title">Change password</h2>
-            <p className="section-sub">Doctor, Nurse, Receptionist, and Admin can all update their own password.</p>
-          </div>
-        </div>
+      <section className="profile-panel">
+        <h2 className="section-title">Change password</h2>
+        <p className="section-lead">All roles can update their own password. Use at least 8 characters.</p>
 
         {error && (
           <div className="profile-alert error" role="alert">
@@ -192,65 +211,75 @@ export function ProfilePage() {
           </div>
         )}
 
-        <form className="profile-pw-form" onSubmit={onChangePassword}>
-          <label className="pw-label">
-            Current password
-            <input
-              type={showPw ? 'text' : 'password'}
-              className="pw-input"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              placeholder="Enter current password"
-            />
-          </label>
-          <label className="pw-label">
-            New password
-            <input
-              type={showPw ? 'text' : 'password'}
-              className="pw-input"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              minLength={8}
-              autoComplete="new-password"
-              placeholder="At least 8 characters"
-            />
-          </label>
-          <label className="pw-label">
-            Confirm new password
-            <input
-              type={showPw ? 'text' : 'password'}
-              className="pw-input"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              autoComplete="new-password"
-              placeholder="Repeat new password"
-            />
-          </label>
+        <form className="profile-form" onSubmit={onChangePassword}>
+          <div className="form-grid pw-grid">
+            <div className="field span-2">
+              <label className="label" htmlFor="pw-current">
+                Current password
+              </label>
+              <input
+                id="pw-current"
+                className="input"
+                type={showPw ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="Enter current password"
+              />
+            </div>
+            <div className="field">
+              <label className="label" htmlFor="pw-new">
+                New password
+              </label>
+              <input
+                id="pw-new"
+                className="input"
+                type={showPw ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+              />
+            </div>
+            <div className="field">
+              <label className="label" htmlFor="pw-confirm">
+                Confirm new password
+              </label>
+              <input
+                id="pw-confirm"
+                className="input"
+                type={showPw ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Repeat new password"
+              />
+            </div>
+          </div>
 
-          <div className="pw-form-footer">
+          <div className="form-actions pw-actions">
             <button
               type="button"
-              className={`pw-toggle${showPw ? ' on' : ''}`}
+              className={`pw-show${showPw ? ' on' : ''}`}
               onClick={() => setShowPw((v) => !v)}
               aria-pressed={showPw}
             >
-              <span className="pw-toggle-track" aria-hidden>
-                <span className="pw-toggle-thumb" />
+              <span className="pw-show-track" aria-hidden>
+                <span className="pw-show-thumb" />
               </span>
               {showPw ? 'Hide passwords' : 'Show passwords'}
             </button>
-
-            <button type="submit" className="pw-submit" disabled={saving}>
+            <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'Updating…' : 'Save new password'}
             </button>
           </div>
         </form>
-      </div>
+      </section>
     </div>
   );
 }
