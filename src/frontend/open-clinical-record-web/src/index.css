@@ -28,6 +28,11 @@
   --status-cancelled: #e8778a;
   --status-no-show: #e8778a;
   --status-critical: #e8778a;
+  /* Semantic UI status tokens — keep status meaning separate from the brand accent. */
+  --status-success: #3ddc97;
+  --status-warning: #eab35a;
+  --status-info: #5b9fd4;
+  --status-danger: #e8778a;
   --btn-primary-fg: #04140c;
   --shadow-soft: rgba(0, 0, 0, 0.35);
   --mobile-header-bg: rgba(12, 19, 16, 0.94);
@@ -62,6 +67,10 @@ html[data-theme="light"] {
   --status-cancelled: #c94a5e;
   --status-no-show: #c94a5e;
   --status-critical: #c94a5e;
+  --status-success: #1fa86a;
+  --status-warning: #b87a12;
+  --status-info: #2f7ab8;
+  --status-danger: #c94a5e;
   color-scheme: light;
 }
 
@@ -339,4 +348,37 @@ label.label {
 .search-clear:hover {
   color: var(--text);
   background: var(--surface-2);
+}
+
+
+/* Small interaction polish — visual only, no layout or workflow changes. */
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.card,
+.panel-card {
+  box-shadow: 0 1px 2px var(--shadow-soft);
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover,
+  .panel-card:hover {
+    border-color: color-mix(in srgb, var(--line) 72%, var(--teal) 28%);
+    box-shadow: 0 6px 22px var(--shadow-soft);
+  }
 }
