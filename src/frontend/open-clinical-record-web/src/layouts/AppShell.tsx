@@ -132,11 +132,11 @@ export function AppShell({
     <div className="shell">
       <button
         type="button"
-        className={`mobile-menu-backdrop${mobileNavOpen ? ' open' : ''}`}
+        className={'mobile-menu-backdrop' + (mobileNavOpen ? ' open' : '')}
         aria-label="Close navigation"
         onClick={() => setMobileNavOpen(false)}
       />
-      <aside className={`sidebar${mobileNavOpen ? ' mobile-open' : ''`}>
+      <aside className={'sidebar' + (mobileNavOpen ? ' mobile-open' : '')}>
         <div className="brand">
           <div className="brand-mark">OCR</div>
           <div>
@@ -160,7 +160,7 @@ export function AppShell({
                 <button
                   key={item.path}
                   type="button"
-                  className={`nav-item${isActive(item.path) ? ' active' : ''}`}
+                  className={'nav-item' + (isActive(item.path) ? ' active' : '')}
                   onClick={() => navigate(item.path)}
                 >
                   <span className="nav-ico">
@@ -182,7 +182,7 @@ export function AppShell({
           </div>
           <div className="sidebar-foot-meta">
             <span className="status-chip">
-              <span className={`status-dot${backendOnline ? '' : ' off'}`} />
+              <span className={'status-dot' + (backendOnline ? '' : ' off')} />
               {backendOnline ? 'API online' : 'API offline'}
             </span>
             <div className="sidebar-icon-actions">
@@ -253,7 +253,7 @@ export function AppShell({
       {scrollCue.show && (
         <button
           type="button"
-          className={`scroll-cue scroll-cue--${scrollCue.dir}`}
+          className={'scroll-cue scroll-cue--' + scrollCue.dir}
           onClick={onScrollCueClick}
           aria-label={scrollCue.dir === 'down' ? 'Scroll down' : 'Scroll to top'}
           title={scrollCue.dir === 'down' ? 'Scroll down' : 'Back to top'}
