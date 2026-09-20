@@ -81,24 +81,40 @@ export function AppShell({
     return () => observer.disconnect();
   }, [currentPath, children]);
 
+  // Scroll cue for every signed-in role (AppShell wraps all authenticated routes)
   useEffect(() => {
     function updateScrollCue() {
       const el = document.documentElement;
-      const max = el.scrollHeight - el.clientHeight;
-      if (max < 48) {
+      const max = Math.max(0, el.scrollHeight - el.clientHeight);
+      if (max < 24) {
         setScrollCue({ show: false, dir: 'down' });
         return;
       }
       const y = window.scrollY || el.scrollTop;
-      const nearBottom = y >= max - 40;
+      const nearBottom = y >= max - 48;
       setScrollCue({ show: true, dir: nearBottom ? 'up' : 'down' });
     }
+
     updateScrollCue();
+    // Content often loads after route change — recheck a few times
+    const t1 = window.setTimeout(updateScrollCue, 120);
+    const t2 = window.setTimeout(updateScrollCue, 400);
+    const t3 = window.setTimeout(updateScrollCue, 1000);
+
     window.addEventListener('scroll', updateScrollCue, { passive: true });
     window.addEventListener('resize', updateScrollCue);
+
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScrollCue) : null;
+    ro?.observe(document.documentElement);
+    if (document.body) ro?.observe(document.body);
+
     return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
       window.removeEventListener('scroll', updateScrollCue);
       window.removeEventListener('resize', updateScrollCue);
+      ro?.disconnect();
     };
   }, [children, currentPath]);
 
@@ -120,7 +136,7 @@ export function AppShell({
         aria-label="Close navigation"
         onClick={() => setMobileNavOpen(false)}
       />
-      <aside className={`sidebar${mobileNavOpen ? ' mobile-open' : ''}`}>
+      <aside className={`sidebar${mobileNavOpen ? ' mobile-open' : ''`}>
         <div className="brand">
           <div className="brand-mark">OCR</div>
           <div>
