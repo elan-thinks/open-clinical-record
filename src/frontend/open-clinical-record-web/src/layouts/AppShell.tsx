@@ -47,6 +47,10 @@ export function AppShell({
 }: AppShellProps) {
   const groups = getNavForRole(role);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [scrollCue, setScrollCue] = useState<{ show: boolean; dir: 'down' | 'up' }>({
+    show: false,
+    dir: 'down',
+  });
   const contentRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
 
@@ -76,6 +80,37 @@ export function AppShell({
     });
     return () => observer.disconnect();
   }, [currentPath, children]);
+
+  useEffect(() => {
+    function updateScrollCue() {
+      const el = document.documentElement;
+      const max = el.scrollHeight - el.clientHeight;
+      if (max < 48) {
+        setScrollCue({ show: false, dir: 'down' });
+        return;
+      }
+      const y = window.scrollY || el.scrollTop;
+      const nearBottom = y >= max - 40;
+      setScrollCue({ show: true, dir: nearBottom ? 'up' : 'down' });
+    }
+    updateScrollCue();
+    window.addEventListener('scroll', updateScrollCue, { passive: true });
+    window.addEventListener('resize', updateScrollCue);
+    return () => {
+      window.removeEventListener('scroll', updateScrollCue);
+      window.removeEventListener('resize', updateScrollCue);
+    };
+  }, [children, currentPath]);
+
+  function onScrollCueClick() {
+    const el = document.documentElement;
+    const max = el.scrollHeight - el.clientHeight;
+    if (scrollCue.dir === 'down') {
+      window.scrollBy({ top: Math.min(window.innerHeight * 0.75, max), behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
 
   return (
     <div className="shell">
@@ -198,6 +233,23 @@ export function AppShell({
           {children}
         </div>
       </div>
+
+      {scrollCue.show && (
+        <button
+          type="button"
+          className={`scroll-cue scroll-cue--${scrollCue.dir}`}
+          onClick={onScrollCueClick}
+          aria-label={scrollCue.dir === 'down' ? 'Scroll down' : 'Scroll to top'}
+          title={scrollCue.dir === 'down' ? 'Scroll down' : 'Back to top'}
+        >
+          <span className="scroll-cue-pill" aria-hidden="true" />
+          <span className="scroll-cue-chevrons" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+        </button>
+      )}
     </div>
   );
 }
