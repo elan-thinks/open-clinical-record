@@ -93,37 +93,39 @@ export function MedicalRecordsPage() {
         ) : patients.length === 0 ? (
           <div className="empty">No patients found. Register a patient first.</div>
         ) : (
-          <ul className="ci-patient-list">
-            {patients.map((p) => (
-              <li key={p.id} className="ci-patient-row">
-                <div className="ci-patient-main">
-                  <div className="ci-patient-name">
-                    {p.firstName} {p.lastName}
+          <div className="ci-list-scroll">
+            <ul className="ci-patient-list">
+              {patients.map((p) => (
+                <li key={p.id} className="ci-patient-row">
+                  <div className="ci-patient-main">
+                    <div className="ci-patient-name">
+                      {p.firstName} {p.lastName}
+                    </div>
+                    <div className="ci-patient-meta">
+                      <span>{p.medicalRecordNumber}</span>
+                      {p.phone ? <span>{p.phone}</span> : null}
+                    </div>
                   </div>
-                  <div className="ci-patient-meta">
-                    <span>{p.medicalRecordNumber}</span>
-                    {p.phone ? <span>{p.phone}</span> : null}
+                  <div className="ci-actions">
+                    <button
+                      type="button"
+                      className="btn-ghost ci-action-ghost"
+                      onClick={() => navigate(`/patients/${p.id}/chart?tab=visits`)}
+                    >
+                      Visit history
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary ci-action-primary"
+                      onClick={() => navigate(`/patients/${p.id}/chart?tab=consultation`)}
+                    >
+                      Consultation
+                    </button>
                   </div>
-                </div>
-                <div className="ci-actions">
-                  <button
-                    type="button"
-                    className="btn-ghost ci-action-ghost"
-                    onClick={() => navigate(`/patients/${p.id}/chart?tab=visits`)}
-                  >
-                    Visit history
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-primary ci-action-primary"
-                    onClick={() => navigate(`/patients/${p.id}/chart?tab=consultation`)}
-                  >
-                    Consultation
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </div>
