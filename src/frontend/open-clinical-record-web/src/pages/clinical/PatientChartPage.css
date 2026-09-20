@@ -303,3 +303,11 @@
   gap: 12px;
   font-size: 13.5px;
 }
+
+/* Avoid horizontal scrollbars in chart workspace */
+.chart-page,
+.chart-page .panel,
+.chart-page .visit-layout {
+  overflow-x: hidden;
+  max-width: 100%;
+}
