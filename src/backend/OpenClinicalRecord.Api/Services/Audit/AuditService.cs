@@ -8,6 +8,17 @@ namespace OpenClinicalRecord.Api.Services.Audit;
 
 public interface IAuditService
 {
+    /// <summary>
+    /// Stages an audit row on the shared DbContext without saving.
+    /// Call when the business mutation will SaveChanges in the same unit of work.
+    /// </summary>
+    void Stage(
+        string action,
+        string entityType,
+        Guid? entityId,
+        ActorContext? actor,
+        string? summary);
+
     Task WriteAsync(
         string action,
         string entityType,
@@ -43,6 +54,21 @@ public sealed class AuditService : IAuditService
         _logger = logger;
     }
 
+    public void Stage(
+        string action,
+        string entityType,
+        Guid? entityId,
+        ActorContext? actor,
+        string? summary)
+    {
+        if (string.IsNullOrWhiteSpace(action) || string.IsNullOrWhiteSpace(entityType))
+            throw new ArgumentException("Audit action and entityType are required.");
+
+        _db.AuditEvents.Add(BuildEvent(
+            action, entityType, entityId,
+            actor?.UserId, actor?.DisplayName, summary));
+    }
+
     public Task WriteAsync(
         string action,
         string entityType,
@@ -52,13 +78,8 @@ public sealed class AuditService : IAuditService
         CancellationToken ct = default)
     {
         return WriteAsync(
-            action,
-            entityType,
-            entityId,
-            actor?.UserId,
-            actor?.DisplayName,
-            summary,
-            ct);
+            action, entityType, entityId,
+            actor?.UserId, actor?.DisplayName, summary, ct);
     }
 
     public async Task WriteAsync(
@@ -73,27 +94,22 @@ public sealed class AuditService : IAuditService
         if (string.IsNullOrWhiteSpace(action) || string.IsNullOrWhiteSpace(entityType))
             throw new ArgumentException("Audit action and entityType are required.");
 
-        _db.AuditEvents.Add(new AuditEvent
-        {
-            Action = action.Trim(),
-            EntityType = entityType.Trim(),
-            EntityId = entityId,
-            ActorUserId = string.IsNullOrWhiteSpace(actorUserId) ? null : actorUserId.Trim(),
-            ActorName = string.IsNullOrWhiteSpace(actorName) ? null : actorName.Trim(),
-            Summary = string.IsNullOrWhiteSpace(summary) ? null : Truncate(summary.Trim(), 500),
-            CreatedAt = DateTimeOffset.UtcNow
-        });
+        _db.AuditEvents.Add(BuildEvent(
+            action, entityType, entityId, actorUserId, actorName, summary));
 
-        // Fail closed: do not pretend the audit was written if persistence fails.
         try
         {
             await _db.SaveChangesAsync(ct);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "Audit write failed for {Action} on {EntityType}/{EntityId}",
-                action, entityType, entityId);
+            _logger.LogError(ex, "Failed to persist audit event {Action} on {EntityType}", action, entityType);
+            foreach (var entry in _db.ChangeTracker.Entries<AuditEvent>()
+                         .Where(e => e.State == EntityState.Added)
+                         .ToList())
+            {
+                entry.State = EntityState.Detached;
+            }
             throw;
         }
     }
@@ -112,6 +128,23 @@ public sealed class AuditService : IAuditService
             q = q.Where(e => e.EntityId == entityId);
         return await q.OrderByDescending(e => e.CreatedAt).Take(take).ToListAsync(ct);
     }
+
+    private static AuditEvent BuildEvent(
+        string action,
+        string entityType,
+        Guid? entityId,
+        string? actorUserId,
+        string? actorName,
+        string? summary) => new()
+    {
+        Action = action.Trim(),
+        EntityType = entityType.Trim(),
+        EntityId = entityId,
+        ActorUserId = string.IsNullOrWhiteSpace(actorUserId) ? null : actorUserId.Trim(),
+        ActorName = string.IsNullOrWhiteSpace(actorName) ? null : actorName.Trim(),
+        Summary = string.IsNullOrWhiteSpace(summary) ? null : Truncate(summary.Trim(), 500),
+        CreatedAt = DateTimeOffset.UtcNow
+    };
 
     private static string Truncate(string value, int max) =>
         value.Length <= max ? value : value[..max];
