@@ -31,7 +31,6 @@ export function PatientsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PatientStatusFilter>('active');
-  // No artificial hold — show data as soon as the API responds
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQ(q.trim()), 280);
@@ -83,12 +82,7 @@ export function PatientsPage() {
             aria-label="Search patients"
           />
           {q && (
-            <button
-              type="button"
-              className="search-clear"
-              onClick={() => setQ('')}
-              aria-label="Clear search"
-            >
+            <button type="button" className="search-clear" onClick={() => setQ('')} aria-label="Clear search">
               ×
             </button>
           )}
@@ -124,77 +118,75 @@ export function PatientsPage() {
               : 'No patients found. Register a patient to get started.'}
           </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Sex / Age</th>
-                <th>Phone</th>
-                <th>Registered</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {patients.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <div className="patient-cell">
-                      <div className="avatar">{initials(p.firstName, p.lastName)}</div>
-                      <div>
-                        <div className="p-name">
-                          {p.firstName} {p.lastName}
-                        </div>
-                        <div className="p-id">{p.medicalRecordNumber}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{sexAge(p)}</td>
-                  <td>{p.phone || '-'}</td>
-                  <td>
-                    {p.createdAt
-                      ? new Date(p.createdAt).toLocaleDateString(undefined, {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                      : '-'}
-                  </td>
-                  <td>
-                    <span
-                      className={`status-badge ${
-                        p.status === 'Deceased'
-                          ? 'status-inactive'
-                          : p.isActive
-                            ? 'status-active'
-                            : 'status-inactive'
-                      }`}
-                    >
-                      {p.status || (p.isActive ? 'Active' : 'Inactive')}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        className="action-link"
-                        onClick={() => navigate(`/patients/${p.id}`)}
-                      >
-                        View
-                      </button>
-                      <button
-                        type="button"
-                        className="action-link"
-                        onClick={() => navigate(`/patients/${p.id}/chart`)}
-                      >
-                        Chart
-                      </button>
-                    </div>
-                  </td>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Sex / Age</th>
+                  <th>Phone</th>
+                  <th>Registered</th>
+                  <th>Status</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {patients.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <div className="patient-cell">
+                        <div className="avatar">{initials(p.firstName, p.lastName)}</div>
+                        <div>
+                          <div className="p-name">
+                            {p.firstName} {p.lastName}
+                          </div>
+                          <div className="p-id">{p.medicalRecordNumber}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{sexAge(p)}</td>
+                    <td>{p.phone || '-'}</td>
+                    <td>
+                      {p.createdAt
+                        ? new Date(p.createdAt).toLocaleDateString(undefined, {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                        : '-'}
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${
+                          p.status === 'Deceased'
+                            ? 'status-inactive'
+                            : p.isActive
+                              ? 'status-active'
+                              : 'status-inactive'
+                        }`}
+                      >
+                        {p.status || (p.isActive ? 'Active' : 'Inactive')}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                        <button type="button" className="action-link" onClick={() => navigate(`/patients/${p.id}`)}>
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          className="action-link"
+                          onClick={() => navigate(`/patients/${p.id}/chart`)}
+                        >
+                          Chart
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
