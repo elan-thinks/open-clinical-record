@@ -409,71 +409,12 @@ label.label {
   overflow-x: hidden;
 }
 
-/* OCR page rail scrollbar — soft, thin, creative (not the OS default bar) */
+/* Hide OS page scrollbar — compact scroll-cue in the shell instead */
 html {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--teal) 45%, transparent) transparent;
+  scrollbar-width: none; /* Firefox */
 }
-
 html::-webkit-scrollbar {
-  width: 11px;
-  height: 11px;
-}
-
-html::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 6px 0;
-}
-
-html::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--teal) 28%, transparent),
-    color-mix(in srgb, var(--teal-dim) 22%, transparent)
-  );
-  border-radius: 999px;
-  border: 3px solid transparent;
-  background-clip: padding-box;
-  min-height: 48px;
-  transition: background 0.2s ease;
-}
-
-html::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--teal) 55%, transparent),
-    color-mix(in srgb, var(--teal-dim) 45%, transparent)
-  );
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-html::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Light theme: slightly stronger so it stays visible on pale backgrounds */
-html[data-theme="light"]::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--teal) 35%, transparent),
-    color-mix(in srgb, var(--teal-dim) 28%, transparent)
-  );
-  border: 3px solid transparent;
-  background-clip: padding-box;
-}
-
-html[data-theme="light"]::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--teal) 55%, transparent),
-    color-mix(in srgb, var(--teal-dim) 48%, transparent)
-  );
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-/* Sidebar nav keeps no bar; main content panels keep ghost vertical only */
-.sidebar .nav {
-  scrollbar-width: none;
+  width: 0 !important;
+  height: 0 !important;
+  display: none;
 }
