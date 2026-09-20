@@ -340,3 +340,63 @@ label.label {
   color: var(--text);
   background: var(--surface-2);
 }
+
+/* Ghost scrollbars — almost invisible; faint on hover */
+.table-scroll,
+.ci-list-scroll,
+.ghost-scroll,
+.chart-page .visit-timeline,
+.chart-page .visit-detail-panel {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.table-scroll:hover,
+.ci-list-scroll:hover,
+.ghost-scroll:hover,
+.chart-page .visit-timeline:hover,
+.chart-page .visit-detail-panel:hover {
+  scrollbar-color: color-mix(in srgb, var(--text-faint) 35%, transparent) transparent;
+}
+
+.table-scroll::-webkit-scrollbar,
+.ci-list-scroll::-webkit-scrollbar,
+.ghost-scroll::-webkit-scrollbar,
+.chart-page .visit-timeline::-webkit-scrollbar,
+.chart-page .visit-detail-panel::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.table-scroll::-webkit-scrollbar-track,
+.ci-list-scroll::-webkit-scrollbar-track,
+.ghost-scroll::-webkit-scrollbar-track,
+.chart-page .visit-timeline::-webkit-scrollbar-track,
+.chart-page .visit-detail-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-scroll::-webkit-scrollbar-thumb,
+.ci-list-scroll::-webkit-scrollbar-thumb,
+.ghost-scroll::-webkit-scrollbar-thumb,
+.chart-page .visit-timeline::-webkit-scrollbar-thumb,
+.chart-page .visit-detail-panel::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.table-scroll:hover::-webkit-scrollbar-thumb,
+.ci-list-scroll:hover::-webkit-scrollbar-thumb,
+.ghost-scroll:hover::-webkit-scrollbar-thumb,
+.chart-page .visit-timeline:hover::-webkit-scrollbar-thumb,
+.chart-page .visit-detail-panel:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-faint) 40%, transparent);
+}
+
+.table-scroll:hover::-webkit-scrollbar-thumb:hover,
+.ci-list-scroll:hover::-webkit-scrollbar-thumb:hover,
+.ghost-scroll:hover::-webkit-scrollbar-thumb:hover,
+.chart-page .visit-timeline:hover::-webkit-scrollbar-thumb:hover,
+.chart-page .visit-detail-panel:hover::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text-dim) 55%, transparent);
+}
