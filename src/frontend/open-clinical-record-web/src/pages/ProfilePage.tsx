@@ -3,14 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { changePasswordRequest, updateProfileRequest } from '../services/authApi';
 import './ProfilePage.css';
 
-type SettingsTab = 'account' | 'security';
-
 export function ProfilePage() {
   const { user, primaryRole, refreshUser } = useAuth();
-  const [tab, setTab] = useState<SettingsTab>(() =>
-    user?.mustChangePassword ? 'security' : 'account',
-  );
   const [fullName, setFullName] = useState(user?.fullName ?? '');
+  const [editingProfile, setEditingProfile] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
@@ -40,12 +36,6 @@ export function ProfilePage() {
     .toUpperCase();
 
   const roleLabel = primaryRole ?? user.roles[0] ?? 'User';
-  const roleHints: Record<string, string> = {
-    Doctor: 'Clinical care — charts, consultations, diagnoses, and notes.',
-    Nurse: 'Observations and vitals — support the care team at the bedside.',
-    Receptionist: 'Front desk — registration, appointments, and check-in.',
-    Admin: 'System administration — users, roles, reports, and audit.',
-  };
 
   async function onSaveProfile(e: FormEvent) {
     e.preventDefault();
@@ -55,11 +45,13 @@ export function ProfilePage() {
       setProfileMsg({ type: 'err', text: 'Name must be at least 2 characters.' });
       return;
     }
+
     setProfileSaving(true);
     try {
       await updateProfileRequest(name);
       await refreshUser?.();
-      setProfileMsg({ type: 'ok', text: 'Display name updated.' });
+      setProfileMsg({ type: 'ok', text: 'Profile updated successfully.' });
+      setEditingProfile(false);
     } catch (err) {
       setProfileMsg({ type: 'err', text: err instanceof Error ? err.message : 'Update failed' });
     } finally {
@@ -67,10 +59,17 @@ export function ProfilePage() {
     }
   }
 
+  function onCancelProfile() {
+    setFullName(user.fullName ?? '');
+    setProfileMsg(null);
+    setEditingProfile(false);
+  }
+
   async function onChangePassword(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+
     if (newPassword !== confirmPassword) {
       setError('New password and confirmation do not match.');
       return;
@@ -79,10 +78,11 @@ export function ProfilePage() {
       setError('New password must be at least 8 characters.');
       return;
     }
+
     setSaving(true);
     try {
       await changePasswordRequest(currentPassword, newPassword, confirmPassword);
-      setSuccess('Password updated. Use your new password the next time you sign in.');
+      setSuccess('Password updated successfully.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -98,237 +98,178 @@ export function ProfilePage() {
     <div className="profile-page">
       <div className="page-head">
         <div>
-          <h1 className="page-title">Settings</h1>
-          <p className="page-sub">Your account and security for Open Clinical Record.</p>
+          <h1 className="page-title">Profile</h1>
+          <p className="page-sub">Manage your personal information and account security.</p>
         </div>
       </div>
 
       {user.mustChangePassword && (
         <div className="profile-banner" role="status">
-          <span className="banner-icon" aria-hidden>
-            !
-          </span>
+          <span className="banner-icon" aria-hidden>!</span>
           <div>
-            <strong>Temporary password in use</strong>
-            <p>
-              Open the{' '}
-              <button type="button" className="banner-link" onClick={() => setTab('security')}>
-                Security
-              </button>{' '}
-              tab and set a new password.
-            </p>
+            <strong>Password change required</strong>
+            <p>You are using a temporary password. Please change it in the Security section below.</p>
           </div>
         </div>
       )}
 
-      <section className="profile-hero">
-        <div className="avatar-lg" aria-hidden>
-          {initials || 'U'}
-        </div>
-        <div className="hero-meta">
-          <div className="p-name">{displayName}</div>
-          <div className="p-role">
-            <span className="role-pill">{roleLabel}</span>
-            <span className="status-live">
-              <span className="role-dot" aria-hidden />
-              Active
-            </span>
+      <section className="profile-card">
+        <div className="profile-card-head">
+          <div className="profile-card-title">
+            <h2>Personal information</h2>
+            <p>Update the information shown across Open Clinical Record.</p>
           </div>
-          <div className="hero-email">{user.email}</div>
-        </div>
-      </section>
-
-      <div className="settings-shell">
-        <div className="settings-tabs" role="tablist" aria-label="Profile settings">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'account'}
-            className={`settings-tab${tab === 'account' ? ' active' : ''}`}
-            onClick={() => setTab('account')}
-          >
-            Account
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'security'}
-            className={`settings-tab${tab === 'security' ? ' active' : ''}`}
-            onClick={() => setTab('security')}
-          >
-            Security
-            {user.mustChangePassword && <span className="tab-badge">Required</span>}
-          </button>
-        </div>
-
-        <div className="settings-body" role="tabpanel">
-          {tab === 'account' ? (
-            <>
-              <div className="settings-intro">
-                <h2 className="settings-title">Account</h2>
-                <p className="settings-desc">How your name appears across charts and appointments.</p>
-              </div>
-
-              <div className="info-grid compact">
-                <div className="info-item">
-                  <label>Roles</label>
-                  <div className="val">{user.roles.join(' · ') || roleLabel}</div>
-                </div>
-                <div className="info-item">
-                  <label>Account ID</label>
-                  <div className="val mono" title={user.id}>
-                    {user.id.slice(0, 8)}…
-                  </div>
-                </div>
-              </div>
-
-              {primaryRole && (
-                <p className="role-hint">{roleHints[primaryRole] ?? 'Signed in to Open Clinical Record.'}</p>
-              )}
-
-              <form className="profile-form" onSubmit={onSaveProfile}>
-                <div className="form-stack">
-                  <div className="field">
-                    <label className="label" htmlFor="profile-name">
-                      Display name
-                    </label>
-                    <input
-                      id="profile-name"
-                      className="input"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      minLength={2}
-                      maxLength={120}
-                      placeholder="Your name as shown in the app"
-                      autoComplete="name"
-                    />
-                  </div>
-                  <div className="field">
-                    <label className="label" htmlFor="profile-email">
-                      Email
-                    </label>
-                    <input
-                      id="profile-email"
-                      className="input"
-                      value={user.email}
-                      disabled
-                      readOnly
-                      title="Email is used for sign-in"
-                    />
-                    <span className="field-hint">Sign-in email — ask an admin if you need this changed.</span>
-                  </div>
-                </div>
-
-                {profileMsg && (
-                  <div className={`profile-alert ${profileMsg.type === 'ok' ? 'success' : 'error'}`} role="status">
-                    {profileMsg.text}
-                  </div>
-                )}
-
-                <div className="form-actions">
-                  <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={profileSaving || fullName.trim() === (user.fullName ?? '').trim()}
-                  >
-                    {profileSaving ? 'Saving…' : 'Save changes'}
-                  </button>
-                </div>
-              </form>
-            </>
-          ) : (
-            <>
-              <div className="settings-intro">
-                <h2 className="settings-title">Security</h2>
-                <p className="settings-desc">Update your password. Minimum 8 characters.</p>
-              </div>
-
-              {error && (
-                <div className="profile-alert error" role="alert">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="profile-alert success" role="status">
-                  {success}
-                </div>
-              )}
-
-              <form className="profile-form" onSubmit={onChangePassword}>
-                <div className="form-stack">
-                  <div className="field">
-                    <label className="label" htmlFor="pw-current">
-                      Current password
-                    </label>
-                    <input
-                      id="pw-current"
-                      className="input"
-                      type={showPw ? 'text' : 'password'}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      required
-                      autoComplete="current-password"
-                      placeholder="Enter current password"
-                    />
-                  </div>
-                  <div className="field-row">
-                    <div className="field">
-                      <label className="label" htmlFor="pw-new">
-                        New password
-                      </label>
-                      <input
-                        id="pw-new"
-                        className="input"
-                        type={showPw ? 'text' : 'password'}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                        minLength={8}
-                        autoComplete="new-password"
-                        placeholder="At least 8 characters"
-                      />
-                    </div>
-                    <div className="field">
-                      <label className="label" htmlFor="pw-confirm">
-                        Confirm
-                      </label>
-                      <input
-                        id="pw-confirm"
-                        className="input"
-                        type={showPw ? 'text' : 'password'}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        minLength={8}
-                        autoComplete="new-password"
-                        placeholder="Repeat new password"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-actions pw-actions">
-                  <button
-                    type="button"
-                    className={`pw-show${showPw ? ' on' : ''}`}
-                    onClick={() => setShowPw((v) => !v)}
-                    aria-pressed={showPw}
-                  >
-                    <span className="pw-show-track" aria-hidden>
-                      <span className="pw-show-thumb" />
-                    </span>
-                    {showPw ? 'Hide' : 'Show'} passwords
-                  </button>
-                  <button type="submit" className="btn-primary" disabled={saving}>
-                    {saving ? 'Updating…' : 'Update password'}
-                  </button>
-                </div>
-              </form>
-            </>
+          {!editingProfile && (
+            <button type="button" className="btn-secondary" onClick={() => setEditingProfile(true)}>
+              Edit profile
+            </button>
           )}
         </div>
-      </div>
+
+        <div className="identity-row">
+          <div className="avatar-lg" aria-hidden>{initials || 'U'}</div>
+          <div className="identity-meta">
+            <div className="p-name">{displayName}</div>
+            <div className="p-role">
+              <span className="role-pill">{roleLabel}</span>
+              <span className="status-live"><span className="role-dot" aria-hidden />Active</span>
+            </div>
+          </div>
+        </div>
+
+        <form className="profile-form" onSubmit={onSaveProfile}>
+          <div className="profile-fields">
+            <div className="field">
+              <label className="label" htmlFor="profile-name">Full name</label>
+              {editingProfile ? (
+                <input
+                  id="profile-name"
+                  className="input"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  minLength={2}
+                  maxLength={120}
+                  autoComplete="name"
+                  autoFocus
+                />
+              ) : (
+                <div className="field-value">{user.fullName}</div>
+              )}
+            </div>
+
+            <div className="field">
+              <label className="label" htmlFor="profile-email">Email address</label>
+              <div id="profile-email" className="field-value muted">{user.email}</div>
+              <span className="field-hint">Your sign-in email. Contact an administrator if it needs to be changed.</span>
+            </div>
+
+            <div className="field">
+              <label className="label">Role</label>
+              <div className="field-value">{user.roles.join(' · ') || roleLabel}</div>
+            </div>
+
+            <div className="field">
+              <label className="label">Account ID</label>
+              <div className="field-value mono" title={user.id}>{user.id.slice(0, 8)}…</div>
+            </div>
+          </div>
+
+          {profileMsg && (
+            <div className={`profile-alert ${profileMsg.type === 'ok' ? 'success' : 'error'}`} role="status">
+              {profileMsg.text}
+            </div>
+          )}
+
+          {editingProfile && (
+            <div className="form-actions">
+              <button type="button" className="btn-secondary" onClick={onCancelProfile}>Cancel</button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={profileSaving || fullName.trim() === (user.fullName ?? '').trim()}
+              >
+                {profileSaving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          )}
+        </form>
+      </section>
+
+      <section className="profile-card security-card">
+        <div className="profile-card-head">
+          <div className="profile-card-title">
+            <h2>Security</h2>
+            <p>Keep your account secure by using a strong, private password.</p>
+          </div>
+        </div>
+
+        <form className="profile-form" onSubmit={onChangePassword}>
+          <div className="password-section">
+            <div className="field">
+              <label className="label" htmlFor="pw-current">Current password</label>
+              <input
+                id="pw-current"
+                className="input"
+                type={showPw ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="Enter current password"
+              />
+            </div>
+
+            <div className="field-row">
+              <div className="field">
+                <label className="label" htmlFor="pw-new">New password</label>
+                <input
+                  id="pw-new"
+                  className="input"
+                  type={showPw ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  placeholder="At least 8 characters"
+                />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="pw-confirm">Confirm new password</label>
+                <input
+                  id="pw-confirm"
+                  className="input"
+                  type={showPw ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  placeholder="Repeat new password"
+                />
+              </div>
+            </div>
+          </div>
+
+          {error && <div className="profile-alert error" role="alert">{error}</div>}
+          {success && <div className="profile-alert success" role="status">{success}</div>}
+
+          <div className="form-actions security-actions">
+            <button
+              type="button"
+              className={`pw-show${showPw ? ' on' : ''}`}
+              onClick={() => setShowPw((v) => !v)}
+              aria-pressed={showPw}
+            >
+              {showPw ? 'Hide passwords' : 'Show passwords'}
+            </button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Updating…' : 'Change password'}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
