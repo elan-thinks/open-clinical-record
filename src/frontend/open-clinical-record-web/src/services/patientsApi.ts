@@ -176,7 +176,8 @@ export async function clearPatientDeceased(id: string): Promise<Patient> {
 export async function getDeathRecord(id: string): Promise<DeathRecord | null> {
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/patients/${id}/death-record`, { headers: authHeaders() });
-  if (res.status === 404) return null;
+  // 404/204 = living patient with no death note (normal)
+  if (res.status === 404 || res.status === 204) return null;
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as DeathRecord;
 }
