@@ -184,3 +184,19 @@ export async function createVisit(patientId: string, body: CreateVisitPayload): 
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as Visit;
 }
+
+
+export async function documentVisit(
+  patientId: string,
+  visitId: string,
+  body: CreateVisitPayload,
+): Promise<Visit> {
+  const base = getApiBaseUrl();
+  const res = await fetch(`${base}/api/patients/${patientId}/chart/visits/${visitId}`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as Visit;
+}
