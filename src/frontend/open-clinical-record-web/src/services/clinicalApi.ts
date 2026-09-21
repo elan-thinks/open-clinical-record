@@ -109,6 +109,7 @@ export interface CreateVisitPayload {
   plan?: string;
   instructions?: string;
   status?: string;
+  noteType?: string;
 }
 
 function authHeaders(): HeadersInit {
@@ -118,6 +119,36 @@ function authHeaders(): HeadersInit {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
+}
+
+/** Backend expects int? for pulse / SpO₂ / RR — decimals break model binding → "The request field is required." */
+function asOptionalInt(n: unknown): number | undefined {
+  if (n === undefined || n === null || n === '') return undefined;
+  const v = typeof n === 'number' ? n : Number(n);
+  if (!Number.isFinite(v)) return undefined;
+  return Math.round(v);
+}
+
+function asOptionalNumber(n: unknown): number | undefined {
+  if (n === undefined || n === null || n === '') return undefined;
+  const v = typeof n === 'number' ? n : Number(n);
+  if (!Number.isFinite(v)) return undefined;
+  return v;
+}
+
+function sanitizeVisitPayload(body: CreateVisitPayload): CreateVisitPayload {
+  const out: CreateVisitPayload = { ...body };
+  out.pulse = asOptionalInt(body.pulse);
+  out.spo2 = asOptionalInt(body.spo2);
+  out.respiratoryRate = asOptionalInt(body.respiratoryRate);
+  out.temperatureC = asOptionalNumber(body.temperatureC);
+  out.weightKg = asOptionalNumber(body.weightKg);
+  out.heightCm = asOptionalNumber(body.heightCm);
+  // Drop undefined so we don't send explicit nulls that confuse some binders
+  for (const key of Object.keys(out) as (keyof CreateVisitPayload)[]) {
+    if (out[key] === undefined) delete out[key];
+  }
+  return out;
 }
 
 async function parseError(response: Response): Promise<string> {
@@ -176,15 +207,15 @@ export async function addHistoryItem(
 
 export async function createVisit(patientId: string, body: CreateVisitPayload): Promise<Visit> {
   const base = getApiBaseUrl();
+  const payload = sanitizeVisitPayload(body);
   const res = await fetch(`${base}/api/patients/${patientId}/chart/visits`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as Visit;
 }
-
 
 export async function documentVisit(
   patientId: string,
@@ -192,10 +223,11 @@ export async function documentVisit(
   body: CreateVisitPayload,
 ): Promise<Visit> {
   const base = getApiBaseUrl();
+  const payload = sanitizeVisitPayload(body);
   const res = await fetch(`${base}/api/patients/${patientId}/chart/visits/${visitId}`, {
     method: 'PATCH',
     headers: authHeaders(),
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as Visit;
