@@ -78,6 +78,13 @@ public class PatientsController : ControllerBase
     public async Task<IActionResult> GetDeathRecord(Guid id, CancellationToken cancellationToken)
     {
         var result = await _patients.GetDeathRecordAsync(id, cancellationToken);
+        // No death record is a normal state for living patients — return 204 instead of 404 noise.
+        if (!result.Succeeded
+            && result.ErrorKind == ServiceErrorKind.NotFound
+            && (result.Error?.Contains("No death record", StringComparison.OrdinalIgnoreCase) ?? false))
+        {
+            return NoContent();
+        }
         return ToActionResult(result);
     }
 
