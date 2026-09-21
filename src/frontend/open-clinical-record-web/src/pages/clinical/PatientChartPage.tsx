@@ -4,6 +4,7 @@ import {
   addAllergy,
   addHistoryItem,
   createVisit,
+  documentVisit,
   getPatientChart,
   type PatientChart,
 } from '../../services/clinicalApi';
@@ -98,6 +99,16 @@ export function PatientChartPage() {
   const [weightKg, setWeightKg] = useState('');
   const [heightCm, setHeightCm] = useState('');
   const [respRate, setRespRate] = useState('');
+  const [consultationComplaint, setConsultationComplaint] = useState('');
+  const [consultationBp, setConsultationBp] = useState('');
+  const [consultationPulse, setConsultationPulse] = useState('');
+  const [consultationTemp, setConsultationTemp] = useState('');
+  const [consultationSpo2, setConsultationSpo2] = useState('');
+  const [primaryDx, setPrimaryDx] = useState('');
+  const [secondaryDx, setSecondaryDx] = useState('');
+  const [clinicalNote, setClinicalNote] = useState('');
+  const [consultationPlan, setConsultationPlan] = useState('');
+  const [consultationInstructions, setConsultationInstructions] = useState('');
   const [deceasedConfirmOpen, setDeceasedConfirmOpen] = useState(false);
   const [deathRecord, setDeathRecord] = useState<DeathRecord | null>(null);
   const [deathNote, setDeathNote] = useState('');
@@ -216,8 +227,8 @@ export function PatientChartPage() {
     if (!patientId || isDeceased) return;
     setSaving(true);
     try {
-      await createVisit(patientId, {
-        visitType: 'Vitals',
+      const draftVisit = chart?.visits.find((v) => v.status === 'Draft');
+      const payload = {
         bloodPressure: bp || undefined,
         pulse: pulse ? Number(pulse) : undefined,
         temperatureC: temp ? Number(temp) : undefined,
@@ -225,8 +236,12 @@ export function PatientChartPage() {
         respiratoryRate: respRate ? Number(respRate) : undefined,
         weightKg: weightKg ? Number(weightKg) : undefined,
         heightCm: heightCm ? Number(heightCm) : undefined,
-        status: 'Final',
-      });
+      };
+      if (draftVisit) {
+        await documentVisit(patientId, draftVisit.id, payload);
+      } else {
+        await createVisit(patientId, { visitType: 'Vitals', ...payload, status: 'Draft' });
+      }
       setBp('');
       setPulse('');
       setTemp('');
@@ -237,6 +252,52 @@ export function PatientChartPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save vitals');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onSaveConsultation(e: FormEvent) {
+    e.preventDefault();
+    if (!patientId || isDeceased) return;
+    if (!consultationComplaint.trim() && !primaryDx.trim() && !clinicalNote.trim() && !consultationPlan.trim()) {
+      setError('Add at least a chief complaint, diagnosis, clinical note, or plan before saving.');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const draftVisit = chart?.visits.find((v) => v.status === 'Draft');
+      const appointment = appointments.find((a) => a.id === draftVisit?.appointmentId) ?? appointments.find((a) =>
+        ['CheckedIn', 'Waiting', 'InProgress'].includes(a.status),
+      );
+      const payload = {
+        appointmentId: draftVisit?.appointmentId ?? appointment?.id,
+        visitType: draftVisit?.visitType ?? appointment?.appointmentType ?? 'Consultation',
+        chiefComplaint: consultationComplaint.trim() || undefined,
+        bloodPressure: consultationBp || undefined,
+        pulse: consultationPulse ? Number(consultationPulse) : undefined,
+        temperatureC: consultationTemp ? Number(consultationTemp) : undefined,
+        spo2: consultationSpo2 ? Number(consultationSpo2) : undefined,
+        primaryDiagnosis: primaryDx.trim() || undefined,
+        secondaryDiagnosis: secondaryDx.trim() || undefined,
+        clinicalNote: clinicalNote.trim() || undefined,
+        plan: consultationPlan.trim() || undefined,
+        instructions: consultationInstructions.trim() || undefined,
+        status: 'Final',
+      };
+      if (draftVisit) {
+        await documentVisit(patientId, draftVisit.id, payload);
+      } else {
+        await createVisit(patientId, payload);
+      }
+      setConsultationComplaint(''); setConsultationBp(''); setConsultationPulse(''); setConsultationTemp('');
+      setConsultationSpo2(''); setPrimaryDx(''); setSecondaryDx(''); setClinicalNote('');
+      setConsultationPlan(''); setConsultationInstructions('');
+      await load();
+      selectTab('visits');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save consultation');
     } finally {
       setSaving(false);
     }
@@ -606,7 +667,39 @@ export function PatientChartPage() {
       )}
 
       {tab === 'visits' && (
-        <VisitHistoryPanel patientId={chart.patientId} visits={chart.visits} isDeceased={isDeceased} onChanged={load} />
+        <VisitHistoryPanel
+          patientId={chart.patientId}
+          visits={chart.visits}
+          isDeceased={isDeceased}
+          onNewConsultation={() => selectTab('consultation')}
+          onChanged={load}
+        />
+      )}
+
+      {tab === 'consultation' && (
+        <div className="panel">
+          <div className="panel-head">
+            <div>
+              <div className="panel-title">New consultation</div>
+              <div className="muted">Complete the current checked-in encounter, then finalize the documentation.</div>
+            </div>
+          </div>
+          <form onSubmit={onSaveConsultation}>
+            <div className="form-grid">
+              <div className="field span-2"><label className="label">Chief complaint</label><input className="input" value={consultationComplaint} onChange={(e) => setConsultationComplaint(e.target.value)} disabled={isDeceased} /></div>
+              <div className="field"><label className="label">Blood pressure</label><input className="input" value={consultationBp} onChange={(e) => setConsultationBp(e.target.value)} placeholder="120/80" disabled={isDeceased} /></div>
+              <div className="field"><label className="label">Pulse</label><input className="input" value={consultationPulse} onChange={(e) => setConsultationPulse(e.target.value)} disabled={isDeceased} /></div>
+              <div className="field"><label className="label">Temperature °C</label><input className="input" value={consultationTemp} onChange={(e) => setConsultationTemp(e.target.value)} disabled={isDeceased} /></div>
+              <div className="field"><label className="label">SpO2 %</label><input className="input" value={consultationSpo2} onChange={(e) => setConsultationSpo2(e.target.value)} disabled={isDeceased} /></div>
+              <div className="field span-2"><label className="label">Primary diagnosis</label><input className="input" value={primaryDx} onChange={(e) => setPrimaryDx(e.target.value)} placeholder="Diagnosis" disabled={isDeceased} /></div>
+              <div className="field span-2"><label className="label">Secondary diagnosis</label><input className="input" value={secondaryDx} onChange={(e) => setSecondaryDx(e.target.value)} disabled={isDeceased} /></div>
+              <div className="field span-2"><label className="label">Clinical note</label><textarea className="textarea" value={clinicalNote} onChange={(e) => setClinicalNote(e.target.value)} rows={5} disabled={isDeceased} /></div>
+              <div className="field span-2"><label className="label">Plan</label><input className="input" value={consultationPlan} onChange={(e) => setConsultationPlan(e.target.value)} disabled={isDeceased} /></div>
+              <div className="field span-2"><label className="label">Instructions</label><input className="input" value={consultationInstructions} onChange={(e) => setConsultationInstructions(e.target.value)} disabled={isDeceased} /></div>
+            </div>
+            <div className="form-actions"><button type="button" className="btn-ghost" onClick={() => selectTab('visits')}>Cancel</button><button type="submit" className="btn-primary" disabled={saving || isDeceased}>{saving ? 'Saving...' : 'Save consultation'}</button></div>
+          </form>
+        </div>
       )}
 
       {tab === 'notes' && (
