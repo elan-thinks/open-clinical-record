@@ -6,6 +6,9 @@
 2. **Patient Chart**
 3. **Appointment Management**
 
+
+![alt text](image.png)
+
 The MVP is intentionally limited to functionality that can realistically be implemented, tested, and demonstrated within the remaining one-month internship period.
 
 ## Project Direction
