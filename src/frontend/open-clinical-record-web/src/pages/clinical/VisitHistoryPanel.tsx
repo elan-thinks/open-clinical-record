@@ -30,12 +30,13 @@ interface Props {
 
 export function VisitHistoryPanel({
   chart,
-  patientId,
+  patientId: _patientId,
   visits: visitsProp,
   isDeceased,
   onNewConsultation,
   onChanged,
 }: Props) {
+  void _patientId;
   const visits = chart?.visits ?? visitsProp ?? [];
   const [selectedVisitId, setSelectedVisitId] = useState<string | null>(visits[0]?.id ?? null);
 

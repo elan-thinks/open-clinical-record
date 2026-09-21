@@ -1,10 +1,11 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PageLoader, useHoldLoading } from '../components/PageLoader';
+import type { AppRole } from '../types/auth';
 
 interface ProtectedRouteProps {
   /** If set, user must have at least one of these roles. */
-  roles?: string[];
+  roles?: AppRole[];
 }
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {

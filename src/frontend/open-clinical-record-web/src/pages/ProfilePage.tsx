@@ -26,7 +26,10 @@ export function ProfilePage() {
     );
   }
 
-  const displayName = fullName.trim() || user.fullName;
+  // Narrow for nested handlers (TS does not always carry control-flow into closures).
+  const current = user;
+
+  const displayName = fullName.trim() || current.fullName;
   const initials = displayName
     .split(/\s+/)
     .filter(Boolean)
@@ -35,7 +38,7 @@ export function ProfilePage() {
     .slice(0, 2)
     .toUpperCase();
 
-  const roleLabel = primaryRole ?? user.roles[0] ?? 'User';
+  const roleLabel = primaryRole ?? current.roles[0] ?? 'User';
 
   async function onSaveProfile(e: FormEvent) {
     e.preventDefault();
@@ -60,7 +63,7 @@ export function ProfilePage() {
   }
 
   function onCancelProfile() {
-    setFullName(user.fullName ?? '');
+    setFullName(current.fullName ?? '');
     setProfileMsg(null);
     setEditingProfile(false);
   }
@@ -103,7 +106,7 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {user.mustChangePassword && (
+      {current.mustChangePassword && (
         <div className="profile-banner" role="status">
           <span className="banner-icon" aria-hidden>!</span>
           <div>
@@ -154,24 +157,24 @@ export function ProfilePage() {
                   autoFocus
                 />
               ) : (
-                <div className="field-value">{user.fullName}</div>
+                <div className="field-value">{current.fullName}</div>
               )}
             </div>
 
             <div className="field">
               <label className="label" htmlFor="profile-email">Email address</label>
-              <div id="profile-email" className="field-value muted">{user.email}</div>
+              <div id="profile-email" className="field-value muted">{current.email}</div>
               <span className="field-hint">Your sign-in email. Contact an administrator if it needs to be changed.</span>
             </div>
 
             <div className="field">
               <label className="label">Role</label>
-              <div className="field-value">{user.roles.join(' · ') || roleLabel}</div>
+              <div className="field-value">{current.roles.join(' · ') || roleLabel}</div>
             </div>
 
             <div className="field">
               <label className="label">Account ID</label>
-              <div className="field-value mono" title={user.id}>{user.id.slice(0, 8)}…</div>
+              <div className="field-value mono" title={current.id}>{current.id.slice(0, 8)}…</div>
             </div>
           </div>
 
@@ -187,7 +190,7 @@ export function ProfilePage() {
               <button
                 type="submit"
                 className="btn-primary"
-                disabled={profileSaving || fullName.trim() === (user.fullName ?? '').trim()}
+                disabled={profileSaving || fullName.trim() === (current.fullName ?? '').trim()}
               >
                 {profileSaving ? 'Saving…' : 'Save changes'}
               </button>

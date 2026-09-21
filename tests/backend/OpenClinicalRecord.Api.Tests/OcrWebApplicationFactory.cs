@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -57,7 +58,13 @@ public class OcrWebApplicationFactory : WebApplicationFactory<Program>
             }
 
             services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase(_dbName));
+            {
+                options.UseInMemoryDatabase(_dbName);
+                // BeginTransactionAsync is used in workflows; in-memory ignores transactions
+                // and would otherwise throw TransactionIgnoredWarning as an error in tests.
+                options.ConfigureWarnings(w =>
+                    w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
         });
     }
 }
