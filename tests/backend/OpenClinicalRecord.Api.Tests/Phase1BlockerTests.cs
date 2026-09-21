@@ -8,9 +8,9 @@ namespace OpenClinicalRecord.Api.Tests;
 
 /// <summary>
 /// Phase 1 blockers: Draft default, deceased path only.
-/// Admin is allowed appointment status updates (same staff set as create).
+/// Appointment status changes: Receptionist/Nurse/Doctor (not Admin — operations role).
 /// </summary>
-public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
+public class Phase1BlockerTests : IClassFixture&lt;OcrWebApplicationFactory&gt;
 {
     private readonly HttpClient _client;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
@@ -20,7 +20,7 @@ public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
     }
 
-    private async Task<string> LoginAsync(string email)
+    private async Task&lt;string&gt; LoginAsync(string email)
     {
         var response = await _client.PostAsJsonAsync("/api/auth/login", new
         {
@@ -28,7 +28,7 @@ public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
             password = OcrWebApplicationFactory.SeedPassword
         });
         response.EnsureSuccessStatusCode();
-        var body = await response.Content.ReadFromJsonAsync<LoginBody>(JsonOpts);
+        var body = await response.Content.ReadFromJsonAsync&lt;LoginBody&gt;(JsonOpts);
         return body!.AccessToken;
     }
 
@@ -40,7 +40,7 @@ public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
         return req;
     }
 
-    private async Task<Guid> RegisterPatientAsync(string deskToken)
+    private async Task&lt;Guid&gt; RegisterPatientAsync(string deskToken)
     {
         var res = await _client.SendAsync(Req(HttpMethod.Post, "/api/patients", deskToken, new
         {
@@ -95,7 +95,7 @@ public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Admin_and_desk_can_update_appointment_status()
+    public async Task Admin_cannot_change_appointment_status_desk_can()
     {
         var desk = await LoginAsync("desk@clinic.local");
         var admin = await LoginAsync("admin@clinic.local");
@@ -108,18 +108,19 @@ public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
             startTime = "10:00:00",
             durationMinutes = 30,
             appointmentType = "Consultation",
-            reason = "Phase1 admin status"
+            reason = "Phase1 status policy"
         }));
         Assert.True(createAppt.IsSuccessStatusCode, await createAppt.Content.ReadAsStringAsync());
         using var doc = JsonDocument.Parse(await createAppt.Content.ReadAsStringAsync());
         var apptId = doc.RootElement.GetProperty("id").GetGuid();
 
+        // Admin is operations/security only — not clinical appointment status transitions.
         var adminStatus = await _client.SendAsync(Req(
             HttpMethod.Patch,
             $"/api/appointments/{apptId}/status",
             admin,
             new { status = "Waiting" }));
-        Assert.Equal(HttpStatusCode.OK, adminStatus.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, adminStatus.StatusCode);
 
         var deskStatus = await _client.SendAsync(Req(
             HttpMethod.Patch,
