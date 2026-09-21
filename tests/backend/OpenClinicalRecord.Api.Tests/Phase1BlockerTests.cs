@@ -10,7 +10,7 @@ namespace OpenClinicalRecord.Api.Tests;
 /// Phase 1 blockers: Draft default, deceased path only.
 /// Appointment status changes: Receptionist/Nurse/Doctor (not Admin — operations role).
 /// </summary>
-public class Phase1BlockerTests : IClassFixture&lt;OcrWebApplicationFactory&gt;
+public class Phase1BlockerTests : IClassFixture<OcrWebApplicationFactory>
 {
     private readonly HttpClient _client;
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
@@ -20,7 +20,7 @@ public class Phase1BlockerTests : IClassFixture&lt;OcrWebApplicationFactory&gt;
         _client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
     }
 
-    private async Task&lt;string&gt; LoginAsync(string email)
+    private async Task<string> LoginAsync(string email)
     {
         var response = await _client.PostAsJsonAsync("/api/auth/login", new
         {
@@ -28,7 +28,7 @@ public class Phase1BlockerTests : IClassFixture&lt;OcrWebApplicationFactory&gt;
             password = OcrWebApplicationFactory.SeedPassword
         });
         response.EnsureSuccessStatusCode();
-        var body = await response.Content.ReadFromJsonAsync&lt;LoginBody&gt;(JsonOpts);
+        var body = await response.Content.ReadFromJsonAsync<LoginBody>(JsonOpts);
         return body!.AccessToken;
     }
 
@@ -40,7 +40,7 @@ public class Phase1BlockerTests : IClassFixture&lt;OcrWebApplicationFactory&gt;
         return req;
     }
 
-    private async Task&lt;Guid&gt; RegisterPatientAsync(string deskToken)
+    private async Task<Guid> RegisterPatientAsync(string deskToken)
     {
         var res = await _client.SendAsync(Req(HttpMethod.Post, "/api/patients", deskToken, new
         {
