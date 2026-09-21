@@ -233,6 +233,19 @@ public sealed class ClinicalChartService : IClinicalChartService
             });
         }
 
+        if (!string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
+            || !string.IsNullOrWhiteSpace(request.SecondaryDiagnosisCode))
+        {
+            visit.Diagnoses.Add(new Diagnosis
+            {
+                IsPrimary = false,
+                Code = NullIfEmpty(request.SecondaryDiagnosisCode),
+                Description = string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
+                    ? (request.SecondaryDiagnosisCode ?? "Diagnosis")
+                    : request.SecondaryDiagnosis.Trim()
+            });
+        }
+
         if (!string.IsNullOrWhiteSpace(request.ClinicalNote))
         {
             visit.Notes.Add(new ClinicalNote
