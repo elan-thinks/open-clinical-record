@@ -620,50 +620,54 @@ export function PatientChartPage() {
       )}
 
       {tab === 'vitals' && (
-        <div className="panel">
-          <div className="panel-title">Record vitals</div>
-          <form onSubmit={onSaveVitals}>
-            <div className="form-grid">
-              <div className="field">
-                <label className="label">Blood pressure</label>
-                <input className="input" value={bp} onChange={(e) => setBp(e.target.value)} placeholder="120/80" disabled={isDeceased} />
+        <>
+          <div className="panel">
+            <div className="panel-title">Record vitals</div>
+            <form onSubmit={onSaveVitals}>
+              <div className="form-grid">
+                <div className="field"><label className="label">Blood pressure</label><input className="input" value={bp} onChange={(e) => setBp(e.target.value)} placeholder="120/80" disabled={isDeceased} /></div>
+                <div className="field"><label className="label">Pulse</label><input className="input" value={pulse} onChange={(e) => setPulse(e.target.value)} disabled={isDeceased} /></div>
+                <div className="field"><label className="label">Temp (°C)</label><input className="input" value={temp} onChange={(e) => setTemp(e.target.value)} disabled={isDeceased} /></div>
+                <div className="field"><label className="label">SpO2 %</label><input className="input" value={spo2} onChange={(e) => setSpo2(e.target.value)} disabled={isDeceased} /></div>
+                <div className="field"><label className="label">Weight (kg)</label><input className="input" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} disabled={isDeceased} /></div>
+                <div className="field"><label className="label">Height (cm)</label><input className="input" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} disabled={isDeceased} /></div>
+                <div className="field"><label className="label">Respiratory rate</label><input className="input" value={respRate} onChange={(e) => setRespRate(e.target.value)} disabled={isDeceased} /></div>
+                {bmi && <div className="field"><label className="label">BMI</label><div className="val">{bmi}</div></div>}
               </div>
-              <div className="field">
-                <label className="label">Pulse</label>
-                <input className="input" value={pulse} onChange={(e) => setPulse(e.target.value)} disabled={isDeceased} />
+              <button type="submit" className="btn-primary" disabled={saving || isDeceased}>Save vitals</button>
+            </form>
+          </div>
+
+          <div className="panel">
+            <div className="panel-head">
+              <div>
+                <div className="panel-title">Recorded vital signs</div>
+                <div className="muted">Vitals are attached to the corresponding clinical encounter.</div>
               </div>
-              <div className="field">
-                <label className="label">Temp (°C)</label>
-                <input className="input" value={temp} onChange={(e) => setTemp(e.target.value)} disabled={isDeceased} />
-              </div>
-              <div className="field">
-                <label className="label">SpO2 %</label>
-                <input className="input" value={spo2} onChange={(e) => setSpo2(e.target.value)} disabled={isDeceased} />
-              </div>
-              <div className="field">
-                <label className="label">Weight (kg)</label>
-                <input className="input" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} disabled={isDeceased} />
-              </div>
-              <div className="field">
-                <label className="label">Height (cm)</label>
-                <input className="input" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} disabled={isDeceased} />
-              </div>
-              <div className="field">
-                <label className="label">Respiratory rate</label>
-                <input className="input" value={respRate} onChange={(e) => setRespRate(e.target.value)} disabled={isDeceased} />
-              </div>
-              {bmi && (
-                <div className="field">
-                  <label className="label">BMI</label>
-                  <div className="val">{bmi}</div>
-                </div>
-              )}
             </div>
-            <button type="submit" className="btn-primary" disabled={saving || isDeceased}>
-              Save vitals
-            </button>
-          </form>
-        </div>
+            {chart.visits.filter((v) => v.vitalSigns).length === 0 ? (
+              <div className="empty">No vital signs recorded yet.</div>
+            ) : (
+              <div className="list-rows">
+                {chart.visits.filter((v) => v.vitalSigns).map((v) => {
+                  const s = v.vitalSigns!;
+                  return (
+                    <div key={s.id} className="list-row">
+                      <div>
+                        <div><strong>{fmtDate(s.recordedAt)}</strong> · {v.visitType} · {v.status}</div>
+                        <div className="muted">{s.recordedByName ?? 'Clinical staff'}</div>
+                      </div>
+                      <div className="muted" style={{ textAlign: 'right' }}>
+                        <div>BP {s.bloodPressure ?? '—'} · Pulse {s.pulse ?? '—'} · Temp {s.temperatureC ?? '—'}°C · SpO₂ {s.spo2 ?? '—'}%</div>
+                        <div>RR {s.respiratoryRate ?? '—'} · Weight {s.weightKg ?? '—'} kg · Height {s.heightCm ?? '—'} cm</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {tab === 'visits' && (
@@ -781,16 +785,6 @@ export function PatientChartPage() {
             })();
           }}
         />
-      )}
-
-      {tab === 'consultation' && (
-        <div className="panel">
-          <div className="panel-title">Consultation</div>
-          <p className="muted">Use Visit history → + New consultation, or record vitals on the Vital signs tab.</p>
-          <button type="button" className="btn-primary" onClick={() => selectTab('visits')}>
-            Open visit history
-          </button>
-        </div>
       )}
 
       <ConfirmDialog
