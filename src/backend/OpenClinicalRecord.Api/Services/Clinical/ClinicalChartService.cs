@@ -284,8 +284,8 @@ public sealed class ClinicalChartService : IClinicalChartService
     {
         var visit = await _db.ClinicalVisits
             .Include(v => v.VitalSigns)
-            .Include(v => v.Diagnoses)
             .Include(v => v.Notes)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(v => v.Id == visitId && v.PatientId == patientId, ct);
 
         if (visit is null)
@@ -336,16 +336,55 @@ public sealed class ClinicalChartService : IClinicalChartService
         if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
             || !string.IsNullOrWhiteSpace(request.PrimaryDiagnosisCode))
         {
-            var primary = visit.Diagnoses.FirstOrDefault(d => d.IsPrimary);
+            var primary = await _db.Diagnoses
+                .FirstOrDefaultAsync(d => d.VisitId == visit.Id && d.IsPrimary, ct);
+
             if (primary is null)
             {
-                primary = new Diagnosis { VisitId = visit.Id, IsPrimary = true };
-                visit.Diagnoses.Add(primary);
+                _db.Diagnoses.Add(new Diagnosis
+                {
+                    VisitId = visit.Id,
+                    IsPrimary = true,
+                    Code = NullIfEmpty(request.PrimaryDiagnosisCode),
+                    Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
+                        ? (request.PrimaryDiagnosisCode ?? "Diagnosis")
+                        : request.PrimaryDiagnosis.Trim()
+                });
             }
-            primary.Code = NullIfEmpty(request.PrimaryDiagnosisCode) ?? primary.Code;
-            primary.Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
-                ? (string.IsNullOrEmpty(primary.Description) ? (request.PrimaryDiagnosisCode ?? "Diagnosis") : primary.Description)
-                : request.PrimaryDiagnosis.Trim();
+            else
+            {
+                primary.Code = NullIfEmpty(request.PrimaryDiagnosisCode) ?? primary.Code;
+                primary.Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
+                    ? (string.IsNullOrEmpty(primary.Description) ? (request.PrimaryDiagnosisCode ?? "Diagnosis") : primary.Description)
+                    : request.PrimaryDiagnosis.Trim();
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
+            || !string.IsNullOrWhiteSpace(request.SecondaryDiagnosisCode))
+        {
+            var secondary = await _db.Diagnoses
+                .FirstOrDefaultAsync(d => d.VisitId == visit.Id && !d.IsPrimary, ct);
+
+            if (secondary is null)
+            {
+                _db.Diagnoses.Add(new Diagnosis
+                {
+                    VisitId = visit.Id,
+                    IsPrimary = false,
+                    Code = NullIfEmpty(request.SecondaryDiagnosisCode),
+                    Description = string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
+                        ? (request.SecondaryDiagnosisCode ?? "Diagnosis")
+                        : request.SecondaryDiagnosis.Trim()
+                });
+            }
+            else
+            {
+                secondary.Code = NullIfEmpty(request.SecondaryDiagnosisCode) ?? secondary.Code;
+                secondary.Description = string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
+                    ? (string.IsNullOrEmpty(secondary.Description) ? (request.SecondaryDiagnosisCode ?? "Diagnosis") : secondary.Description)
+                    : request.SecondaryDiagnosis.Trim();
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(request.ClinicalNote))
