@@ -33,7 +33,7 @@
 1. **DbContext is not thread-safe** — do not `Task.WhenAll` multiple queries on one scoped context.
 2. **Appointment slot conflict** is check-then-insert (race possible under concurrent book).
 3. **Clinical entities** lack `RowVersion` / optimistic concurrency.
-4. **Consultation / DocumentVisit** path needs dedicated automated tests.
+4. **Manual E2E matrix** still needs a full pass on real PostgreSQL.
 
 ---
 
@@ -42,14 +42,16 @@
 ### A. Functional testing
 
 - [x] Document functional matrix (this file)
-- [ ] `dotnet test` green on developer machine
+- [x] CI backend suite green on main (includes ClinicalDocumentationTests)
 - [x] Add `ClinicalDocumentationTests` (create visit, document draft, reject finalized overwrite)
 - [ ] Manual E2E: register → book → check-in → vitals → consult → second visit
 - [ ] Manual role matrix (desk / nurse / doctor / admin)
 
 ### B. Bug fixes
 
-- [x] Prior: DocumentVisit hardening + frontend fallback (earlier commits)
+- [x] DocumentVisit hardening (InMemory-safe; no dual-attach)
+- [x] **API error hardening:** never append `InnerException` / provider messages to client responses
+- [x] **HTTP mapping:** infrastructure failures use `ServiceErrorKind.Internal` → HTTP 500 (not 400 Validation)
 - [ ] Empty Draft visit cleanup policy (defer UX if time-boxed)
 
 ### C. Refactor / architecture
@@ -57,6 +59,7 @@
 - [x] Dashboard: project `AppointmentDto` in query (no full entity materialization)
 - [x] Appointment list: Select projection where practical
 - [x] DashboardController → IDashboardService (already on main)
+- [x] PatientsController + ClinicalChartController map `Internal` → 500
 
 ### D. Query optimization
 
@@ -90,8 +93,9 @@
 1. Automated tests pass (`dotnet test tests/backend/...`).
 2. Hot-path list/dashboard queries use projections + AsNoTracking.
 3. DocumentVisit / longitudinal tests cover the consultation path.
-4. Manual matrix F1–F7 executed at least once on real Postgres.
-5. Short notes in this file of what changed.
+4. Client-facing errors are sanitized; infrastructure failures return 500.
+5. Manual matrix F1–F7 executed at least once on real Postgres.
+6. Short notes in this file of what changed.
 
 ---
 
@@ -103,3 +107,4 @@
 | 2026-09-26 | **Queries:** dashboard schedule projected to `AppointmentDto` in SQL; clinic-local week bound |
 | 2026-09-26 | **Queries:** appointment list uses `Select` projection (no full graph load) |
 | 2026-09-26 | **Tests:** `ClinicalDocumentationTests` — document draft, reject Final edit, dashboard stats |
+| 2026-09-26 | **API safety:** Patient / Appointment / DocumentVisit catch blocks no longer leak SQL; `ServiceErrorKind.Internal` → HTTP 500 |
