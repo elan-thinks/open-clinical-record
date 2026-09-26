@@ -16,7 +16,7 @@ public interface IClinicalChartService
     Task<ServiceResult<VisitDto>> DocumentVisitAsync(Guid patientId, Guid visitId, DocumentVisitRequest request, ActorContext actor, CancellationToken ct);
 }
 
-public sealed class ClinicalChartService : IClinicalChartService
+public sealed partial class ClinicalChartService : IClinicalChartService
 {
     private readonly AppDbContext _db;
 
@@ -100,7 +100,182 @@ public sealed class ClinicalChartService : IClinicalChartService
         return ServiceResult<VisitDto>.Ok(MapVisit(visit));
     }
 
-    // NOTE: remainder continues in same push - truncated intentionally for tool limits
-    public async Task<ServiceResult<AllergyDto>> AddAllergyAsync(Guid patientId, CreateAllergyRequest request, CancellationToken ct)
-        => throw new NotImplementedException("incomplete push");
+    public async Task<ServiceResult<AllergyDto>> AddAllergyAsync(
+        Guid patientId, CreateAllergyRequest request, CancellationToken ct)
+    {
+        var patient = await GetPatientAsync(patientId, ct);
+        if (patient is null)
+            return ServiceResult<AllergyDto>.Fail("Patient not found.", ServiceErrorKind.NotFound);
+        if (IsDeceased(patient))
+            return ServiceResult<AllergyDto>.Fail(
+                "Cannot modify clinical data for a deceased patient.", ServiceErrorKind.Validation);
+
+        var entity = new PatientAllergy
+        {
+            PatientId = patientId,
+            Substance = request.Substance.Trim(),
+            Reaction = string.IsNullOrWhiteSpace(request.Reaction) ? null : request.Reaction.Trim(),
+            Severity = string.IsNullOrWhiteSpace(request.Severity) ? "Unknown" : request.Severity.Trim(),
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        _db.PatientAllergies.Add(entity);
+        await _db.SaveChangesAsync(ct);
+        return ServiceResult<AllergyDto>.Ok(new AllergyDto
+        {
+            Id = entity.Id,
+            Substance = entity.Substance,
+            Reaction = entity.Reaction,
+            Severity = entity.Severity,
+            CreatedAt = entity.CreatedAt
+        });
+    }
+
+    public async Task<ServiceResult<HistoryItemDto>> AddHistoryAsync(
+        Guid patientId, CreateHistoryItemRequest request, CancellationToken ct)
+    {
+        var patient = await GetPatientAsync(patientId, ct);
+        if (patient is null)
+            return ServiceResult<HistoryItemDto>.Fail("Patient not found.", ServiceErrorKind.NotFound);
+        if (IsDeceased(patient))
+            return ServiceResult<HistoryItemDto>.Fail(
+                "Cannot modify clinical data for a deceased patient.", ServiceErrorKind.Validation);
+
+        var entity = new MedicalHistoryItem
+        {
+            PatientId = patientId,
+            Category = string.IsNullOrWhiteSpace(request.Category) ? "Condition" : request.Category.Trim(),
+            Description = request.Description.Trim(),
+            OnsetDate = request.OnsetDate,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        _db.MedicalHistoryItems.Add(entity);
+        await _db.SaveChangesAsync(ct);
+        return ServiceResult<HistoryItemDto>.Ok(new HistoryItemDto
+        {
+            Id = entity.Id,
+            Category = entity.Category,
+            Description = entity.Description,
+            OnsetDate = entity.OnsetDate,
+            IsActive = entity.IsActive,
+            CreatedAt = entity.CreatedAt
+        });
+    }
+
+    public async Task<ServiceResult<VisitDto>> CreateVisitAsync(
+        Guid patientId, CreateVisitRequest request, ActorContext actor, CancellationToken ct)
+    {
+        var patient = await GetPatientAsync(patientId, ct);
+        if (patient is null)
+            return ServiceResult<VisitDto>.Fail("Patient not found.", ServiceErrorKind.NotFound);
+        if (IsDeceased(patient))
+            return ServiceResult<VisitDto>.Fail(
+                "Cannot add clinical documentation for a deceased patient.", ServiceErrorKind.Validation);
+
+        if (request.AppointmentId.HasValue)
+        {
+            var apptOk = await _db.Appointments.AnyAsync(
+                a => a.Id == request.AppointmentId.Value && a.PatientId == patientId, ct);
+            if (!apptOk)
+                return ServiceResult<VisitDto>.Fail(
+                    "Appointment not found for this patient.", ServiceErrorKind.Validation);
+        }
+
+        var visitType = string.IsNullOrWhiteSpace(request.VisitType) ? "Consultation" : request.VisitType.Trim();
+        var status = NormalizeVisitStatus(request.Status, visitType);
+
+        var visit = new ClinicalVisit
+        {
+            PatientId = patientId,
+            AppointmentId = request.AppointmentId,
+            VisitDate = DateTimeOffset.UtcNow,
+            VisitType = visitType,
+            Status = status,
+            EpisodeLabel = NullIfEmpty(request.EpisodeLabel),
+            Location = NullIfEmpty(request.Location),
+            Department = NullIfEmpty(request.Department),
+            ChiefComplaint = NullIfEmpty(request.ChiefComplaint),
+            Plan = NullIfEmpty(request.Plan),
+            Instructions = NullIfEmpty(request.Instructions),
+            ClinicianUserId = actor.UserId,
+            ClinicianName = actor.DisplayName,
+            CheckInAt = DateTimeOffset.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        if (HasAnyVitals(request))
+        {
+            visit.VitalSigns = new VitalSigns
+            {
+                BloodPressure = NullIfEmpty(request.BloodPressure),
+                Pulse = request.Pulse,
+                TemperatureC = request.TemperatureC,
+                RespiratoryRate = request.RespiratoryRate,
+                Spo2 = request.Spo2,
+                WeightKg = request.WeightKg,
+                HeightCm = request.HeightCm,
+                RecordedByUserId = actor.UserId,
+                RecordedByName = actor.DisplayName,
+                RecordedAt = DateTimeOffset.UtcNow
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
+            || !string.IsNullOrWhiteSpace(request.PrimaryDiagnosisCode))
+        {
+            visit.Diagnoses.Add(new Diagnosis
+            {
+                IsPrimary = true,
+                Code = NullIfEmpty(request.PrimaryDiagnosisCode),
+                Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
+                    ? (request.PrimaryDiagnosisCode ?? "Diagnosis")
+                    : request.PrimaryDiagnosis.Trim()
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
+            || !string.IsNullOrWhiteSpace(request.SecondaryDiagnosisCode))
+        {
+            visit.Diagnoses.Add(new Diagnosis
+            {
+                IsPrimary = false,
+                Code = NullIfEmpty(request.SecondaryDiagnosisCode),
+                Description = string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
+                    ? (request.SecondaryDiagnosisCode ?? "Diagnosis")
+                    : request.SecondaryDiagnosis.Trim()
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ClinicalNote))
+        {
+            visit.Notes.Add(new ClinicalNote
+            {
+                NoteType = "Progress",
+                Content = request.ClinicalNote.Trim(),
+                AuthorUserId = actor.UserId,
+                AuthorName = actor.DisplayName,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+        }
+
+        if (string.Equals(status, "Final", StringComparison.OrdinalIgnoreCase))
+        {
+            visit.FinalizedAt = DateTimeOffset.UtcNow;
+            visit.FinalizedByUserId = actor.UserId;
+            visit.FinalizedByName = actor.DisplayName;
+            visit.CheckOutAt = DateTimeOffset.UtcNow;
+        }
+
+        _db.ClinicalVisits.Add(visit);
+        await _db.SaveChangesAsync(ct);
+
+        var loaded = await _db.ClinicalVisits.AsNoTracking()
+            .Include(v => v.VitalSigns)
+            .Include(v => v.Diagnoses)
+            .Include(v => v.Notes)
+            .AsSplitQuery()
+            .FirstAsync(v => v.Id == visit.Id, ct);
+
+        return ServiceResult<VisitDto>.Ok(MapVisit(loaded));
+    }
 }
