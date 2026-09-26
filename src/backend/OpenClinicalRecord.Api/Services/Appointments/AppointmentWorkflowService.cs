@@ -116,11 +116,11 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
 
             return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Ok(events);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return ServiceResult<IReadOnlyList<AppointmentEventDto>>.Fail(
-                "Could not load appointment history. " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
+                "Could not load appointment history.",
+                ServiceErrorKind.Internal);
         }
     }
 
@@ -214,12 +214,12 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             await _db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await tx.RollbackAsync(ct);
             return ServiceResult<AppointmentDto>.Fail(
-                "Could not save appointment. " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
+                "Could not save appointment.",
+                ServiceErrorKind.Internal);
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt, patient));
@@ -302,11 +302,11 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return ServiceResult<AppointmentDto>.Fail(
-                "Could not update appointment. " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
+                "Could not update appointment.",
+                ServiceErrorKind.Internal);
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt));
@@ -410,11 +410,11 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return ServiceResult<AppointmentDto>.Fail(
-                "Could not reschedule appointment. " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
+                "Could not reschedule appointment.",
+                ServiceErrorKind.Internal);
         }
 
         return ServiceResult<AppointmentDto>.Ok(Map(appt));
