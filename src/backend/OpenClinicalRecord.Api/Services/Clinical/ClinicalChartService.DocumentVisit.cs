@@ -156,11 +156,12 @@ public sealed partial class ClinicalChartService
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex)
+        catch (DbUpdateException)
         {
+            // Never leak provider/SQL details to the client
             return ServiceResult<VisitDto>.Fail(
-                "Could not save consultation: " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
+                "Could not save consultation.",
+                ServiceErrorKind.Internal);
         }
 
         var loaded = await _db.ClinicalVisits.AsNoTracking()
