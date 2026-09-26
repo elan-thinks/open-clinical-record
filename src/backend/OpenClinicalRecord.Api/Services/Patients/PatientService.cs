@@ -211,7 +211,7 @@ public sealed class PatientService : IPatientService
         {
             return ServiceResult<PatientDto>.Fail(
                 "Death-record table is missing. Restart the API so schema can be created, or run: dotnet ef database update",
-                ServiceErrorKind.Validation);
+                ServiceErrorKind.Internal);
         }
 
         patient.Status = "Deceased";
@@ -260,11 +260,11 @@ public sealed class PatientService : IPatientService
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return ServiceResult<PatientDto>.Fail(
-                "Could not mark patient deceased. " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
+                "Could not mark patient deceased.",
+                ServiceErrorKind.Internal);
         }
 
         return ServiceResult<PatientDto>.Ok(ToDto(patient));
@@ -302,11 +302,11 @@ public sealed class PatientService : IPatientService
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return ServiceResult<PatientDto>.Fail(
-                "Could not clear deceased status. " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
+                "Could not clear deceased status.",
+                ServiceErrorKind.Internal);
         }
 
         return ServiceResult<PatientDto>.Ok(ToDto(patient));
