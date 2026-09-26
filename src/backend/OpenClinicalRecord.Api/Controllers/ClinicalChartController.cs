@@ -103,6 +103,7 @@ public class ClinicalChartController : ControllerBase
             ServiceErrorKind.NotFound => NotFound(new { message = result.Error }),
             ServiceErrorKind.Conflict => Conflict(new { message = result.Error }),
             ServiceErrorKind.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { message = result.Error }),
+            ServiceErrorKind.Internal => StatusCode(StatusCodes.Status500InternalServerError, new { message = result.Error }),
             _ => BadRequest(new { message = result.Error })
         };
     }
