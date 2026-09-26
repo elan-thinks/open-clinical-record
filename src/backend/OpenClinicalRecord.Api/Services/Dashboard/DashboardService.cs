@@ -10,6 +10,10 @@ public interface IDashboardService
     Task<DashboardStatsDto> GetStatsAsync(CancellationToken ct);
 }
 
+/// <summary>
+/// Dashboard aggregates. Queries run sequentially on one scoped DbContext
+/// (EF Core contexts are not thread-safe — do not parallelize with Task.WhenAll).
+/// </summary>
 public sealed class DashboardService : IDashboardService
 {
     private readonly AppDbContext _db;
@@ -21,13 +25,31 @@ public sealed class DashboardService : IDashboardService
         var today = ClinicTime.Today;
         // Week starts Monday in clinic local calendar
         var weekStart = today.AddDays(-((int)today.DayOfWeek + 6) % 7);
-        // Precompute UTC bound so EF translates VisitDate >= constant (no ClinicTime.* in the expression tree)
+        // Precompute UTC bound so EF can translate VisitDate >= constant (no ClinicTime.* in LINQ)
         var weekStartUtc = ClinicTime.StartOfClinicDayUtc(weekStart);
 
-        var todays = await _db.Appointments.AsNoTracking()
-            .Include(a => a.Patient)
+        // Project to DTO in SQL — avoid loading full Appointment + Patient graphs
+        var schedule = await _db.Appointments.AsNoTracking()
             .Where(a => a.AppointmentDate == today)
             .OrderBy(a => a.StartTime)
+            .Select(a => new AppointmentDto
+            {
+                Id = a.Id,
+                PatientId = a.PatientId,
+                PatientName = a.Patient == null
+                    ? ""
+                    : a.Patient.FirstName + " " + a.Patient.LastName,
+                MedicalRecordNumber = a.Patient != null ? a.Patient.MedicalRecordNumber : "",
+                AppointmentDate = a.AppointmentDate,
+                StartTime = a.StartTime,
+                DurationMinutes = a.DurationMinutes,
+                AppointmentType = a.AppointmentType,
+                Status = a.Status,
+                ProviderName = a.ProviderName,
+                Reason = a.Reason,
+                Notes = a.Notes,
+                CreatedAt = a.CreatedAt
+            })
             .ToListAsync(ct);
 
         var activePatients = await _db.Patients.AsNoTracking()
@@ -37,32 +59,17 @@ public sealed class DashboardService : IDashboardService
             .CountAsync(v => v.VisitDate >= weekStartUtc, ct);
 
         var patientsWithAllergies = await _db.PatientAllergies.AsNoTracking()
-            .Select(a => a.PatientId).Distinct().CountAsync(ct);
-
-        var schedule = todays.Select(a => new AppointmentDto
-        {
-            Id = a.Id,
-            PatientId = a.PatientId,
-            PatientName = a.Patient is null ? "" : $"{a.Patient.FirstName} {a.Patient.LastName}",
-            MedicalRecordNumber = a.Patient?.MedicalRecordNumber ?? "",
-            AppointmentDate = a.AppointmentDate,
-            StartTime = a.StartTime,
-            DurationMinutes = a.DurationMinutes,
-            AppointmentType = a.AppointmentType,
-            Status = a.Status,
-            ProviderName = a.ProviderName,
-            Reason = a.Reason,
-            Notes = a.Notes,
-            CreatedAt = a.CreatedAt
-        }).ToList();
+            .Select(a => a.PatientId)
+            .Distinct()
+            .CountAsync(ct);
 
         return new DashboardStatsDto
         {
-            AppointmentsToday = todays.Count,
-            ScheduledCount = todays.Count(a => a.Status == "Scheduled"),
-            WaitingCount = todays.Count(a => a.Status == "Waiting"),
-            CheckedInCount = todays.Count(a => a.Status == "CheckedIn"),
-            InProgressCount = todays.Count(a => a.Status == "InProgress"),
+            AppointmentsToday = schedule.Count,
+            ScheduledCount = schedule.Count(a => a.Status == "Scheduled"),
+            WaitingCount = schedule.Count(a => a.Status == "Waiting"),
+            CheckedInCount = schedule.Count(a => a.Status == "CheckedIn"),
+            InProgressCount = schedule.Count(a => a.Status == "InProgress"),
             ActivePatients = activePatients,
             VisitsThisWeek = visitsWeek,
             PatientsWithAllergies = patientsWithAllergies,
