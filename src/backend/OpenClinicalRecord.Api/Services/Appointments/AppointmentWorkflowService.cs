@@ -47,7 +47,8 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
 
     public async Task<IReadOnlyList<AppointmentDto>> ListAsync(DateOnly? date, string? status, CancellationToken ct)
     {
-        var query = _db.Appointments.AsNoTracking().Include(a => a.Patient).AsQueryable();
+        // Week 7: project in SQL — avoid materializing full Appointment + Patient graphs for list views
+        var query = _db.Appointments.AsNoTracking().AsQueryable();
 
         if (date.HasValue)
             query = query.Where(a => a.AppointmentDate == date.Value);
@@ -55,12 +56,29 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
             query = query.Where(a => a.Status == status);
 
-        var rows = await query
+        return await query
             .OrderBy(a => a.AppointmentDate)
             .ThenBy(a => a.StartTime)
             .Take(200)
+            .Select(a => new AppointmentDto
+            {
+                Id = a.Id,
+                PatientId = a.PatientId,
+                PatientName = a.Patient == null
+                    ? ""
+                    : a.Patient.FirstName + " " + a.Patient.LastName,
+                MedicalRecordNumber = a.Patient != null ? a.Patient.MedicalRecordNumber : "",
+                AppointmentDate = a.AppointmentDate,
+                StartTime = a.StartTime,
+                DurationMinutes = a.DurationMinutes,
+                AppointmentType = a.AppointmentType,
+                Status = a.Status,
+                ProviderName = a.ProviderName,
+                Reason = a.Reason,
+                Notes = a.Notes,
+                CreatedAt = a.CreatedAt
+            })
             .ToListAsync(ct);
-        return rows.Select(a => Map(a)).ToList();
     }
 
     public async Task<ServiceResult<AppointmentDto>> GetAsync(Guid id, CancellationToken ct)
@@ -364,8 +382,8 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         appt.AppointmentDate = request.AppointmentDate;
         appt.StartTime = request.StartTime;
         appt.DurationMinutes = duration;
-        if (!string.IsNullOrWhiteSpace(provider))
-            appt.ProviderName = provider;
+        if (!string.IsNullOrWhiteSpace(provider)
+            ) appt.ProviderName = provider;
         if (string.Equals(fromStatus, "Cancelled", StringComparison.OrdinalIgnoreCase)
             || string.Equals(fromStatus, "NoShow", StringComparison.OrdinalIgnoreCase))
         {
