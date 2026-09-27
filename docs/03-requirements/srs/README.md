@@ -2,10 +2,8 @@
 
 | File | Role |
 |------|------|
-| **SRS.md** | **Canonical Software Requirements Specification v2.0** (use this) |
-| `srs.pdf` | Legacy export — may lag; regenerate from SRS.md if a PDF is required for submission |
-| `srs.tex` | Pointer / notes for LaTeX users |
+| **SRS.md** | Canonical Software Requirements Specification v2.0 |
+| [PDF deliverable](../../08-finalization/deliverables/OCR-SRS-v2.pdf) | Submission PDF |
+| `latex/` under deliverables | LaTeX source used to build the PDF |
 
-Traceability: `../traceability-matrix.md`  
-NFRs: `../non-functional-requirements.md`  
-Domain rules: `../clinical-domain-rules.md`
+Related: [traceability matrix](../traceability-matrix.md), [NFRs](../non-functional-requirements.md), [domain rules](../clinical-domain-rules.md).
