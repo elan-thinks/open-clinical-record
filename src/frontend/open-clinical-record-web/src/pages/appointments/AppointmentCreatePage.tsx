@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient } from '../../services/patientsApi';
 import { ApiError, createAppointment } from '../../services/appointmentsApi';
@@ -41,11 +41,16 @@ function noticeFromError(err: unknown): Notice {
   };
 }
 
+function patientLabel(p: Patient): string {
+  return `${p.firstName} ${p.lastName} — ${p.medicalRecordNumber}`;
+}
+
 export function AppointmentCreatePage() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [patientId, setPatientId] = useState('');
+  const [patientQuery, setPatientQuery] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [slot, setSlot] = useState('09:30');
   const [duration, setDuration] = useState(30);
@@ -60,6 +65,17 @@ export function AppointmentCreatePage() {
       .then(setPatients)
       .catch((err) => setNotice(noticeFromError(err)));
   }, []);
+
+  const filteredPatients = useMemo(() => {
+    const q = patientQuery.trim().toLowerCase();
+    if (!q) return patients;
+    return patients.filter((p) => {
+      const hay = `${p.firstName} ${p.lastName} ${p.medicalRecordNumber} ${p.phone ?? ''} ${p.email ?? ''}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [patients, patientQuery]);
+
+  const selectedPatient = patients.find((p) => p.id === patientId);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -122,13 +138,41 @@ export function AppointmentCreatePage() {
           <div className="section-title">1. Patient</div>
           <div className="form-grid">
             <div className="field span-2">
+              <label className="label" htmlFor="patient-search">Search patient</label>
+              <input
+                id="patient-search"
+                className="input"
+                type="search"
+                placeholder="Name, MRN, or phone…"
+                value={patientQuery}
+                onChange={(e) => setPatientQuery(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+            <div className="field span-2">
               <label className="label">Patient <span className="req">*</span></label>
-              <select className="select" value={patientId} onChange={(e) => setPatientId(e.target.value)} required>
-                <option value="">Select patient...</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.firstName} {p.lastName} — {p.medicalRecordNumber}</option>
+              <select
+                className="select"
+                value={patientId}
+                onChange={(e) => setPatientId(e.target.value)}
+                required
+              >
+                <option value="">
+                  {filteredPatients.length === 0
+                    ? 'No patients match search…'
+                    : `Select patient… (${filteredPatients.length})`}
+                </option>
+                {filteredPatients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {patientLabel(p)}
+                  </option>
                 ))}
               </select>
+              {selectedPatient && (
+                <p className="hint" style={{ marginTop: 6 }}>
+                  Selected: <strong>{patientLabel(selectedPatient)}</strong>
+                </p>
+              )}
             </div>
           </div>
           <p className="hint">Patient must already be registered. Use Patients → Register for new records.</p>
