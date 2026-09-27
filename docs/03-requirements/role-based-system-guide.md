@@ -31,13 +31,99 @@ Hiding a button is not security. Every protected API operation must independentl
 
 ---
 
-For the full role UX sections (Doctor, Nurse, Receptionist, Admin dashboards, matrices, and flows), this document previously contained detailed design guidance that remains valid. Prefer the **access-control-report** for live API permissions and **clinical-domain-rules** for appointment/visit status transitions.
+## 2. Shared Application Shell
 
-## Quick links
+All authenticated users should use a consistent application shell so the product feels like one system rather than four unrelated applications.
 
-| Doc | Use |
-|-----|-----|
-| `docs/README.md` | Index of current vs historical docs |
-| `docs/05-engineering/access-control-report.md` | Seed users + endpoint matrix |
-| `docs/03-requirements/clinical-domain-rules.md` | Statuses and domain rules |
-| `docs/clinical-visit-model.md` | Longitudinal visit model |
+### Shared shell elements
+
+- Application logo/name: **Open Clinical Record**
+- Role-aware sidebar navigation
+- Global patient search where permitted
+- Current user name and role
+- Logout
+- Responsive content area
+
+### Shared UX behavior
+
+- Clearly show the current role in the user profile/menu.
+- Preserve patient context when moving between related patient screens.
+- Do not expose navigation items for functions the role cannot access.
+- If a user reaches a protected route directly, the backend must still reject unauthorized requests.
+- Destructive or sensitive actions require clear confirmation.
+
+---
+
+## 3. Clinician / Doctor
+
+**Purpose:** Review patient clinical context and perform authorized chart activities.
+
+**Typical nav:** Dashboard, Patients, Medical Chart, Medical Records, Appointments.
+
+**Can:** search/open patients, view chart, clinical writes (visits, allergies, history per API), mark/clear deceased.
+
+**Normally not:** user/role administration as primary work (Admin owns that).
+
+---
+
+## 4. Nurse / Clinical Staff
+
+**Purpose:** Patient preparation, vitals, visit support.
+
+**Typical nav:** Dashboard, Patients, Chart, Appointments, Check-in support.
+
+**Can:** chart writes (ClinicalStaff policy), vitals, visits.
+
+**Cannot:** mark deceased (403).
+
+---
+
+## 5. Receptionist / Front Desk
+
+**Purpose:** Registration, scheduling, arrival.
+
+**Typical nav:** Dashboard, Patients, Register, Appointments, Check-in / Queue.
+
+**Can:** register, book, reschedule, cancel (with reason), check-in, mark deceased.
+
+**Cannot:** clinical visit/allergy writes (403).
+
+---
+
+## 6. System Administrator
+
+**Purpose:** Application security and configuration, not clinical care.
+
+**Typical nav:** Dashboard, Users, Audit, operational Patients/Appointments as needed.
+
+**Can:** user management, audit list, booking and deceased clear per matrix.
+
+Admin is **not** automatically a clinician author for chart content (clinical writes remain Doctor/Nurse).
+
+---
+
+## 7. Permission matrix (product baseline)
+
+Live API enforcement: **`docs/05-engineering/access-control-report.md`**.
+
+| Capability | Doctor | Nurse | Receptionist | Admin |
+|---|:---:|:---:|:---:|:---:|
+| Login | ✓ | ✓ | ✓ | ✓ |
+| Register patient | ✓ | ✓ | ✓ | ✓ |
+| Book appointment | ✓ | ✓ | ✓ | ✓ |
+| Reschedule / cancel | ✓ | ✓ | ✓ | ✓ |
+| Check-in | ✓ | ✓ | ✓ | ✓ |
+| Clinical chart write | ✓ | ✓ | ✗ | ✗ |
+| Mark deceased | ✓ | ✗ | ✓ | ✓ |
+| Clear deceased | ✓ | ✗ | ✗ | ✓ |
+| Audit / users | ✗ | ✗ | ✗ | ✓ |
+
+---
+
+## 8. Login flow
+
+```text
+Login → JWT with role claims → role-aware dashboard → backend enforces every API
+```
+
+Seed accounts and passwords: access-control report.
