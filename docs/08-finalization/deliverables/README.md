@@ -1,18 +1,23 @@
-# Final deliverable documents (LaTeX / PDF)
+# Submission PDFs
 
-Professional PDF packages for internship submission. Rebuild with `pdflatex` (run twice for TOC):
+The three internship submission PDFs are stored as **base64 text** (`.pdf.b64`) so they remain intact on GitHub.
+
+## Get the PDF files
 
 ```bash
-cd docs/08-finalization/deliverables/latex
-pdflatex ocr-srs.tex && pdflatex ocr-srs.tex
-pdflatex ocr-user-manual.tex && pdflatex ocr-user-manual.tex
-pdflatex ocr-technical-documentation.tex && pdflatex ocr-technical-documentation.tex
+cd docs/08-finalization/deliverables
+chmod +x decode-pdfs.sh
+./decode-pdfs.sh
 ```
 
-| Document | LaTeX source | Output PDF (build locally or use submission copies) |
-|----------|--------------|------------------------------------------------------|
-| **Software Requirements Specification v2.0** | `latex/ocr-srs.tex` | OCR-SRS-v2.pdf |
-| **User Manual** | `latex/ocr-user-manual.tex` | OCR-User-Manual.pdf |
-| **Technical Documentation** | `latex/ocr-technical-documentation.tex` | OCR-Technical-Documentation.pdf |
+This creates:
 
-Markdown counterparts remain under `docs/03-requirements/srs/SRS.md`, `docs/08-finalization/user-guide.md`, and `docs/08-finalization/technical-documentation.md`.
+| File | Description |
+|------|-------------|
+| `OCR-SRS-v2.pdf` | Software Requirements Specification v2.0 |
+| `OCR-User-Manual.pdf` | User Manual |
+| `OCR-Technical-Documentation.pdf` | Technical Documentation |
+
+LaTeX sources are in `latex/` if you need to rebuild from source.
+
+> **Why `.b64`?** The GitHub file-write API transports content as UTF-8 text. Raw binary PDFs would be corrupted. Base64 is pure ASCII and decodes to the original PDF.
