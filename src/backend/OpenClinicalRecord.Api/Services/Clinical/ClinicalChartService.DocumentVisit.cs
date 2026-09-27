@@ -8,17 +8,19 @@ namespace OpenClinicalRecord.Api.Services.Clinical;
 
 public sealed partial class ClinicalChartService
 {
-public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
+    /// <summary>
+    /// Document / update a Draft visit. Loads visit WITHOUT navigation includes and uses
+    /// DbSet queries for vitals/diagnoses/notes so EF InMemory does not dual-attach 1:1 rows.
+    /// Finalizing also marks the linked appointment Completed (queue alignment).
+    /// </summary>
+    public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
         Guid patientId, Guid visitId, DocumentVisitRequest request, ActorContext actor, CancellationToken ct)
     {
         if (request is null)
             return ServiceResult<VisitDto>.Fail("Request body is required.", ServiceErrorKind.Validation);
 
+        // No Include — avoids InMemory "entity does not exist in the store" on vitals/dx updates
         var visit = await _db.ClinicalVisits
-            .Include(v => v.VitalSigns)
-            .Include(v => v.Diagnoses)
-            .Include(v => v.Notes)
-            .AsSplitQuery()
             .FirstOrDefaultAsync(v => v.Id == visitId && v.PatientId == patientId, ct);
 
         if (visit is null)
@@ -50,17 +52,19 @@ public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
 
         if (HasAnyVitals(request))
         {
-            // Use navigation only — avoids EF InMemory dual-attach on 1:1 VitalSigns
-            if (visit.VitalSigns is null)
+            var vitals = await _db.VitalSigns.FirstOrDefaultAsync(v => v.VisitId == visitId, ct);
+            if (vitals is null)
             {
-                visit.VitalSigns = new VitalSigns
+                vitals = new VitalSigns
                 {
+                    Id = Guid.NewGuid(),
+                    VisitId = visitId,
                     RecordedByUserId = actor.UserId,
                     RecordedByName = actor.DisplayName,
                     RecordedAt = DateTimeOffset.UtcNow
                 };
+                _db.VitalSigns.Add(vitals);
             }
-            var vitals = visit.VitalSigns;
             if (request.BloodPressure is not null) vitals.BloodPressure = NullIfEmpty(request.BloodPressure);
             if (request.Pulse.HasValue) vitals.Pulse = request.Pulse;
             if (request.TemperatureC.HasValue) vitals.TemperatureC = request.TemperatureC;
@@ -73,15 +77,16 @@ public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
             vitals.RecordedAt = DateTimeOffset.UtcNow;
         }
 
-        // Prefer included collections — separate Diagnoses queries can break EF InMemory when visit is tracked
         if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
             || !string.IsNullOrWhiteSpace(request.PrimaryDiagnosisCode))
         {
-            var primary = visit.Diagnoses.FirstOrDefault(d => d.IsPrimary);
+            var primary = await _db.Diagnoses.FirstOrDefaultAsync(d => d.VisitId == visitId && d.IsPrimary, ct);
             if (primary is null)
             {
-                visit.Diagnoses.Add(new Diagnosis
+                _db.Diagnoses.Add(new Diagnosis
                 {
+                    Id = Guid.NewGuid(),
+                    VisitId = visitId,
                     IsPrimary = true,
                     Code = NullIfEmpty(request.PrimaryDiagnosisCode),
                     Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
@@ -101,11 +106,13 @@ public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
         if (!string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
             || !string.IsNullOrWhiteSpace(request.SecondaryDiagnosisCode))
         {
-            var secondary = visit.Diagnoses.FirstOrDefault(d => !d.IsPrimary);
+            var secondary = await _db.Diagnoses.FirstOrDefaultAsync(d => d.VisitId == visitId && !d.IsPrimary, ct);
             if (secondary is null)
             {
-                visit.Diagnoses.Add(new Diagnosis
+                _db.Diagnoses.Add(new Diagnosis
                 {
+                    Id = Guid.NewGuid(),
+                    VisitId = visitId,
                     IsPrimary = false,
                     Code = NullIfEmpty(request.SecondaryDiagnosisCode),
                     Description = string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
@@ -124,8 +131,10 @@ public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
 
         if (!string.IsNullOrWhiteSpace(request.ClinicalNote))
         {
-            visit.Notes.Add(new ClinicalNote
+            _db.ClinicalNotes.Add(new ClinicalNote
             {
+                Id = Guid.NewGuid(),
+                VisitId = visitId,
                 NoteType = string.IsNullOrWhiteSpace(request.NoteType) ? "Progress" : request.NoteType.Trim(),
                 Content = request.ClinicalNote.Trim(),
                 AuthorUserId = actor.UserId,
@@ -145,7 +154,6 @@ public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
                 visit.FinalizedByName = actor.DisplayName;
                 visit.CheckOutAt ??= DateTimeOffset.UtcNow;
 
-                // Align queue: mark linked appointment Completed so it leaves active check-in queue
                 if (visit.AppointmentId is Guid apptId)
                 {
                     var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == apptId, ct);
@@ -198,15 +206,12 @@ public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
         await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.Id == patientId, ct);
 
     private static bool IsDeceased(Patient p) =>
-        string.Equals(p.Status, "Deceased", StringComparison.OrdinalIgnoreCase);
+        p.IsDeceased || p.DateOfDeath.HasValue;
 
-    private static string NormalizeVisitStatus(string? status, string visitType)
+    private static string NormalizeVisitStatus(string status, string? visitType)
     {
-        if (string.IsNullOrWhiteSpace(status))
-            return "Draft";
-        var s = status.Trim();
-        if (string.Equals(s, "Final", StringComparison.OrdinalIgnoreCase)) return "Final";
-        if (string.Equals(s, "Cancelled", StringComparison.OrdinalIgnoreCase)) return "Cancelled";
+        if (string.Equals(status, "Final", StringComparison.OrdinalIgnoreCase)) return "Final";
+        if (string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase)) return "Cancelled";
         return "Draft";
     }
 
