@@ -1,0 +1,302 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{setspace}
+\usepackage{microtype}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!50!black,
+  pdftitle={Open Clinical Record --- Software Requirements Specification v2.0},
+  pdfauthor={Open Clinical Record Internship Project}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Open Clinical Record}
+\fancyhead[R]{\small SRS v2.0}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\large\bfseries\color{blue!40!black}}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=1.4em,itemsep=0.2em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0.2em}
+\onehalfspacing
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+{\LARGE\bfseries Open Clinical Record}\\[0.4cm]
+{\Large Software Requirements Specification}\\[1.2cm]
+{\large Version 2.0 --- Week 8 Finalization Baseline}\\[0.6cm]
+{\large 27 September 2026}\\[1.5cm]
+\begin{tabular}{ll}
+\toprule
+\textbf{Product} & Open Clinical Record (OCR) outpatient EMR \\
+\textbf{Document type} & Software Requirements Specification \\
+\textbf{Status} & Canonical requirements baseline \\
+\textbf{Repository} & \texttt{elan-thinks/open-clinical-record} \\
+\textbf{Branch} & \texttt{main} \\
+\bottomrule
+\end{tabular}
+\vfill
+{\small Internship MVP --- Patient Management, Patient Chart, Appointment Management}\\[0.3cm]
+{\small This document prevails over earlier drafts where they conflict.}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+\subsection{Purpose}
+This Software Requirements Specification (SRS) defines the functional and non-functional requirements for the Open Clinical Record internship Minimum Viable Product (MVP). It is the authoritative requirements baseline for design validation, implementation, testing, demonstration, and formal evaluation.
+
+Where earlier requirement drafts, research notes, or UI mocks conflict with this document, \textbf{this version prevails}.
+
+\subsection{Scope}
+Open Clinical Record is a focused \textbf{outpatient} electronic medical record supporting three business modules only:
+
+\begin{enumerate}
+  \item \textbf{Patient Management} --- registration, unique identification, search, demographic updates, and patient status (including deceased policy).
+  \item \textbf{Patient Chart} --- longitudinal clinical context: allergies, medical history items, and \textbf{per-visit} documentation (vital signs, diagnoses, clinical notes), without overwriting prior attendances.
+  \item \textbf{Appointment Management} --- scheduling, rescheduling, cancellation with reason, status transitions, check-in/queue, and appointment event history.
+\end{enumerate}
+
+The product is \textbf{not} a full hospital EMR. Explicitly excluded: pharmacy dispensing, laboratory and imaging order management, billing and insurance, patient portal and native mobile apps, FHIR/HL7 external exchange, multi-facility enterprise scheduling, and AI clinical decision support.
+
+\subsection{Definitions}
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}p{3.2cm}X@{}}
+\toprule
+Term & Definition \\
+\midrule
+MVP & Minimum Viable Product for the internship deliverable \\
+Patient & Registered person with a unique medical record number (MRN) \\
+Appointment & Scheduled (or walk-in typed) attendance slot with status lifecycle \\
+Visit / ClinicalVisit & One facility attendance record holding clinical content \\
+Draft & Editable visit status \\
+Final & Closed visit; clinical content is immutable \\
+JWT & JSON Web Token used for API authentication \\
+RBAC & Role-based access control enforced at the API \\
+\bottomrule
+\end{tabularx}
+
+\subsection{References}
+Project scope, clinical domain rules, non-functional requirements, traceability matrix, access-control report, clinical visit model, technical documentation, and user guide in the project repository under \texttt{docs/}.
+
+\subsection{Document overview}
+Section~2 describes the product and users. Section~3 states functional requirements. Section~4 summarises non-functional requirements. Section~5 covers interfaces and data. Section~6 defines verification and acceptance. Section~7 lists exclusions.
+
+\section{Overall Description}
+
+\subsection{Product perspective}
+OCR is a standalone web application with a clear three-tier structure:
+
+\begin{verbatim}
+  Browser (React SPA + TypeScript)
+           |  REST / JSON + JWT
+  ASP.NET Core 8 Web API
+           |  EF Core 8 + Npgsql
+  PostgreSQL
+\end{verbatim}
+
+Controllers remain thin; application services encapsulate workflows (patients, appointments, clinical chart, dashboard, audit).
+
+\subsection{Product functions}
+\begin{itemize}
+  \item Authenticate users and authorize operations by role at the API boundary.
+  \item Register and manage patients, including deceased mark/clear policy.
+  \item Maintain a longitudinal chart and per-visit clinical documentation.
+  \item Schedule and manage appointments; check in patients; preserve history.
+  \item Provide role-aware dashboards and basic operational statistics.
+  \item Audit important actions for administrative review.
+\end{itemize}
+
+\subsection{User characteristics --- application roles}
+The MVP defines \textbf{exactly four} application roles:
+
+\begin{tabularx}{\textwidth}{@{}p{3.4cm}p{2.4cm}X@{}}
+\toprule
+\textbf{Role} & \textbf{Claim} & \textbf{Primary responsibilities} \\
+\midrule
+Receptionist / Front Desk & \texttt{Receptionist} & Registration, booking, check-in, cancel/reschedule, mark deceased \\
+Nurse / Clinical Staff & \texttt{Nurse} & Chart support, vitals, visit documentation (write) \\
+Clinician / Doctor & \texttt{Doctor} & Chart review, clinical documentation, mark/clear deceased \\
+System Administrator & \texttt{Admin} & Users, audit, configuration; operational access without default clinical authorship \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.4em}
+\noindent\textbf{Security principle:} UI visibility is not security. The API shall enforce authorization independently of the client.
+
+\subsection{Constraints}
+\begin{itemize}
+  \item Internship time-box limits scope to the three modules above.
+  \item PostgreSQL is the system of record; EF Core migrations are schema authority.
+  \item Development training credentials must never be used in production.
+  \item International interoperability standards (e.g.\ FHIR) are not MVP acceptance criteria.
+\end{itemize}
+
+\subsection{Assumptions and dependencies}
+Users have a modern browser and network access to the API. PostgreSQL is available for non-test deployments. Appointment dates are treated as clinic-local calendar dates.
+
+\section{Functional Requirements}
+
+Priority \textbf{M} means mandatory for MVP acceptance. Identifiers align with the requirements traceability matrix.
+
+\subsection{Patient management (FR-PM)}
+
+\begin{longtable}{@{}p{2.2cm}p{11.2cm}c@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\midrule
+\endhead
+FR-PM-001 & Authorized users shall register a new patient with required demographics. & M \\
+FR-PM-002 & The system shall assign a unique medical record number to each patient. & M \\
+FR-PM-003 & Authenticated staff shall search patients by name and/or MRN. & M \\
+FR-PM-004 & Authorized users shall view a patient profile. & M \\
+FR-PM-005 & Authorized users shall update permitted demographic and contact fields. & M \\
+FR-PM-006 & The system should support duplicate awareness (e.g.\ search-before-create). & M \\
+FR-PM-007 & The system shall maintain patient status: Active, Inactive, or Deceased. & M \\
+FR-PM-008 & Marking a patient deceased (with provenance) shall be allowed for Admin, Doctor, and Receptionist --- not Nurse. & M \\
+FR-PM-009 & Clearing deceased status shall be allowed for Admin and Doctor only. & M \\
+FR-PM-010 & The system shall reject new appointments for patients with status Deceased. & M \\
+\bottomrule
+\end{longtable}
+
+\subsection{Patient chart and visits (FR-PC)}
+
+\begin{longtable}{@{}p{2.2cm}p{11.2cm}c@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\midrule
+\endhead
+FR-PC-001 & Authorized users shall open a patient chart in single-patient context. & M \\
+FR-PC-002 & The system shall display a chart summary (identity, status, key alerts). & M \\
+FR-PC-003 & Doctor and Nurse shall record and view allergies. & M \\
+FR-PC-004 & Doctor and Nurse shall record and view medical history items. & M \\
+FR-PC-005 & Clinical attendance shall be represented as a ClinicalVisit linked to the patient. & M \\
+FR-PC-006 & Visit statuses shall include Draft, Final, and Cancelled. & M \\
+FR-PC-007 & New visits shall default to Draft and remain editable until Final. & M \\
+FR-PC-008 & Final visits shall be immutable (no further clinical documentation edits). & M \\
+FR-PC-009 & Clinical staff shall record vital signs on a visit. & M \\
+FR-PC-010 & Clinical staff shall record diagnoses (primary/secondary) on a visit. & M \\
+FR-PC-011 & Clinical staff shall record clinical notes and plan/instructions on a visit. & M \\
+FR-PC-012 & Prior visits shall never be overwritten; a return creates a new visit. & M \\
+FR-PC-013 & Visit history shall be displayed chronologically on the chart. & M \\
+FR-PC-014 & Receptionist shall not create or edit clinical visit content (API forbidden). & M \\
+FR-PC-015 & Finalizing a visit linked to an appointment shall set that appointment to Completed. & M \\
+\bottomrule
+\end{longtable}
+
+\subsection{Appointments (FR-AP)}
+
+\begin{longtable}{@{}p{2.2cm}p{11.2cm}c@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\midrule
+\endhead
+FR-AP-001 & Authorized staff shall create an appointment for an existing non-deceased patient. & M \\
+FR-AP-002 & Appointments shall be viewable for a selected date (list). & M \\
+FR-AP-003 & A calendar view (day/week) of appointments shall be supported. & M \\
+FR-AP-004 & Appointment types shall be supported as labels (Consultation, Follow-up, Walk-in, etc.). & M \\
+FR-AP-005 & Reschedule shall be allowed for Scheduled, Waiting, Cancelled, NoShow; blocked for CheckedIn, InProgress, Completed. & M \\
+FR-AP-006 & Cancel shall require a non-empty reason. & M \\
+FR-AP-007 & Statuses Scheduled, Waiting, CheckedIn, InProgress, Completed, Cancelled, NoShow shall have enforced transitions. & M \\
+FR-AP-008 & Check-in shall transition to CheckedIn and create a Draft visit when applicable. & M \\
+FR-AP-009 & Meaningful changes shall record AppointmentEvent history. & M \\
+FR-AP-010 & The active check-in queue shall exclude Completed, Cancelled, and NoShow. & M \\
+FR-AP-011 & Booking shall be available to Admin, Doctor, Nurse, and Receptionist. & M \\
+\bottomrule
+\end{longtable}
+
+\subsection{Security, validation, and audit}
+
+\begin{longtable}{@{}p{2.2cm}p{11.2cm}c@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\midrule
+\endhead
+FR-SEC-001 & Users shall authenticate before accessing protected resources. & M \\
+FR-SEC-002 & Exactly four application roles shall be enforced as defined above. & M \\
+FR-SEC-003 & Unauthorized operations shall be rejected at the API (401/403). & M \\
+FR-SEC-004 & Important actions shall be auditable with actor and timestamp. & M \\
+FR-SEC-005 & Admin shall be able to list audit events. & M \\
+FR-VAL-001 & Required fields and relationships shall be validated before persistence. & M \\
+FR-VAL-002 & Patient and appointment business status rules shall be enforced. & M \\
+FR-VAL-003 & Error messages shall be clear without leaking sensitive internals. & M \\
+FR-RPT-001 & Dashboard statistics shall be available (e.g.\ today, waiting, checked-in). & M \\
+FR-RPT-002 & A simple reports view based on live stats may be provided (not a BI suite). & M \\
+\bottomrule
+\end{longtable}
+
+\section{Non-Functional Requirements (Summary)}
+
+Detailed NFRs are maintained in \texttt{docs/03-requirements/non-functional-requirements.md}. MVP commitments include:
+
+\begin{itemize}
+  \item \textbf{Security:} backend authorization, hashed passwords, least privilege, no secrets in source control.
+  \item \textbf{Privacy:} minimum necessary access; synthetic data in demonstrations.
+  \item \textbf{Integrity:} unique MRN; consistent relationships; history not silently deleted.
+  \item \textbf{Performance:} common reads typically within approximately 2\,s and writes within approximately 3\,s under normal laboratory load; target of at least ten concurrent authenticated users.
+  \item \textbf{Reliability:} failed operations must not report success; confirmed data preserved.
+  \item \textbf{Usability:} role-aware navigation; visible patient context; distinguishable appointment statuses.
+  \item \textbf{Auditability:} actor and timestamp; audit stream not editable through ordinary workflows.
+  \item \textbf{Maintainability:} service-layer separation; migrations as schema source of truth.
+\end{itemize}
+
+\section{Interfaces and Data}
+
+\subsection{User interfaces}
+Web SPA with role-aware shell. Core screens: Login, Dashboard, Patients, Register, Chart, Appointments (list and calendar), Check-in queue, Profile, Admin audit.
+
+\subsection{Software interfaces}
+REST JSON API under \texttt{/api/*}; PostgreSQL via EF Core~8.
+
+\subsection{Logical data}
+Patient (status, unique MRN); allergies and history items; ClinicalVisit with vital signs, diagnoses, notes; Appointment and AppointmentEvent; PatientDeathRecord; AuditEvent; identity tables for users and roles. \textbf{EF Core migrations} are authoritative; reference SQL under \texttt{docs/05-data/} is secondary.
+
+\section{Verification and Acceptance}
+
+\subsection{Verification methods}
+\begin{itemize}
+  \item Automated API tests: access matrix, appointment transitions, clinical documentation/finalize, longitudinal visits.
+  \item Manual end-to-end checklist under \texttt{docs/09-testing/}.
+  \item Continuous integration: backend tests and frontend typecheck/build on \texttt{main}.
+\end{itemize}
+
+\subsection{MVP acceptance criteria}
+\begin{enumerate}
+  \item Four roles can sign in with role-appropriate navigation.
+  \item A patient can be registered, searched, and opened in the chart.
+  \item An appointment can be booked, checked in, cancelled with reason, and rescheduled under allowed statuses.
+  \item Clinical staff can document a Draft visit and finalize; history shows multiple visits without overwrite.
+  \item Finalizing a visit completes the linked appointment for queue purposes.
+  \item Unauthorized clinical writes by Receptionist are rejected.
+  \item Deceased booking is rejected; mark/clear deceased follows the role matrix.
+  \item Technical documentation and user guide are available in the repository.
+\end{enumerate}
+
+\section{Exclusions}
+Prescription and pharmacy, laboratory and imaging workflows, billing, patient portal, FHIR exchange, multi-facility enterprise scheduling, and AI decision support are \textbf{not} MVP requirements.
+
+\section*{Document control}
+Version 2.0 (27 September 2026). Implementation evidence is the \texttt{main} branch of the project repository. Subsequent changes shall increment the version and date.
+
+\end{document}
