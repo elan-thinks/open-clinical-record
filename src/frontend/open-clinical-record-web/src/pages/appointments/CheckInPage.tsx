@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { listAppointments, updateAppointmentStatus, type Appointment } from '../../services/appointmentsApi';
 import './CheckInPage.css';
 
-type FilterId = 'all' | 'Scheduled' | 'Waiting' | 'CheckedIn' | 'Walk-in';
+type FilterId = 'all' | 'Scheduled' | 'Waiting' | 'CheckedIn' | 'Completed' | 'Walk-in';
 
 function todayIso(): string {
   const d = new Date();
@@ -19,11 +19,10 @@ function formatTime(t: string): string {
 
 function statusClass(status: string): string {
   const s = status.toLowerCase();
-  if (s === 'checkedin') return 's-ok';
+  if (s === 'checkedin' || s === 'completed' || s === 'inprogress') return 's-ok';
   if (s === 'waiting') return 's-wait';
   if (s === 'scheduled') return 's-dim';
   if (s === 'cancelled' || s === 'noshow') return 's-bad';
-  if (s === 'completed' || s === 'inprogress') return 's-ok';
   return 's-dim';
 }
 
@@ -31,8 +30,11 @@ function statusLabel(status: string): string {
   if (status === 'CheckedIn') return 'Checked in';
   if (status === 'NoShow') return 'No-show';
   if (status === 'InProgress') return 'In progress';
+  if (status === 'Completed') return 'Completed';
   return status;
 }
+
+const CLOSED = new Set(['Completed', 'Cancelled', 'NoShow']);
 
 export function CheckInPage() {
   const navigate = useNavigate();
@@ -64,17 +66,23 @@ export function CheckInPage() {
     const scheduled = items.filter((a) => a.status === 'Scheduled').length;
     const checkedIn = items.filter((a) => a.status === 'CheckedIn' || a.status === 'InProgress').length;
     const waiting = items.filter((a) => a.status === 'Waiting').length;
+    const completed = items.filter((a) => a.status === 'Completed').length;
     const walkIns = items.filter((a) =>
       (a.appointmentType || '').toLowerCase().includes('walk'),
     ).length;
-    return { scheduled: items.length, checkedIn, waiting, walkIns, scheduledOnly: scheduled };
+    return { scheduled: items.length, checkedIn, waiting, walkIns, scheduledOnly: scheduled, completed };
   }, [items]);
 
   const filtered = useMemo(() => {
     let list = items;
-    if (filter === 'Walk-in') {
+    // Default "all" = active queue only (not yet completed/cancelled)
+    if (filter === 'all') {
+      list = list.filter((a) => !CLOSED.has(a.status));
+    } else if (filter === 'Walk-in') {
       list = list.filter((a) => (a.appointmentType || '').toLowerCase().includes('walk'));
-    } else if (filter !== 'all') {
+    } else if (filter === 'Completed') {
+      list = list.filter((a) => a.status === 'Completed');
+    } else {
       list = list.filter((a) => a.status === filter);
     }
     const term = q.trim().toLowerCase();
@@ -103,6 +111,7 @@ export function CheckInPage() {
   }
 
   function primaryAction(a: Appointment): { label: string; next: string } | null {
+    if (CLOSED.has(a.status)) return null;
     if (a.status === 'Scheduled' || a.status === 'Waiting') {
       return { label: 'Check in', next: 'CheckedIn' };
     }
@@ -118,7 +127,7 @@ export function CheckInPage() {
         <div>
           <div className="page-title">Check-in / Queue</div>
           <div className="page-sub">
-            Front desk · Confirm identity → Check in → Waiting workflow
+            Front desk · Confirm identity → Check in → Waiting workflow. Finalized consults move to Completed.
           </div>
         </div>
         <div className="head-actions">
@@ -145,8 +154,8 @@ export function CheckInPage() {
           <div className="stat-val amber">{stats.waiting}</div>
         </div>
         <div className="stat">
-          <div className="stat-label">Walk-ins</div>
-          <div className="stat-val">{stats.walkIns}</div>
+          <div className="stat-label">Completed</div>
+          <div className="stat-val">{stats.completed}</div>
         </div>
       </div>
 
@@ -161,10 +170,11 @@ export function CheckInPage() {
         />
         {(
           [
-            ['all', 'All'],
+            ['all', 'Active'],
             ['Scheduled', 'Scheduled'],
             ['Waiting', 'Waiting'],
             ['CheckedIn', 'Checked in'],
+            ['Completed', 'Completed'],
             ['Walk-in', 'Walk-in'],
           ] as const
         ).map(([id, label]) => (
@@ -181,7 +191,7 @@ export function CheckInPage() {
 
       <div className="panel">
         {loading ? (
-          <div className="empty">Loading today&apos;s queue…</div>
+          <div className="empty">Loading today's queue…</div>
         ) : filtered.length === 0 ? (
           <div className="empty">No appointments match. Book one or clear filters.</div>
         ) : (
@@ -235,6 +245,19 @@ export function CheckInPage() {
                           Arrive / Wait
                         </button>
                       )}
+                      {!CLOSED.has(a.status) && (
+                        <button
+                          type="button"
+                          className="btn-sm ghost"
+                          disabled={busyId === a.id}
+                          onClick={() => {
+                            const reason = window.prompt('Cancel reason (required):');
+                            if (reason && reason.trim()) void setStatus(a.id, 'Cancelled', reason.trim());
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="link"
@@ -259,17 +282,17 @@ export function CheckInPage() {
             <br />
             <b>2.</b> Check in → status <em>Checked in</em>
             <br />
-            <b>3.</b> Patient enters waiting / clinician queue
+            <b>3.</b> Doctor finalizes consult → appointment <em>Completed</em>
           </div>
         </div>
         <div className="flow-card">
-          <div className="flow-title">Walk-in</div>
+          <div className="flow-title">Visit vs appointment</div>
           <div className="flow-steps">
-            <b>1.</b> Register patient if new
+            <b>Appointment</b> = front-desk status (Scheduled → Checked in → Completed).
             <br />
-            <b>2.</b> Book walk-in appointment (or use Arrived path)
+            <b>Clinical visit</b> = chart documentation (Draft → Final).
             <br />
-            <b>3.</b> Check in when ready for care
+            Finalizing the visit closes the linked appointment automatically.
           </div>
         </div>
       </div>
