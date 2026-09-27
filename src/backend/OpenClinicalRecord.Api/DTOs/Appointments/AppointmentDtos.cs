@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace OpenClinicalRecord.Api.DTOs.Appointments;
 
@@ -48,10 +49,12 @@ public class CreateAppointmentRequest
 public class UpdateAppointmentStatusRequest
 {
     [Required, MaxLength(32)]
+    [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
 
     /// <summary>Required when transitioning to Cancelled; optional otherwise.</summary>
     [MaxLength(500)]
+    [JsonPropertyName("reason")]
     public string? Reason { get; set; }
 }
 

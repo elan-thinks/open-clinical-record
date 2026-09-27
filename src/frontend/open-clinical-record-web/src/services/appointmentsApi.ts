@@ -129,11 +129,24 @@ export async function updateAppointmentStatus(
   status: string,
   reason?: string,
 ): Promise<Appointment> {
+  const trimmed = (reason ?? '').trim();
+  if (status.toLowerCase() === 'cancelled' && !trimmed) {
+    throw new ApiError(
+      'A reason is required when cancelling an appointment.',
+      'validation',
+      400,
+    );
+  }
   const base = getApiBaseUrl();
+  // Always include reason as a string so model binding never drops the property
+  const payload: { status: string; reason: string } = {
+    status,
+    reason: trimmed,
+  };
   const res = await apiFetch(`${base}/api/appointments/${id}/status`, {
     method: 'PATCH',
     headers: authHeaders(),
-    body: JSON.stringify({ status, reason }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) await throwApiError(res);
   return (await res.json()) as Appointment;
