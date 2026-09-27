@@ -2,137 +2,118 @@
 
 **Project:** Open Clinical Record  
 **Scope:** MVP — Patient Management, Patient Chart, Appointment Management  
-**Status:** Revised engineering baseline
+**Status:** Aligned with SRS v2.0 (2026-09-27)
 
 ## 1. Purpose
 
-This matrix connects the approved MVP requirements to workflows, business rules, roles, architecture/data design, and planned verification. It is the traceability bridge between requirements and implementation.
+This matrix connects approved MVP requirements to workflows, roles, and verification. A requirement is **verified** only with objective test or acceptance evidence.
 
-A requirement is not considered implemented or verified merely because it appears in this document. Verification requires objective evidence from tests, review, or acceptance records.
-
-## 2. Canonical MVP Workflows
+## 2. Canonical MVP workflows
 
 | ID | Workflow |
-|---|---|
+|----|----------|
 | UC-01 | Patient registration and identification |
 | UC-02 | Patient search and profile/chart access |
-| UC-03 | Patient chart information management |
+| UC-03 | Patient chart and visit documentation |
 | UC-04 | Appointment scheduling and management |
-| UC-05 | Check-in and walk-in handling |
+| UC-05 | Check-in, queue, and walk-in handling |
 | UC-06 | Authentication, authorization, validation, and audit |
 
-These six workflows are the canonical MVP set. Individual CRUD actions are requirement items, not additional application modules.
+## 3. Functional requirements
 
-## 3. Functional Requirements
+| Requirement | Summary | Workflow | Primary roles | Verification |
+|-------------|---------|----------|---------------|--------------|
+| FR-PM-001 | Register patient | UC-01 | Receptionist (+ staff) | Acceptance + AccessMatrix |
+| FR-PM-002 | Unique MRN | UC-01 | System | Integration |
+| FR-PM-003 | Search patient | UC-02 | All staff | Acceptance |
+| FR-PM-004 | View profile | UC-02 | All staff | Acceptance |
+| FR-PM-005 | Update demographics | UC-02 | Authorized staff | Authorization test |
+| FR-PM-006 | Duplicate awareness | UC-01 | System / UI | Acceptance |
+| FR-PM-007 | Patient status | UC-02 | Authorized | Acceptance |
+| FR-PM-008 | Mark deceased | UC-02 | Admin, Doctor, Receptionist | AccessMatrix |
+| FR-PM-009 | Clear deceased | UC-02 | Admin, Doctor | AccessMatrix |
+| FR-PM-010 | No book if deceased | UC-04 | System | AccessMatrix / workflow test |
+| FR-PC-001 | Open chart | UC-02, UC-03 | Staff | Acceptance |
+| FR-PC-002 | Chart summary | UC-03 | Clinical / staff | Acceptance |
+| FR-PC-003 | Allergies | UC-03 | Doctor, Nurse | AccessMatrix |
+| FR-PC-004 | Medical history items | UC-03 | Doctor, Nurse | AccessMatrix |
+| FR-PC-005 | ClinicalVisit entity | UC-03, UC-05 | System | LongitudinalVisitTests |
+| FR-PC-006 | Visit statuses Draft/Final/Cancelled | UC-03 | System | ClinicalDocumentationTests |
+| FR-PC-007 | Default Draft | UC-03, UC-05 | System | ClinicalDocumentationTests |
+| FR-PC-008 | Final immutable | UC-03 | System | ClinicalDocumentationTests |
+| FR-PC-009 | Vital signs | UC-03 | Doctor, Nurse | ClinicalDocumentationTests |
+| FR-PC-010 | Diagnoses | UC-03 | Doctor, Nurse | ClinicalDocumentationTests |
+| FR-PC-011 | Notes / plan | UC-03 | Doctor, Nurse | ClinicalDocumentationTests |
+| FR-PC-012 | No overwrite on return | UC-03 | System | LongitudinalVisitTests |
+| FR-PC-013 | Visit history UI | UC-03 | Staff | Acceptance |
+| FR-PC-014 | Receptionist blocked from clinical write | UC-03 | System | AccessMatrix |
+| FR-PC-015 | Final → appointment Completed | UC-03, UC-05 | System | Workflow + acceptance |
+| FR-AP-001 | Create appointment | UC-04 | StaffCanBook | AccessMatrix |
+| FR-AP-002 | List by date | UC-04 | Staff | Acceptance |
+| FR-AP-003 | Calendar view | UC-04 | Staff | Acceptance |
+| FR-AP-004 | Appointment type labels | UC-04 | Staff | Acceptance |
+| FR-AP-005 | Reschedule rules | UC-04 | Staff | AppointmentWorkflowTests |
+| FR-AP-006 | Cancel requires reason | UC-04 | Staff | AppointmentWorkflowTests |
+| FR-AP-007 | Status transition engine | UC-04 | System | AppointmentWorkflowTests |
+| FR-AP-008 | Check-in + Draft visit | UC-05 | Desk / Nurse | AppointmentWorkflowTests |
+| FR-AP-009 | AppointmentEvent history | UC-04 | System | AppointmentWorkflowTests |
+| FR-AP-010 | Queue excludes terminal | UC-05 | System | Acceptance |
+| FR-AP-011 | Staff book policy | UC-04 | All four roles | AccessMatrix |
+| FR-SEC-001 | Authenticate | UC-06 | All | Security / 401 tests |
+| FR-SEC-002 | Four roles | UC-06 | System | AccessMatrix |
+| FR-SEC-003 | Reject unauthorized | UC-06 | System | AccessMatrix |
+| FR-SEC-004 | Audit important actions | UC-06 | System | Audit tests / acceptance |
+| FR-SEC-005 | Admin list audit | UC-06 | Admin | Acceptance |
+| FR-VAL-001 | Validate before save | UC-01–05 | System | Validation tests |
+| FR-VAL-002 | Status business rules | UC-04–05 | System | Workflow tests |
+| FR-VAL-003 | Clear errors | UC-01–06 | System | Acceptance |
+| FR-RPT-001 | Dashboard stats | UC-06 | Staff | Acceptance |
+| FR-RPT-002 | Simple reports view | UC-06 | Staff | Acceptance |
 
-| Requirement | Summary | Workflow | Primary role | Verification |
-|---|---|---|---|---|
-| FR-PM-001 | Register patient | UC-01 | Receptionist / Front Desk | Acceptance test |
-| FR-PM-002 | Assign unique patient ID | UC-01 | System / Receptionist | Unit + integration test |
-| FR-PM-003 | Search patient | UC-02 | All four roles, permission-controlled | Acceptance test |
-| FR-PM-004 | View patient profile | UC-02 | All four roles, permission-controlled | Acceptance test |
-| FR-PM-005 | Update permitted patient information | UC-02 | Authorized roles | Authorization + acceptance test |
-| FR-PM-006 | Detect likely duplicate patients | UC-01, UC-02 | System behavior | Validation/integration test |
-| FR-PM-007 | Maintain basic patient status | UC-02 | Authorized role | Authorization + acceptance test |
-| FR-PC-001 | Open patient chart | UC-02, UC-03 | Authorized roles, permission-controlled | Acceptance test |
-| FR-PC-002 | Display chart summary | UC-03 | Nurse / Clinical Staff; Clinician / Doctor | Acceptance test |
-| FR-PC-003 | Record/view allergies | UC-03 | Authorized clinical role | Authorization + integration test |
-| FR-PC-004 | Record/view medication history | UC-03 | Authorized clinical role | Authorization + integration test |
-| FR-PC-005 | Record/view important patient alerts | UC-03 | Authorized clinical role | Acceptance test |
-| FR-PC-006 | View appointment history | UC-03 | Authorized roles | Acceptance test |
-| FR-PC-007 | View visit/check-in history | UC-03 | Authorized roles | Acceptance test |
-| FR-PC-008 | Prevent wrong-patient chart association | UC-03 | System behavior | Integration + authorization test |
-| FR-AP-001 | Create appointment | UC-04 | Receptionist / Front Desk | Acceptance test |
-| FR-AP-002 | View appointments | UC-04 | Authorized roles, permission-controlled | Acceptance test |
-| FR-AP-003 | View appointment details | UC-04 | Authorized roles | Acceptance test |
-| FR-AP-004 | Reschedule appointment | UC-04 | Receptionist / Front Desk | Acceptance + integration test |
-| FR-AP-005 | Cancel appointment | UC-04 | Receptionist / Front Desk | Acceptance + integration test |
-| FR-AP-006 | Maintain appointment status | UC-04 | System behavior | Unit + integration test |
-| FR-AP-007 | Check in patient | UC-05 | Receptionist / Front Desk; Nurse / Clinical Staff | Acceptance test |
-| FR-AP-008 | Support basic walk-in | UC-05 | Receptionist / Front Desk; Nurse / Clinical Staff | Acceptance test |
-| FR-AP-009 | Link visit to patient and applicable appointment | UC-05 | System behavior | Integration test |
-| FR-AP-010 | Preserve appointment history | UC-04 | System behavior | Integration test |
-| FR-SEC-001 | Authenticate user | UC-06 | All four roles | Security test |
-| FR-SEC-002 | Enforce exactly four roles | UC-06 | System behavior | Authorization test |
-| FR-SEC-003 | Restrict unauthorized operations | UC-06 | All four roles | Authorization test |
-| FR-SEC-004 | Audit important actions | UC-06 | System behavior | Audit test |
-| FR-VAL-001 | Validate required data and relationships | UC-01–UC-05 | System behavior | Validation test |
-| FR-VAL-002 | Enforce appointment/patient status rules | UC-04, UC-05 | System behavior | Acceptance test |
-| FR-VAL-003 | Report failures clearly | UC-01–UC-06 | All four roles | Usability test |
-| FR-VAL-004 | Prevent partial/inconsistent save on failure | UC-01–UC-05 | System behavior | Integration test |
-
-## 4. Business Rules
+## 4. Business rules
 
 | ID | Rule |
-|---|---|
-| BR-001 | Each patient has one unique patient identifier within the system. |
-| BR-002 | Patient chart information must belong to the correct patient. |
-| BR-003 | Cancelled appointments remain in history and are not silently deleted. |
-| BR-004 | Rescheduling preserves enough history to understand the previous appointment state. |
-| BR-005 | A walk-in may create a visit without a prior appointment. |
-| BR-006 | Appointment operations must respect applicable patient and appointment status rules. |
-| BR-007 | Chart access does not automatically grant permission to modify every chart information type. |
-| BR-008 | Exactly four application roles are used: Receptionist / Front Desk, Nurse / Clinical Staff, Clinician / Doctor, and System Administrator. |
-| BR-009 | Important patient, appointment, access, and administrative security actions should be auditable. |
-| BR-010 | Future EMR functionality is deferred until the three core modules are complete. |
+|----|------|
+| BR-001 | Each patient has one unique MRN. |
+| BR-002 | Chart and visit data belong to one patient; wrong-patient association is prevented. |
+| BR-003 | Cancelled appointments remain in history (not hard-deleted). |
+| BR-004 | Reschedule preserves prior slot information via events. |
+| BR-005 | Walk-in is supported as an appointment type and/or check-in path without inventing false history. |
+| BR-006 | Appointment transitions are limited to the approved matrix. |
+| BR-007 | Chart write permission is separate from chart read permission. |
+| BR-008 | Exactly four application roles exist. |
+| BR-009 | Important actions are auditable. |
+| BR-010 | Prior visits are never overwritten. |
+| BR-011 | Cancel requires a reason. |
+| BR-012 | Final visit completes linked appointment. |
 
-## 5. Role Coverage
+## 5. Role coverage
 
 | Role | Core responsibilities |
-|---|---|
-| Receptionist / Front Desk | Register/search patients, maintain permitted demographics, manage appointments, check in patients, support basic walk-ins |
-| Nurse / Clinical Staff | View patient/chart information, support check-in/visit workflow, maintain permitted chart information and observations where approved |
-| Clinician / Doctor | Review patient charts/history and perform authorized chart updates required by the MVP |
-| System Administrator | Manage users, roles/permissions, approved system configuration, security/operational functions, and audit access; does not receive clinical authoring privileges by default |
+|------|------------------------|
+| Receptionist | Register/search, appointments, check-in, mark deceased |
+| Nurse | Chart writes (vitals/visits), queue support; not mark deceased |
+| Doctor | Chart writes, mark/clear deceased |
+| Admin | Users, audit, operational access; not default clinical author |
 
-**The MVP has exactly four application roles.** Authentication, authorization, validation, audit, and error handling are cross-cutting mechanisms supporting these four roles.
+## 6. NFR categories
 
-## 6. Non-Functional Traceability
+See `non-functional-requirements.md` (NFR-SEC, NFR-DAT, NFR-PERF, NFR-REL, NFR-USE, NFR-MNT, NFR-AUD, NFR-BAK).
 
-| NFR category | Requirements | Main verification |
-|---|---|---|
-| Security & Privacy | NFR-SEC-001–008; NFR-PRI-001–003 | Security + authorization tests |
-| Data Integrity | NFR-DAT-001–006 | Integrity + transaction tests |
-| Performance | NFR-PERF-001–004 | Performance tests |
-| Reliability | NFR-REL-001–005 | Failure/recovery tests |
-| Usability & Accessibility | NFR-USE-001–005 | Usability/acceptance tests |
-| Maintainability | NFR-MNT-001–005 | Architecture/code review |
-| Auditability | NFR-AUD-001–004 | Audit verification |
-| Backup & Recovery | NFR-BAK-001–004 | Restore/recovery test |
+## 7. Architecture / data mapping
 
-International interoperability/FHIR is intentionally not included in the MVP NFR baseline.
+| Area | Implementation target |
+|------|------------------------|
+| Patient Management | Patient APIs + Patient entity |
+| Chart / visits | ClinicalChartService + ClinicalVisit + vitals/dx/notes |
+| Appointments | AppointmentWorkflowService + AppointmentEvent |
+| Security | JWT + policies |
+| Audit | AuditEvent + Admin API |
 
-## 7. Traceability to Architecture and Data
+## 8. Exclusions
 
-| Requirement area | Architecture/data target |
-|---|---|
-| Patient Management | Patient entity + patient-management API/module |
-| Patient Chart | Patient + Allergy + Medication History + Patient Alert + patient-linked appointment/visit history |
-| Appointment Management | Appointment + optional appointment history/event + Visit |
-| Authentication/authorization | User/authentication service and backend authorization |
-| Audit | Audit Event or equivalent minimal audit mechanism |
-| Administration | User/role/permission management + audit + approved system configuration |
-
-The current logical ERD at `docs/03-requirements/ER/OCR_MVP_ERD.html` and the data-model baseline at `docs/05-data/README.md` are the current data references for implementation.
-
-## 8. Scope Exclusions
-
-The following requirements from earlier drafts are no longer MVP requirements and must not appear as implementation commitments:
-
-- Full enterprise clinical encounter documentation
-- Diagnosis and treatment documentation beyond explicitly approved MVP chart functionality
-- Prescription management
-- Clinical notes as a full documentation subsystem
-- Medical report/document generation
-- Finalized-document amendment/versioning
-- Laboratory, pharmacy, billing, insurance, or radiology modules
-- Patient portal/mobile application
-- External EMR exchange or FHIR integration
-- Advanced analytics or enterprise scheduling
-- AI clinical decision support
-
-They may remain in research documents as future/domain context, but they must not be treated as current MVP requirements.
+Pharmacy, lab, radiology, billing, portal, FHIR, enterprise scheduling, AI CDS — not MVP requirements.
 
 ## 9. Status
 
-**Current status:** The MVP has exactly four application roles and three business modules. Scope, SRS, role baseline, NFRs, traceability, architecture, and logical ERD must remain aligned to this baseline. A requirement moves to **verified** only when objective implementation/test evidence exists.
+**SRS v2.0 + this matrix** are the Week 8 requirements baseline. Verification evidence lives in automated tests and the manual E2E checklist.
