@@ -8,15 +8,17 @@ namespace OpenClinicalRecord.Api.Services.Clinical;
 
 public sealed partial class ClinicalChartService
 {
-    public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
+public async Task<ServiceResult<VisitDto>> DocumentVisitAsync(
         Guid patientId, Guid visitId, DocumentVisitRequest request, ActorContext actor, CancellationToken ct)
     {
         if (request is null)
             return ServiceResult<VisitDto>.Fail("Request body is required.", ServiceErrorKind.Validation);
 
-        // Load visit only (no includes). Dependents are loaded via separate queries so EF InMemory
-        // does not dual-attach the same 1:1 / collection rows.
         var visit = await _db.ClinicalVisits
+            .Include(v => v.VitalSigns)
+            .Include(v => v.Diagnoses)
+            .Include(v => v.Notes)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(v => v.Id == visitId && v.PatientId == patientId, ct);
 
         if (visit is null)
@@ -48,19 +50,17 @@ public sealed partial class ClinicalChartService
 
         if (HasAnyVitals(request))
         {
-            var vitals = await _db.VitalSigns.FirstOrDefaultAsync(v => v.VisitId == visitId, ct);
-            if (vitals is null)
+            // Use navigation only — avoids EF InMemory dual-attach on 1:1 VitalSigns
+            if (visit.VitalSigns is null)
             {
-                vitals = new VitalSigns
+                visit.VitalSigns = new VitalSigns
                 {
-                    VisitId = visitId,
                     RecordedByUserId = actor.UserId,
                     RecordedByName = actor.DisplayName,
                     RecordedAt = DateTimeOffset.UtcNow
                 };
-                _db.VitalSigns.Add(vitals);
             }
-
+            var vitals = visit.VitalSigns;
             if (request.BloodPressure is not null) vitals.BloodPressure = NullIfEmpty(request.BloodPressure);
             if (request.Pulse.HasValue) vitals.Pulse = request.Pulse;
             if (request.TemperatureC.HasValue) vitals.TemperatureC = request.TemperatureC;
@@ -73,22 +73,21 @@ public sealed partial class ClinicalChartService
             vitals.RecordedAt = DateTimeOffset.UtcNow;
         }
 
+        // Prefer included collections — separate Diagnoses queries can break EF InMemory when visit is tracked
         if (!string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
             || !string.IsNullOrWhiteSpace(request.PrimaryDiagnosisCode))
         {
-            var primary = await _db.Diagnoses.FirstOrDefaultAsync(d => d.VisitId == visitId && d.IsPrimary, ct);
+            var primary = visit.Diagnoses.FirstOrDefault(d => d.IsPrimary);
             if (primary is null)
             {
-                primary = new Diagnosis
+                visit.Diagnoses.Add(new Diagnosis
                 {
-                    VisitId = visitId,
                     IsPrimary = true,
                     Code = NullIfEmpty(request.PrimaryDiagnosisCode),
                     Description = string.IsNullOrWhiteSpace(request.PrimaryDiagnosis)
                         ? (request.PrimaryDiagnosisCode ?? "Diagnosis")
                         : request.PrimaryDiagnosis.Trim()
-                };
-                _db.Diagnoses.Add(primary);
+                });
             }
             else
             {
@@ -102,19 +101,17 @@ public sealed partial class ClinicalChartService
         if (!string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
             || !string.IsNullOrWhiteSpace(request.SecondaryDiagnosisCode))
         {
-            var secondary = await _db.Diagnoses.FirstOrDefaultAsync(d => d.VisitId == visitId && !d.IsPrimary, ct);
+            var secondary = visit.Diagnoses.FirstOrDefault(d => !d.IsPrimary);
             if (secondary is null)
             {
-                secondary = new Diagnosis
+                visit.Diagnoses.Add(new Diagnosis
                 {
-                    VisitId = visitId,
                     IsPrimary = false,
                     Code = NullIfEmpty(request.SecondaryDiagnosisCode),
                     Description = string.IsNullOrWhiteSpace(request.SecondaryDiagnosis)
                         ? (request.SecondaryDiagnosisCode ?? "Diagnosis")
                         : request.SecondaryDiagnosis.Trim()
-                };
-                _db.Diagnoses.Add(secondary);
+                });
             }
             else
             {
@@ -127,9 +124,8 @@ public sealed partial class ClinicalChartService
 
         if (!string.IsNullOrWhiteSpace(request.ClinicalNote))
         {
-            _db.ClinicalNotes.Add(new ClinicalNote
+            visit.Notes.Add(new ClinicalNote
             {
-                VisitId = visitId,
                 NoteType = string.IsNullOrWhiteSpace(request.NoteType) ? "Progress" : request.NoteType.Trim(),
                 Content = request.ClinicalNote.Trim(),
                 AuthorUserId = actor.UserId,
@@ -138,43 +134,41 @@ public sealed partial class ClinicalChartService
             });
         }
 
-        var becameFinal = false;
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
             var newStatus = NormalizeVisitStatus(request.Status, visit.VisitType);
             visit.Status = newStatus;
             if (string.Equals(newStatus, "Final", StringComparison.OrdinalIgnoreCase))
             {
-                becameFinal = true;
                 visit.FinalizedAt = DateTimeOffset.UtcNow;
                 visit.FinalizedByUserId = actor.UserId;
                 visit.FinalizedByName = actor.DisplayName;
                 visit.CheckOutAt ??= DateTimeOffset.UtcNow;
-            }
-        }
 
-        // Align appointment queue: Final visit → linked appointment Completed
-        if (becameFinal && visit.AppointmentId.HasValue)
-        {
-            var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == visit.AppointmentId.Value, ct);
-            if (appt is not null
-                && !string.Equals(appt.Status, "Completed", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(appt.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
-            {
-                var from = appt.Status;
-                appt.Status = "Completed";
-                appt.UpdatedAt = DateTimeOffset.UtcNow;
-                _db.AppointmentEvents.Add(new AppointmentEvent
+                // Align queue: mark linked appointment Completed so it leaves active check-in queue
+                if (visit.AppointmentId is Guid apptId)
                 {
-                    Id = Guid.NewGuid(),
-                    AppointmentId = appt.Id,
-                    FromStatus = from,
-                    ToStatus = "Completed",
-                    Reason = "Consultation finalized",
-                    ActorUserId = actor.UserId,
-                    ActorName = actor.DisplayName,
-                    CreatedAt = DateTimeOffset.UtcNow
-                });
+                    var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == apptId, ct);
+                    if (appt is not null
+                        && !string.Equals(appt.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(appt.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var from = appt.Status;
+                        appt.Status = "Completed";
+                        appt.UpdatedAt = DateTimeOffset.UtcNow;
+                        _db.AppointmentEvents.Add(new AppointmentEvent
+                        {
+                            Id = Guid.NewGuid(),
+                            AppointmentId = appt.Id,
+                            FromStatus = from,
+                            ToStatus = "Completed",
+                            Reason = "Visit finalized",
+                            ActorUserId = string.IsNullOrWhiteSpace(actor.UserId) ? null : actor.UserId,
+                            ActorName = actor.DisplayName,
+                            CreatedAt = DateTimeOffset.UtcNow
+                        });
+                    }
+                }
             }
         }
 
@@ -183,12 +177,11 @@ public sealed partial class ClinicalChartService
         {
             await _db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
-            // Never leak provider/SQL details to the client
             return ServiceResult<VisitDto>.Fail(
-                "Could not save consultation.",
-                ServiceErrorKind.Internal);
+                "Could not save consultation: " + (ex.InnerException?.Message ?? ex.Message),
+                ServiceErrorKind.Validation);
         }
 
         var loaded = await _db.ClinicalVisits.AsNoTracking()
@@ -211,8 +204,9 @@ public sealed partial class ClinicalChartService
     {
         if (string.IsNullOrWhiteSpace(status))
             return "Draft";
-        if (string.Equals(status, "Final", StringComparison.OrdinalIgnoreCase)) return "Final";
-        if (string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase)) return "Cancelled";
+        var s = status.Trim();
+        if (string.Equals(s, "Final", StringComparison.OrdinalIgnoreCase)) return "Final";
+        if (string.Equals(s, "Cancelled", StringComparison.OrdinalIgnoreCase)) return "Cancelled";
         return "Draft";
     }
 
