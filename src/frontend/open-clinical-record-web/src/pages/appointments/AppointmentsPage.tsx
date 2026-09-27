@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   listAppointments,
@@ -46,7 +46,8 @@ function weekMonday(iso: string): Date {
 }
 function weekDays(iso: string): Date[] {
   const mon = weekMonday(iso);
-  return [0, 1, 2, 3, 4].map((i) => {
+  // Full clinic week: Mon → Sun (so Saturday/Sunday are visible, e.g. 27)
+  return [0, 1, 2, 3, 4, 5, 6].map((i) => {
     const x = new Date(mon);
     x.setDate(mon.getDate() + i);
     return x;
@@ -71,12 +72,39 @@ function formatChip(iso: string): string {
 function formatWeekRange(iso: string): string {
   const days = weekDays(iso);
   const a = days[0];
-  const b = days[4];
+  const b = days[days.length - 1];
   if (a.getMonth() === b.getMonth()) {
     return `${a.getDate()} – ${b.getDate()} ${a.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}`;
   }
   return `${a.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${b.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
 }
+
+/** Pack overlapping appointments into side-by-side lanes so near-time blocks do not stack on top of each other. */
+function layoutLanes(list: Appointment[]): Map<string, { lane: number; lanes: number }> {
+  const sorted = [...list].sort((a, b) => {
+    const d = timeMins(a.startTime) - timeMins(b.startTime);
+    return d !== 0 ? d : a.durationMinutes - b.durationMinutes;
+  });
+  const result = new Map<string, { lane: number; lanes: number }>();
+  for (const a of sorted) {
+    const aStart = timeMins(a.startTime);
+    const aEnd = aStart + Math.max(a.durationMinutes || 30, 15);
+    const overlapping = sorted.filter((b) => {
+      const bStart = timeMins(b.startTime);
+      const bEnd = bStart + Math.max(b.durationMinutes || 30, 15);
+      return aStart < bEnd && bStart < aEnd;
+    });
+    const lanes = Math.max(1, overlapping.length);
+    const clusterSorted = overlapping.sort((x, y) => {
+      const d = timeMins(x.startTime) - timeMins(y.startTime);
+      return d !== 0 ? d : x.id.localeCompare(y.id);
+    });
+    const lane = clusterSorted.findIndex((x) => x.id === a.id);
+    result.set(a.id, { lane: Math.max(0, lane), lanes });
+  }
+  return result;
+}
+
 function formatMonth(y: number, m: number): string {
   return new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
@@ -307,21 +335,34 @@ export function AppointmentsPage() {
     }
   }
 
-  function renderBlock(a: Appointment, compact?: boolean) {
+  function renderBlock(
+    a: Appointment,
+    compact?: boolean,
+    laneInfo?: { lane: number; lanes: number },
+  ) {
     const { top, height } = blockStyle(a.startTime, a.durationMinutes);
     if (top < -20 || top > HOURS.length * HOUR_PX) return null;
+    const lanes = Math.max(1, laneInfo?.lanes ?? 1);
+    const lane = laneInfo?.lane ?? 0;
+    const style: CSSProperties = {
+      top,
+      height,
+      left: `calc(${(lane / lanes) * 100}% + 3px)`,
+      width: `calc(${100 / lanes}% - 6px)`,
+      right: 'auto',
+    };
     return (
       <div
         key={a.id}
-        className={`appt-block ${statusClass(a.status)}`}
-        style={{ top, height }}
+        className={`appt-block ${statusClass(a.status)}${lanes > 1 ? ' stacked' : ''}`}
+        style={style}
         onClick={() => navigate(`/patients/${a.patientId}/chart`)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') navigate(`/patients/${a.patientId}/chart`);
         }}
         role="button"
         tabIndex={0}
-        title={`${a.patientName} · ${statusLabel(a.status)}`}
+        title={`${a.patientName} · ${statusLabel(a.status)} · ${formatTime(a.startTime)}`}
       >
         <div className="ab-time">{formatTime(a.startTime)}</div>
         <div className="ab-name">{a.patientName}</div>
@@ -587,7 +628,10 @@ export function AppointmentsPage() {
                       <div key={h} className="hour-line" />
                     ))}
                     {date === todayIso && nowLineTop != null && <div className="now-line" style={{ top: nowLineTop }} />}
-                    {filteredDay.map((a) => renderBlock(a))}
+                    {(() => {
+                      const lanes = layoutLanes(filteredDay);
+                      return filteredDay.map((a) => renderBlock(a, false, lanes.get(a.id)));
+                    })()}
                   </div>
                 </div>
               ) : (
@@ -596,9 +640,21 @@ export function AppointmentsPage() {
                     <div />
                     {days.map((d) => {
                       const iso = toIsoDate(d);
+                      const dow = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'][
+                        d.getDay() === 0 ? 6 : d.getDay() - 1
+                      ];
                       return (
-                        <div key={iso} className={`wh-day${iso === todayIso ? ' today' : ''}${iso === date ? ' selected' : ''}`}>
-                          <div className="wh-dow">{['MON', 'TUE', 'WED', 'THU', 'FRI'][d.getDay() === 0 ? 6 : d.getDay() - 1]}</div>
+                        <div
+                          key={iso}
+                          className={`wh-day${iso === todayIso ? ' today' : ''}${iso === date ? ' selected' : ''}`}
+                          onClick={() => setDate(iso)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setDate(iso);
+                          }}
+                        >
+                          <div className="wh-dow">{dow}</div>
                           <div className="wh-num">{d.getDate()}</div>
                         </div>
                       );
@@ -615,13 +671,14 @@ export function AppointmentsPage() {
                     {days.map((d) => {
                       const iso = toIsoDate(d);
                       const dayList = filteredWeek.filter((a) => a.appointmentDate === iso);
+                      const lanes = layoutLanes(dayList);
                       return (
-                        <div key={iso} className="week-col">
+                        <div key={iso} className={`week-col${iso === todayIso ? ' today-col' : ''}`}>
                           {HOURS.map((h) => (
                             <div key={h} className="hour-line" />
                           ))}
                           {iso === todayIso && nowLineTop != null && <div className="now-line" style={{ top: nowLineTop }} />}
-                          {dayList.map((a) => renderBlock(a, true))}
+                          {dayList.map((a) => renderBlock(a, true, lanes.get(a.id)))}
                         </div>
                       );
                     })}
@@ -674,7 +731,8 @@ export function AppointmentsPage() {
           <div className="modal-card modal-wide">
             <div className="modal-title">Reschedule appointment</div>
             <div className="modal-sub">
-              {rescheduleTarget.patientName} · currently {rescheduleTarget.appointmentDate} {formatTime(rescheduleTarget.startTime)}
+              {rescheduleTarget.patientName} · currently {rescheduleTarget.appointmentDate}{' '}
+              {formatTime(rescheduleTarget.startTime)}
             </div>
             <div className="modal-grid">
               <div>
