@@ -1,198 +1,134 @@
-# Clinical Domain Rules & System Behavior
+# Clinical domain rules (MVP)
 
-**Status:** Supporting technical reference for the MVP  
-**Scope:** Open Clinical Record — Patient Management, Patient Chart, Appointment Management  
-**Application roles:** Clinician / Doctor, Nurse / Clinical Staff, Receptionist / Front Desk
+**Status:** Current as of 2026-09-27  
+**Application roles:** Admin, Doctor, Nurse, Receptionist  
 
-> This document explains domain rules that affect requirements, data modeling, UX, and testing. The approved SRS and approved project decisions take precedence over this reference.
+This document is the **live domain contract** for the internship MVP. Research and early discovery docs may lag; prefer this file and `docs/clinical-visit-model.md`.
 
-## 1. Core Principle
+---
 
-The MVP treats patient registration, appointments, check-in, visits, and chart information as related but distinct concepts.
-
-```text
-Patient
-  ├── Profile / status
-  ├── Chart information
-  │     ├── Allergies
-  │     ├── Medication history
-  │     └── Important alerts
-  └── Appointments / visits
-        ├── Scheduled appointment
-        ├── Checked-in visit
-        ├── Cancelled appointment
-        ├── Rescheduled appointment
-        └── Walk-in visit
-```
-
-Full clinical encounter documentation, diagnosis, treatment, prescriptions, and medical-report/document workflows are outside the committed MVP.
-
-## 2. Patient Identity and History
-
-### 2.1 Registration is not a visit
-
-A patient can be registered without attending the clinic. Registration must not automatically create a visit or appointment.
-
-### 2.2 Unique patient identity
-
-Each patient must have one unique patient identifier within the system. The application should detect likely duplicate registrations and let the user review the result rather than silently creating duplicate records.
-
-### 2.3 Patient status
-
-Patient status is an explicit field, not an arbitrary note. If deceased status is included in the final MVP, existing history must remain preserved and new activity must follow the approved policy.
-
-## 3. Patient Chart
-
-The patient chart is the main patient-centered workspace. At minimum, the MVP may contain:
-
-- Patient identity and demographics
-- Patient status
-- Allergies
-- Relevant medication/history information
-- Important patient alerts where required
-- Appointment history
-- Visit/check-in history
-
-Chart access does not automatically grant permission to modify every item. Permissions are role-based and enforced by the backend.
-
-## 4. Appointment Behavior
-
-An appointment represents planned care for an existing patient.
+## 1. Core model
 
 ```text
-Scheduled
- ├── Checked-in / Arrived
- ├── Cancelled
- ├── No-show (if included in final MVP)
- └── Rescheduled
+Patient (registered once)
+  ├── Demographics / contact / status
+  ├── Allergies, medical history items
+  ├── Optional death record (when Status = Deceased)
+  ├── Appointments (scheduled attendances)
+  └── ClinicalVisits (one per attendance; never overwritten)
+        ├── VitalSigns (0..1)
+        ├── Diagnoses (0..n)
+        └── ClinicalNotes (0..n)
 ```
 
 Rules:
 
-1. An appointment must reference an existing patient.
-2. Cancellation does not silently delete the appointment.
-3. Rescheduling preserves enough information to understand the previous state.
-4. No-show, if supported, remains distinct from cancellation.
-5. Check-in indicates arrival and does not by itself mean that consultation was completed.
+1. A patient is registered **once**. Returns do not create a new patient.  
+2. Each facility attendance is a **new Visit**. Prior visits are never overwritten.  
+3. Encounter content (vitals, diagnoses, notes, plan) hangs off the Visit.  
 
-## 5. Walk-in Behavior
+See also: [clinical-visit-model.md](../clinical-visit-model.md).
 
-A walk-in may arrive without a scheduled appointment.
+---
 
-```text
-Walk-in
-  → Find or register patient
-  → Check-in / Arrival
-  → Visit
-```
+## 2. Patient status
 
-The data model must allow a visit/check-in record without an appointment reference. The MVP does not require complex triage or queue optimization.
+| Status | Meaning |
+|--------|---------|
+| Active | May book and attend |
+| Inactive | Soft-inactive; history retained |
+| Deceased | Provenance via death record; **no new appointments**; clinical writes blocked |
 
-## 6. Visit / Check-in
+- Deceased ≠ delete history.  
+- Mark deceased: Admin, Doctor, Receptionist (not Nurse).  
+- Clear deceased: Admin, Doctor only.  
 
-A visit represents an actual attendance/care episode associated with a patient. When it originates from an appointment, the appointment relationship should be preserved. When it is a walk-in, the appointment relationship is empty.
+---
 
-The MVP uses the visit/check-in concept only as needed to support appointment attendance, walk-ins, and patient history. It does not require a separate enterprise encounter subsystem.
+## 3. Appointment statuses and transitions
 
-## 7. Basic Chart Information
+Canonical statuses (API):
 
-Where included in the final MVP, the chart may support:
+`Scheduled` · `Waiting` · `CheckedIn` · `InProgress` · `Completed` · `Cancelled` · `NoShow`
 
-- Allergies and reactions
-- Relevant medication history
-- Important patient alerts
-- Basic observations/vitals if confirmed as required
+| From | Allowed to |
+|------|------------|
+| Scheduled | Waiting, CheckedIn, Cancelled, NoShow |
+| Waiting | CheckedIn, Cancelled, NoShow, Scheduled |
+| CheckedIn | InProgress, Waiting, Completed, Cancelled |
+| InProgress | Completed, CheckedIn |
+| Cancelled | Scheduled (re-open via reschedule path) |
+| NoShow | Scheduled |
+| Completed | *(terminal)* |
 
-The exact fields and role permissions must be finalized before implementation. Medication history must not be confused with prescription management.
+Additional rules:
 
-## 8. Role Boundaries
+- **Cancel** requires a non-empty **reason**.  
+- **Check-in** (`CheckedIn`) creates a **Draft** `ClinicalVisit` when appropriate.  
+- **Finalizing a visit** sets linked appointment to **Completed** (queue alignment).  
+- Active queue UI excludes terminal statuses: Completed, Cancelled, NoShow.  
+- Cannot book for a **Deceased** patient (400).  
 
-### Receptionist / Front Desk
+Reschedule: allowed when status is Scheduled, Waiting, Cancelled, or NoShow; blocked for CheckedIn, InProgress, Completed.
 
-- Register and search patients
-- Maintain permitted demographic/contact information
-- Create, reschedule, and cancel appointments
-- Check in patients
-- Support basic walk-in intake
+---
 
-### Nurse / Clinical Staff
+## 4. Visit statuses
 
-- View patient/chart information according to permission
-- Support check-in and visit flow
-- Maintain permitted chart information or observations
+| Status | Meaning |
+|--------|---------|
+| Draft | Editable clinical documentation |
+| Final | Closed; no further documentation edits |
+| Cancelled | Visit voided |
 
-### Clinician / Doctor
+- Default new visit: **Draft**.  
+- Final is immutable; start a **new** consultation for new content.  
 
-- Review patient charts/history
-- Perform authorized chart updates included in the MVP
-- Perform other clinical actions only when explicitly included and approved
+---
 
-No Administrator role exists in the MVP.
+## 5. Appointment types (labels)
 
-## 9. History and Audit
+Consultation · Follow-up · New complaint · Procedure · Walk-in · Other  
 
-Important changes should remain understandable over time. At minimum, appointment history should preserve meaningful cancellation and rescheduling information. Important patient/chart changes may be recorded in a minimal audit mechanism.
+Labels only — they do not change authorization.
 
-Audit records should identify the actor, event, time, and affected entity without unnecessarily copying sensitive clinical content.
+---
 
-## 10. Derived Information
+## 6. Role boundaries (summary)
 
-Where possible, values should be derived from authoritative records instead of maintained as duplicate flags.
+| Role | Typical duties |
+|------|----------------|
+| **Receptionist** | Register patients, book/reschedule/cancel, check-in, mark deceased |
+| **Nurse** | Chart support, vitals, visits (write), queue support — not mark deceased |
+| **Doctor** | Chart review and clinical writes, mark/clear deceased |
+| **Admin** | Users/audit, full operational access per matrix, clear deceased |
 
-| Concept | Preferred source |
-|---|---|
-| Appointment attendance | Appointment/check-in state |
-| No-show | Appointment status |
-| Reschedule history | Appointment history/event records |
-| Cancellation history | Appointment history/event records |
-| Visit history | Visit records |
-| Patient timeline | Chronological patient-linked events |
+Detailed matrix: [access-control-report.md](../05-engineering/access-control-report.md).
 
-## 11. Things We Must Not Treat as the Same
+**Frontend** controls visibility; **backend** enforces permission.
 
-- Patient registration ≠ appointment
-- Appointment ≠ visit/check-in
-- Check-in ≠ completed clinical consultation
-- Cancellation ≠ no-show
-- Rescheduling ≠ deletion
-- Patient status = deceased ≠ deletion of patient history
-- Medication history ≠ prescription management
+---
 
-## 12. Data-Model Implications
+## 7. History and audit
 
-The final ERD should evaluate only the entities justified by the approved MVP. Expected core concepts are:
+- Appointment changes write `AppointmentEvent` rows (and optional `AuditEvent`).  
+- Clinical content is visit-scoped and retained longitudinally.  
+- Audit identifies actor, event, time, entity without dumping full clinical payloads.
 
-- Patient
-- User
-- Allergy
-- Medication History
-- Patient Alert
-- Appointment
-- Appointment History/Event where required to preserve changes
-- Visit
-- Audit Event
+---
 
-Vital signs/observations may be included only if they are confirmed as part of the final MVP.
+## 8. Things we must not treat as the same
 
-The ERD must not introduce diagnosis, treatment/care-plan, prescription, clinical-document, report, laboratory, pharmacy, billing, insurance, radiology, portal, FHIR, or other deferred modules as implementation commitments.
+- Patient registration ≠ appointment  
+- Appointment ≠ visit  
+- Check-in ≠ completed consultation  
+- Cancellation ≠ no-show  
+- Rescheduling ≠ deletion  
+- Deceased status ≠ deletion of history  
+- Medication/history items ≠ full prescription management (deferred)  
 
-## 13. Open Decisions Before Implementation
+---
 
-1. Which role may create/update allergies?
-2. Which role may create/update medication history?
-3. Which patient alerts are required?
-4. Are basic vitals/observations part of the MVP?
-5. Is No-show required in the first release?
-6. What is the exact deceased-patient appointment policy?
-7. What minimum fields are required for patient registration?
-8. Which events must be audited?
+## 9. Out of MVP scope
 
-## 14. Relationship to Other Documents
-
-- The **SRS** defines the approved requirements and scope.
-- The **clinical workflow** describes the approved operational flow.
-- This document provides supporting domain rules.
-- The **architecture** defines system boundaries and components.
-- The **ERD/data model** defines persistent entities and relationships.
-
-If this document conflicts with the SRS or a later approved clinical decision, the approved requirement or decision wins and this document must be updated.
+Full hospital EMR, FHIR exchange, imaging/lab interfaces, pharmacy dispensing, multi-facility enterprise scheduling.
