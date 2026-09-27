@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPatients, type Patient } from '../../services/patientsApi';
 import { ApiError, createAppointment } from '../../services/appointmentsApi';
@@ -10,7 +10,7 @@ const SLOTS = [
   '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
 ];
 
-const TYPES = ['Consultation', 'Follow-up', 'New complaint', 'Procedure', 'Other'];
+const TYPES = ['Consultation', 'Follow-up', 'New complaint', 'Procedure', 'Walk-in', 'Other'];
 
 type Notice = { title: string; body: string; tone: 'error' | 'auth' };
 
@@ -70,18 +70,34 @@ export function AppointmentCreatePage() {
     const q = patientQuery.trim().toLowerCase();
     if (!q) return patients;
     return patients.filter((p) => {
-      const hay = `${p.firstName} ${p.lastName} ${p.medicalRecordNumber} ${p.phone ?? ''} ${p.email ?? ''}`.toLowerCase();
+      const hay = `${p.firstName} ${p.lastName} ${p.medicalRecordNumber} ${p.phone ?? ''}`.toLowerCase();
       return hay.includes(q);
     });
   }, [patients, patientQuery]);
 
   const selectedPatient = patients.find((p) => p.id === patientId);
 
+  /** Enter in search must NOT submit the form (that was jumping away / to dashboard). */
+  function onSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (filteredPatients.length > 0) {
+      setPatientId(filteredPatients[0].id);
+      setPatientQuery('');
+    }
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    e.stopPropagation();
     setNotice(null);
     if (!patientId) {
-      setNotice({ title: 'Patient required', body: 'Select a patient before creating the appointment.', tone: 'error' });
+      setNotice({
+        title: 'Patient required',
+        body: 'Search and select a patient before creating the appointment.',
+        tone: 'error',
+      });
       return;
     }
     setSaving(true);
@@ -95,7 +111,7 @@ export function AppointmentCreatePage() {
         reason: reason || undefined,
         providerName: providerName || undefined,
       });
-      navigate('/appointments');
+      navigate('/appointments', { replace: true });
     } catch (err) {
       setNotice(noticeFromError(err));
     } finally {
@@ -106,7 +122,9 @@ export function AppointmentCreatePage() {
   return (
     <div className="appointment-create-page">
       <div className="breadcrumb">
-        <button type="button" onClick={() => navigate('/appointments')}>Appointments</button>
+        <button type="button" onClick={() => navigate('/appointments')}>
+          Appointments
+        </button>
         {' · '}New
       </div>
       <h1 className="page-title">New appointment</h1>
@@ -133,25 +151,32 @@ export function AppointmentCreatePage() {
         </div>
       )}
 
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} noValidate>
         <div className="panel" style={{ marginBottom: 14 }}>
           <div className="section-title">1. Patient</div>
           <div className="form-grid">
             <div className="field span-2">
-              <label className="label" htmlFor="patient-search">Search patient</label>
+              <label className="label" htmlFor="patient-search">
+                Search patient
+              </label>
               <input
                 id="patient-search"
                 className="input"
-                type="search"
-                placeholder="Name, MRN, or phone…"
+                type="text"
+                inputMode="search"
+                placeholder="Type name, MRN, or phone — Enter selects first match"
                 value={patientQuery}
                 onChange={(e) => setPatientQuery(e.target.value)}
+                onKeyDown={onSearchKeyDown}
                 autoComplete="off"
               />
             </div>
             <div className="field span-2">
-              <label className="label">Patient <span className="req">*</span></label>
+              <label className="label" htmlFor="patient-select">
+                Patient <span className="req">*</span>
+              </label>
               <select
+                id="patient-select"
                 className="select"
                 value={patientId}
                 onChange={(e) => setPatientId(e.target.value)}
@@ -169,33 +194,59 @@ export function AppointmentCreatePage() {
                 ))}
               </select>
               {selectedPatient && (
-                <p className="hint" style={{ marginTop: 6 }}>
+                <p className="page-sub" style={{ marginTop: 8 }}>
                   Selected: <strong>{patientLabel(selectedPatient)}</strong>
                 </p>
               )}
             </div>
           </div>
-          <p className="hint">Patient must already be registered. Use Patients → Register for new records.</p>
+          <p className="page-sub" style={{ marginTop: 8 }}>
+            Use Patients → Register for new records.
+          </p>
         </div>
 
         <div className="panel" style={{ marginBottom: 14 }}>
-          <div className="section-title">2. Date & time</div>
+          <div className="section-title">2. Date &amp; time</div>
           <div className="form-grid">
             <div className="field">
-              <label className="label">Date <span className="req">*</span></label>
-              <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <label className="label">
+                Date <span className="req">*</span>
+              </label>
+              <input
+                className="input"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
             </div>
             <div className="field">
               <label className="label">Duration</label>
-              <select className="select" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
-                <option value={15}>15 min</option><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option>
+              <select
+                className="select"
+                value={duration}
+                onChange={(e) => setDuration(Number(e.target.value))}
+              >
+                <option value={15}>15 min</option>
+                <option value={30}>30 min</option>
+                <option value={45}>45 min</option>
+                <option value={60}>60 min</option>
               </select>
             </div>
             <div className="field span-2">
-              <label className="label">Available slots <span className="req">*</span></label>
+              <label className="label">
+                Available slots <span className="req">*</span>
+              </label>
               <div className="slot-grid">
                 {SLOTS.map((s) => (
-                  <button key={s} type="button" className={`slot${slot === s ? ' selected' : ''}`} onClick={() => setSlot(s)}>{s}</button>
+                  <button
+                    key={s}
+                    type="button"
+                    className={`slot${slot === s ? ' selected' : ''}`}
+                    onClick={() => setSlot(s)}
+                  >
+                    {s}
+                  </button>
                 ))}
               </div>
             </div>
@@ -205,13 +256,37 @@ export function AppointmentCreatePage() {
         <div className="panel" style={{ marginBottom: 14 }}>
           <div className="section-title">3. Details</div>
           <div className="form-grid">
-            <div className="field"><label className="label">Type</label><select className="select" value={type} onChange={(e) => setType(e.target.value)}>{TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
-            <div className="field"><label className="label">Provider (optional)</label><input className="input" value={providerName} onChange={(e) => setProviderName(e.target.value)} placeholder="Defaults to current user" /></div>
-            <div className="field span-2"><label className="label">Reason / chief complaint</label><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} /></div>
+            <div className="field">
+              <label className="label">Type</label>
+              <select className="select" value={type} onChange={(e) => setType(e.target.value)}>
+                {TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label className="label">Provider (optional)</label>
+              <input
+                className="input"
+                value={providerName}
+                onChange={(e) => setProviderName(e.target.value)}
+                placeholder="Defaults to current user"
+              />
+            </div>
+            <div className="field span-2">
+              <label className="label">Reason / chief complaint</label>
+              <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} />
+            </div>
           </div>
           <div className="form-actions">
-            <button type="button" className="btn-ghost" onClick={() => navigate('/appointments')}>Cancel</button>
-            <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Create appointment'}</button>
+            <button type="button" className="btn-ghost" onClick={() => navigate('/appointments')}>
+              Back
+            </button>
+            <button type="submit" className="btn-primary" disabled={saving || !patientId}>
+              {saving ? 'Saving...' : 'Create appointment'}
+            </button>
           </div>
         </div>
       </form>
