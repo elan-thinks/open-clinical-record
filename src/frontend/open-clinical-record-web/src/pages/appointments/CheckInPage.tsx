@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { listAppointments, updateAppointmentStatus, type Appointment } from '../../services/appointmentsApi';
 import './CheckInPage.css';
 
-type FilterId = 'all' | 'Scheduled' | 'Waiting' | 'CheckedIn' | 'Completed' | 'Walk-in';
+type FilterId = 'all' | 'Scheduled' | 'Waiting' | 'CheckedIn' | 'Walk-in' | 'Completed';
+
+const TERMINAL = new Set(['Completed', 'Cancelled', 'NoShow']);
 
 function todayIso(): string {
   const d = new Date();
@@ -19,10 +21,11 @@ function formatTime(t: string): string {
 
 function statusClass(status: string): string {
   const s = status.toLowerCase();
-  if (s === 'checkedin' || s === 'completed' || s === 'inprogress') return 's-ok';
+  if (s === 'checkedin' || s === 'inprogress') return 's-ok';
   if (s === 'waiting') return 's-wait';
   if (s === 'scheduled') return 's-dim';
   if (s === 'cancelled' || s === 'noshow') return 's-bad';
+  if (s === 'completed') return 's-done';
   return 's-dim';
 }
 
@@ -30,11 +33,8 @@ function statusLabel(status: string): string {
   if (status === 'CheckedIn') return 'Checked in';
   if (status === 'NoShow') return 'No-show';
   if (status === 'InProgress') return 'In progress';
-  if (status === 'Completed') return 'Completed';
   return status;
 }
-
-const CLOSED = new Set(['Completed', 'Cancelled', 'NoShow']);
 
 export function CheckInPage() {
   const navigate = useNavigate();
@@ -44,6 +44,9 @@ export function CheckInPage() {
   const [filter, setFilter] = useState<FilterId>('all');
   const [q, setQ] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelBusy, setCancelBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,6 +65,11 @@ export function CheckInPage() {
     void load();
   }, [load]);
 
+  const activeItems = useMemo(
+    () => items.filter((a) => !TERMINAL.has(a.status)),
+    [items],
+  );
+
   const stats = useMemo(() => {
     const scheduled = items.filter((a) => a.status === 'Scheduled').length;
     const checkedIn = items.filter((a) => a.status === 'CheckedIn' || a.status === 'InProgress').length;
@@ -70,20 +78,15 @@ export function CheckInPage() {
     const walkIns = items.filter((a) =>
       (a.appointmentType || '').toLowerCase().includes('walk'),
     ).length;
-    return { scheduled: items.length, checkedIn, waiting, walkIns, scheduledOnly: scheduled, completed };
-  }, [items]);
+    return { scheduled: activeItems.length, checkedIn, waiting, walkIns, scheduledOnly: scheduled, completed };
+  }, [items, activeItems]);
 
   const filtered = useMemo(() => {
-    let list = items;
-    // Default "all" = active queue only (not yet completed/cancelled)
-    if (filter === 'all') {
-      list = list.filter((a) => !CLOSED.has(a.status));
-    } else if (filter === 'Walk-in') {
-      list = list.filter((a) => (a.appointmentType || '').toLowerCase().includes('walk'));
-    } else if (filter === 'Completed') {
-      list = list.filter((a) => a.status === 'Completed');
-    } else {
-      list = list.filter((a) => a.status === filter);
+    let list = filter === 'Completed' ? items.filter((a) => a.status === 'Completed') : activeItems;
+    if (filter === 'Walk-in') {
+      list = activeItems.filter((a) => (a.appointmentType || '').toLowerCase().includes('walk'));
+    } else if (filter !== 'all' && filter !== 'Completed') {
+      list = activeItems.filter((a) => a.status === filter);
     }
     const term = q.trim().toLowerCase();
     if (term) {
@@ -95,7 +98,7 @@ export function CheckInPage() {
       );
     }
     return list;
-  }, [items, filter, q]);
+  }, [items, activeItems, filter, q]);
 
   async function setStatus(id: string, status: string, reason?: string) {
     setBusyId(id);
@@ -110,8 +113,28 @@ export function CheckInPage() {
     }
   }
 
+  async function confirmCancel() {
+    if (!cancelTarget) return;
+    if (!cancelReason.trim()) {
+      setError('A reason is required when cancelling.');
+      return;
+    }
+    setCancelBusy(true);
+    setError(null);
+    try {
+      await updateAppointmentStatus(cancelTarget.id, 'Cancelled', cancelReason.trim());
+      setCancelTarget(null);
+      setCancelReason('');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Cancel failed');
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
   function primaryAction(a: Appointment): { label: string; next: string } | null {
-    if (CLOSED.has(a.status)) return null;
+    if (TERMINAL.has(a.status)) return null;
     if (a.status === 'Scheduled' || a.status === 'Waiting') {
       return { label: 'Check in', next: 'CheckedIn' };
     }
@@ -127,7 +150,7 @@ export function CheckInPage() {
         <div>
           <div className="page-title">Check-in / Queue</div>
           <div className="page-sub">
-            Front desk · Confirm identity → Check in → Waiting workflow. Finalized consults move to Completed.
+            Front desk · Confirm identity → Check in → Waiting workflow
           </div>
         </div>
         <div className="head-actions">
@@ -142,7 +165,7 @@ export function CheckInPage() {
 
       <div className="stats">
         <div className="stat">
-          <div className="stat-label">Today total</div>
+          <div className="stat-label">Active today</div>
           <div className="stat-val">{stats.scheduled}</div>
         </div>
         <div className="stat">
@@ -191,7 +214,7 @@ export function CheckInPage() {
 
       <div className="panel">
         {loading ? (
-          <div className="empty">Loading today's queue…</div>
+          <div className="empty">Loading today&apos;s queue…</div>
         ) : filtered.length === 0 ? (
           <div className="empty">No appointments match. Book one or clear filters.</div>
         ) : (
@@ -209,8 +232,9 @@ export function CheckInPage() {
             <tbody>
               {filtered.map((a) => {
                 const action = primaryAction(a);
+                const isTerminal = TERMINAL.has(a.status);
                 return (
-                  <tr key={a.id}>
+                  <tr key={a.id} className={isTerminal ? 'row-done' : undefined}>
                     <td className="time">{formatTime(a.startTime)}</td>
                     <td>
                       <div className="pname">{a.patientName}</div>
@@ -245,14 +269,15 @@ export function CheckInPage() {
                           Arrive / Wait
                         </button>
                       )}
-                      {!CLOSED.has(a.status) && (
+                      {!isTerminal && (
                         <button
                           type="button"
-                          className="btn-sm ghost"
+                          className="btn-sm ghost danger"
                           disabled={busyId === a.id}
                           onClick={() => {
-                            const reason = window.prompt('Cancel reason (required):');
-                            if (reason && reason.trim()) void setStatus(a.id, 'Cancelled', reason.trim());
+                            setCancelTarget(a);
+                            setCancelReason('');
+                            setError(null);
                           }}
                         >
                           Cancel
@@ -282,25 +307,69 @@ export function CheckInPage() {
             <br />
             <b>2.</b> Check in → status <em>Checked in</em>
             <br />
-            <b>3.</b> Doctor finalizes consult → appointment <em>Completed</em>
+            <b>3.</b> Clinician finalizes visit → status <em>Completed</em> (leaves active queue)
           </div>
         </div>
         <div className="flow-card">
-          <div className="flow-title">Visit vs appointment</div>
+          <div className="flow-title">Walk-in</div>
           <div className="flow-steps">
-            <b>Appointment</b> = front-desk status (Scheduled → Checked in → Completed).
+            <b>1.</b> Register patient if new
             <br />
-            <b>Clinical visit</b> = chart documentation (Draft → Final).
+            <b>2.</b> Book walk-in appointment (or use Arrived path)
             <br />
-            Finalizing the visit closes the linked appointment automatically.
+            <b>3.</b> Check in when ready for care
           </div>
         </div>
       </div>
 
       <div className="note">
         Receptionist view: demographics, appointment status, and check-in actions only. Clinical notes and
-        diagnoses stay on the chart.
+        diagnoses stay on the chart. Finalized consultations auto-complete the appointment.
       </div>
+
+      {cancelTarget && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <div className="modal-title">Cancel appointment</div>
+            <div className="modal-sub">
+              {cancelTarget.patientName} · {formatTime(cancelTarget.startTime)} · {cancelTarget.appointmentType}
+            </div>
+            <label className="modal-label" htmlFor="cancel-reason">
+              Reason <span className="req">*</span>
+            </label>
+            <textarea
+              id="cancel-reason"
+              className="modal-textarea"
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="e.g. Patient requested, provider unavailable, double-booked…"
+              autoFocus
+            />
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={cancelBusy}
+                onClick={() => {
+                  setCancelTarget(null);
+                  setCancelReason('');
+                }}
+              >
+                Keep appointment
+              </button>
+              <button
+                type="button"
+                className="btn-danger"
+                disabled={cancelBusy || !cancelReason.trim()}
+                onClick={() => void confirmCancel()}
+              >
+                {cancelBusy ? 'Cancelling…' : 'Confirm cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
