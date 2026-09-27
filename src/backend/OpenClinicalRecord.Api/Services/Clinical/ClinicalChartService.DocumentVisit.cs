@@ -206,7 +206,7 @@ public sealed partial class ClinicalChartService
         await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.Id == patientId, ct);
 
     private static bool IsDeceased(Patient p) =>
-        p.IsDeceased || p.DateOfDeath.HasValue;
+        string.Equals(p.Status, "Deceased", StringComparison.OrdinalIgnoreCase);
 
     private static string NormalizeVisitStatus(string status, string? visitType)
     {

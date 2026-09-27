@@ -6,6 +6,7 @@ export type ApiErrorCode =
   | 'not_found'
   | 'conflict'
   | 'validation'
+  | 'network'
   | 'unknown';
 
 export class ApiError extends Error {
