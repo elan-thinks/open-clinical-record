@@ -1,23 +1,40 @@
 # Submission PDFs
 
-The three internship submission PDFs are stored as **base64 text** (`.pdf.b64`) so they remain intact on GitHub.
+## Ready-to-submit files (full quality)
 
-## Get the PDF files
-
-```bash
-cd docs/08-finalization/deliverables
-chmod +x decode-pdfs.sh
-./decode-pdfs.sh
-```
-
-This creates:
+These three PDFs should live in this folder:
 
 | File | Description |
 |------|-------------|
-| `OCR-SRS-v2.pdf` | Software Requirements Specification v2.0 |
-| `OCR-User-Manual.pdf` | User Manual |
-| `OCR-Technical-Documentation.pdf` | Technical Documentation |
+| `OCR-SRS-v2.pdf` | Software Requirements Specification v2.0 (9 pages) |
+| `OCR-User-Manual.pdf` | User Manual (7 pages) |
+| `OCR-Technical-Documentation.pdf` | Technical Documentation (8 pages) |
 
-LaTeX sources are in `latex/` if you need to rebuild from source.
+### Option A — from your machine (recommended)
 
-> **Why `.b64`?** The GitHub file-write API transports content as UTF-8 text. Raw binary PDFs would be corrupted. Base64 is pure ASCII and decodes to the original PDF.
+```bash
+git pull origin main
+# copy the three PDFs into docs/08-finalization/deliverables/
+git add docs/08-finalization/deliverables/*.pdf
+git commit -m "docs(final): add submission PDFs"
+git push origin main
+```
+
+### Option B — GitHub website
+
+1. Open `docs/08-finalization/deliverables/` on GitHub
+2. **Add file → Upload files**
+3. Drop the three PDFs → Commit
+
+### Rebuild from LaTeX
+
+```bash
+cd latex
+pdflatex ocr-srs.tex && pdflatex ocr-srs.tex
+pdflatex ocr-user-manual.tex && pdflatex ocr-user-manual.tex
+pdflatex ocr-technical-documentation.tex && pdflatex ocr-technical-documentation.tex
+```
+
+> **Note:** Automation cannot push raw binary PDFs through the text file API without corruption (UTF-8). Local `git push` or the GitHub web uploader handles binaries correctly.
+
+LaTeX sources are in `latex/` (restored and non-empty).
