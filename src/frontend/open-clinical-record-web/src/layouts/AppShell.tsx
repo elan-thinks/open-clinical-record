@@ -79,7 +79,7 @@ export function AppShell({
       characterData: true,
     });
     return () => observer.disconnect();
-  }, [currentPath, children]);
+  }, [currentPath]);
 
   // Scroll cue for every signed-in role (AppShell wraps all authenticated routes)
   useEffect(() => {
@@ -116,7 +116,7 @@ export function AppShell({
       window.removeEventListener('resize', updateScrollCue);
       ro?.disconnect();
     };
-  }, [children, currentPath]);
+  }, [currentPath]);
 
   function onScrollCueClick() {
     const el = document.documentElement;
