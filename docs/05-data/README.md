@@ -1,32 +1,21 @@
-# OCR data / database docs
+# Data documentation
 
-| File | Purpose |
-|------|--------|
-| [`ocr-complete-database.sql`](./ocr-complete-database.sql) | Full PostgreSQL reference schema matching EF Core (Week 4) |
-| [`ocr-database-audit.md`](./ocr-database-audit.md) | Table inventory, conflicts, checklist |
+**Last updated:** 2026-09-27
 
-## Apply schema
+| Artifact | Role |
+|----------|------|
+| `ocr-database-audit.md` | FK policy, history safety, alignment notes |
+| `ocr-complete-database.sql` | Reference schema dump for reading — **not** applied in preference to EF migrations |
 
-**Preferred for the running app:**
+## Source of truth
 
-```bash
-cd src/backend/OpenClinicalRecord.Api
-dotnet ef database update
-```
+Runtime schema is defined by:
 
-**Reference script (empty DB / documentation):**
+`src/backend/OpenClinicalRecord.Api/Data/AppDbContext.cs`  
+`src/backend/OpenClinicalRecord.Api/Migrations/`
 
-From the **repository root**:
+When migrations change, update or regenerate the reference SQL if it is still needed for reviewers who prefer `.sql` files.
 
-```powershell
-psql -U postgres -d open_clinical_record -f docs/05-data/ocr-complete-database.sql
-```
+## Core tables (MVP)
 
-If you get `No such file or directory`, you are not in the repo root. Example:
-
-```powershell
-cd D:\edHil ╝\Intern\Home_code\open-clinical-record\open-clinical-record
-psql -U postgres -d open_clinical_record -f docs/05-data/ocr-complete-database.sql
-```
-
-Or use an absolute path to the `.sql` file.
+Patients, PatientAllergies, MedicalHistoryItems, ClinicalVisits, VitalSigns, Diagnoses, ClinicalNotes, Appointments, AppointmentEvents, PatientDeathRecords, AuditEvents (plus Identity tables for users/roles).

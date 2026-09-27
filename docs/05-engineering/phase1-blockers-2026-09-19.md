@@ -1,14 +1,5 @@
-# Phase 1 blockers — applied 2026-09-19
+> **Historical note:** Point-in-time engineering log. Current rules: `docs/03-requirements/clinical-domain-rules.md`, structure: `docs/04-architecture/project-structure.md`.
 
-| Issue | Change | File |
-|-------|--------|------|
-| Visit defaulted to Final | Blank status → **Draft** | ClinicalChartController.NormalizeVisitStatus |
-| PUT could mark Deceased | Reject; use POST /deceased | PatientsController |
-| Create as Deceased | Rejected | PatientsController |
-| Admin on appointment status | Roles = Receptionist,Doctor,Nurse only | AppointmentsController |
+# Phase 1 blockers (2026-09-19)
 
-Tests: `Phase1BlockerTests.cs`
-
-```bash
-dotnet test tests/backend/OpenClinicalRecord.Api.Tests --filter Phase1BlockerTests
-```
+Historical log of Phase 1 blockers resolved around Draft default visits, deceased path-only updates, and Admin appointment status constraints. See Week 7 and domain rules for current behavior.
