@@ -138,16 +138,43 @@ public sealed partial class ClinicalChartService
             });
         }
 
+        var becameFinal = false;
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
             var newStatus = NormalizeVisitStatus(request.Status, visit.VisitType);
             visit.Status = newStatus;
             if (string.Equals(newStatus, "Final", StringComparison.OrdinalIgnoreCase))
             {
+                becameFinal = true;
                 visit.FinalizedAt = DateTimeOffset.UtcNow;
                 visit.FinalizedByUserId = actor.UserId;
                 visit.FinalizedByName = actor.DisplayName;
                 visit.CheckOutAt ??= DateTimeOffset.UtcNow;
+            }
+        }
+
+        // Align appointment queue: Final visit → linked appointment Completed
+        if (becameFinal && visit.AppointmentId.HasValue)
+        {
+            var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == visit.AppointmentId.Value, ct);
+            if (appt is not null
+                && !string.Equals(appt.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(appt.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+            {
+                var from = appt.Status;
+                appt.Status = "Completed";
+                appt.UpdatedAt = DateTimeOffset.UtcNow;
+                _db.AppointmentEvents.Add(new AppointmentEvent
+                {
+                    Id = Guid.NewGuid(),
+                    AppointmentId = appt.Id,
+                    FromStatus = from,
+                    ToStatus = "Completed",
+                    Reason = "Consultation finalized",
+                    ActorUserId = actor.UserId,
+                    ActorName = actor.DisplayName,
+                    CreatedAt = DateTimeOffset.UtcNow
+                });
             }
         }
 
