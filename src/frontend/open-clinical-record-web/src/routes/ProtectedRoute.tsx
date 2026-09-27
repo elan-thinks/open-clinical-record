@@ -18,8 +18,7 @@ const PASSWORD_CHANGE_PATH = '/profile';
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   const location = useLocation();
-  // Only this “Restoring your session…” screen stays longer (~3.2s)
-  const showLoader = useHoldLoading(isLoading, 3200);
+  const showLoader = useHoldLoading(isLoading, 0);
 
   if (showLoader) {
     return (

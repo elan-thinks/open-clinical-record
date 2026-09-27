@@ -81,40 +81,37 @@ export function AppShell({
     return () => observer.disconnect();
   }, [currentPath]);
 
-  // Scroll cue for every signed-in role (AppShell wraps all authenticated routes)
+  // Scroll cue — only update state when values actually change (avoids re-render loops
+  // from ResizeObserver + new object identity on every tick).
   useEffect(() => {
     function updateScrollCue() {
       const el = document.documentElement;
       const max = Math.max(0, el.scrollHeight - el.clientHeight);
+      let next: { show: boolean; dir: 'down' | 'up' };
       if (max < 24) {
-        setScrollCue({ show: false, dir: 'down' });
-        return;
+        next = { show: false, dir: 'down' };
+      } else {
+        const y = window.scrollY || el.scrollTop;
+        const nearBottom = y >= max - 48;
+        next = { show: true, dir: nearBottom ? 'up' : 'down' };
       }
-      const y = window.scrollY || el.scrollTop;
-      const nearBottom = y >= max - 48;
-      setScrollCue({ show: true, dir: nearBottom ? 'up' : 'down' });
+      setScrollCue((prev) =>
+        prev.show === next.show && prev.dir === next.dir ? prev : next,
+      );
     }
 
     updateScrollCue();
-    // Content often loads after route change — recheck a few times
-    const t1 = window.setTimeout(updateScrollCue, 120);
-    const t2 = window.setTimeout(updateScrollCue, 400);
-    const t3 = window.setTimeout(updateScrollCue, 1000);
+    const t1 = window.setTimeout(updateScrollCue, 150);
+    const t2 = window.setTimeout(updateScrollCue, 500);
 
     window.addEventListener('scroll', updateScrollCue, { passive: true });
     window.addEventListener('resize', updateScrollCue);
 
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScrollCue) : null;
-    ro?.observe(document.documentElement);
-    if (document.body) ro?.observe(document.body);
-
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
-      window.clearTimeout(t3);
       window.removeEventListener('scroll', updateScrollCue);
       window.removeEventListener('resize', updateScrollCue);
-      ro?.disconnect();
     };
   }, [currentPath]);
 

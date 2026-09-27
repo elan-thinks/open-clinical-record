@@ -28,7 +28,13 @@ export function AppLayout() {
   }, [checkBackend]);
 
   if (!user) {
-    return null;
+    // Never paint a blank white root — ProtectedRoute should redirect, but keep a
+    // visible fallback if session is mid-clear.
+    return (
+      <div style={{ padding: 40, color: 'var(--text-dim)', textAlign: 'center' }}>
+        Loading workspace…
+      </div>
+    );
   }
 
   return (
