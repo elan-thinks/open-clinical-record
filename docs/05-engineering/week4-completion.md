@@ -1,35 +1,5 @@
-# Week 4 completion status
+> **Historical note:** Point-in-time engineering log. Current rules: `docs/03-requirements/clinical-domain-rules.md`, structure: `docs/04-architecture/project-structure.md`.
 
-**Product:** Open Clinical Record  
-**Date:** 2026-09-15
+# Week 4 completion (historical)
 
-## Definition of done
-
-```text
-Patient → Appointment/Walk-in → Check-in → Visit → Clinical record → Save
-  → Patient Chart → Visit History → Historical visit detail
-AND same patient can return without overwriting prior visits.
-```
-
-## Checklist
-
-| Item | Status |
-|------|--------|
-| Visit model (`ClinicalVisit`) | ✅ |
-| Encounter content (vitals, dx, notes) | ✅ |
-| Multiple visits (always insert) | ✅ |
-| Check-in → Draft visit | ✅ |
-| GET single visit (patient-scoped) | ✅ |
-| PATCH document open Draft | ✅ |
-| Medical Records → real data / chart | ✅ |
-| Clinical writes Doctor/Nurse only | ✅ |
-| Admin not automatic clinical author | ✅ |
-| LongitudinalVisitTests | ✅ |
-| No Rx/lab/FHIR scope creep | ✅ |
-
-## Remaining limitations
-
-- AUDIT_EVENT deferred
-- PATIENT_ALERT logical only
-- Walk-in = visit without AppointmentId
-- Run `dotnet test` locally / CI
+Clinical records week close-out notes. Visit/chart capabilities continued through later phases and Week 7.

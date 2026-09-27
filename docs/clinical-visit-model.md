@@ -1,5 +1,9 @@
 # Clinical model: Patient → Visit → Encounter
 
+**Last updated:** 2026-09-27
+
+When a visit is set to **Final**, the linked appointment (if any) is set to **Completed** so the patient leaves the active check-in queue.
+
 Open Clinical Record follows an OpenMRS / FHIR-inspired longitudinal model.
 
 ## Rules
@@ -31,60 +35,15 @@ PATIENT (registered once)
 | Appointment → Visit | Optional `ClinicalVisit.AppointmentId`; created on **CheckedIn** |
 | Episode of care (optional) | `ClinicalVisit.EpisodeLabel` string (full Episode entity deferred) |
 
-## Visit fields
+## Visit statuses
 
-- VisitDate, VisitType, Status (`Draft` \| `Final` \| `Cancelled`)
-- Location, Department, EpisodeLabel
-- ChiefComplaint, Plan, Instructions
-- Clinician, CheckInAt / CheckOutAt, FinalizedAt
-- AppointmentId (from check-in)
-
-## Workflow
-
-```
-Appointment (Scheduled)
-  → Check-in
-  → ClinicalVisit created (Draft, linked to appointment)
-  → Nurse records vitals (new visit of type Vitals, or documentation on open visit)
-  → Doctor documents consultation (new visit of type Consultation, or Final on draft)
-  → Status Final
-```
-
-**Important:** Saving vitals or a consultation **inserts a new `ClinicalVisit` row**. Historical rows remain intact.
-
-## Modules
-
-| Module | Focus |
-|--------|--------|
-| **Medical Chart** | Longitudinal patient story: overview, allergies, history, **visit history**, vitals |
-| **Medical Records** | Entry point into visit / consultation documentation |
-| **Appointments** | Planned interaction → check-in → visit |
-
-## Migration
-
-`20260915110000_EnhanceVisitEncounterModel` adds AppointmentId, EpisodeLabel, Location, Department, CheckInAt, CheckOutAt.
-
-## Module boundaries (MVP)
-
-| Module | Meaning |
+| Status | Meaning |
 |--------|---------|
-| **Patient Management** | Registration, search, demographics, status (including deceased) |
-| **Medical Chart** | Longitudinal **patient-level** view: demographics, allergies, history/meds, alerts, visit history summary |
-| **Medical Records** | **Visit/encounter-level** clinical details attached to each attendance (vitals, diagnoses, notes, plan for Visit N) |
-| **Appointments** | Scheduling, status lifecycle, check-in / queue |
+| Draft | Editable |
+| Final | Immutable; new content requires a new visit |
+| Cancelled | Voided |
 
-```text
-PATIENT (registered once)
-├── Medical Chart (longitudinal)
-│   ├── Demographics, allergies, meds/history, alerts
-│   └── Visit history (list of attendances)
-├── Medical Records (per visit)
-│   ├── Visit 001 → encounter content
-│   ├── Visit 002 → encounter content
-│   └── …
-└── Appointments
-    ├── Appointment 001 → (optional) check-in → Visit
-    └── …
-```
+## Related
 
-Rule: **never overwrite** a prior visit’s encounter when the patient returns.
+- Domain rules: `docs/03-requirements/clinical-domain-rules.md`
+- Access matrix: `docs/05-engineering/access-control-report.md`
