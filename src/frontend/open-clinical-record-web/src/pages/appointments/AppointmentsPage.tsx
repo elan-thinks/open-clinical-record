@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   listAppointments,
   updateAppointmentStatus,
+  rescheduleAppointment,
   type Appointment,
 } from '../../services/appointmentsApi';
 import { Icon } from '../../components/Icon';
@@ -15,7 +16,10 @@ const FILTERS = [
   { id: 'Waiting', label: 'Waiting' },
   { id: 'Scheduled', label: 'Scheduled' },
   { id: 'Cancelled', label: 'Cancelled' },
+  { id: 'Completed', label: 'Completed' },
 ] as const;
+
+const CAN_RESCHEDULE = new Set(['Scheduled', 'Waiting', 'Cancelled', 'NoShow']);
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 const HOUR_PX = 72;
@@ -87,11 +91,15 @@ function statusClass(status: string): string {
   if (status === 'CheckedIn' || status === 'InProgress') return 'checked';
   if (status === 'Waiting') return 'waiting';
   if (status === 'Cancelled' || status === 'NoShow') return 'cancelled';
+  if (status === 'Completed') return 'completed';
   if (status === 'Scheduled') return 'scheduled';
   return 'nurse';
 }
 function statusLabel(status: string): string {
-  return status === 'CheckedIn' ? 'Checked in' : status;
+  if (status === 'CheckedIn') return 'Checked in';
+  if (status === 'InProgress') return 'In progress';
+  if (status === 'NoShow') return 'No-show';
+  return status;
 }
 function hourLabel(h: number): string {
   if (h === 12) return '12 PM';
@@ -129,12 +137,22 @@ export function AppointmentsPage() {
   const [date, setDate] = useState(todayIso);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [view, setView] = useState<'list' | 'calendar'>('calendar');
+  const [view, setView] = useState<'list' | 'calendar'>('list');
   const [calMode, setCalMode] = useState<'day' | 'week'>('week');
   const [items, setItems] = useState<Appointment[]>([]);
   const [weekItems, setWeekItems] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
+  const [rsDate, setRsDate] = useState('');
+  const [rsTime, setRsTime] = useState('09:30');
+  const [rsDuration, setRsDuration] = useState(30);
+  const [rsProvider, setRsProvider] = useState('');
+  const [rsReason, setRsReason] = useState('');
+  const [rsBusy, setRsBusy] = useState(false);
   const selected = parseIso(date);
   const [calYear, setCalYear] = useState(selected.getFullYear());
   const [calMonth, setCalMonth] = useState(selected.getMonth());
@@ -178,6 +196,11 @@ export function AppointmentsPage() {
     else void loadDay();
   }, [view, calMode, loadDay, loadWeek]);
 
+  async function reload() {
+    if (view === 'calendar' && calMode === 'week') await loadWeek();
+    else await loadDay();
+  }
+
   const filteredDay = useMemo(() => {
     let list = items;
     if (filter !== 'all') list = list.filter((a) => a.status === filter);
@@ -217,10 +240,70 @@ export function AppointmentsPage() {
     setError(null);
     try {
       await updateAppointmentStatus(id, status);
-      if (calMode === 'week' && view === 'calendar') await loadWeek();
-      else await loadDay();
+      await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Status update failed');
+    }
+  }
+
+  function openCancel(a: Appointment) {
+    setCancelTarget(a);
+    setCancelReason('');
+    setError(null);
+  }
+
+  function openReschedule(a: Appointment) {
+    setRescheduleTarget(a);
+    setRsDate(a.appointmentDate);
+    setRsTime(formatTime(a.startTime));
+    setRsDuration(a.durationMinutes || 30);
+    setRsProvider(a.providerName || '');
+    setRsReason('');
+    setError(null);
+  }
+
+  async function confirmCancel() {
+    if (!cancelTarget) return;
+    if (!cancelReason.trim()) {
+      setError('A reason is required when cancelling.');
+      return;
+    }
+    setCancelBusy(true);
+    setError(null);
+    try {
+      await updateAppointmentStatus(cancelTarget.id, 'Cancelled', cancelReason.trim());
+      setCancelTarget(null);
+      setCancelReason('');
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Cancel failed');
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
+  async function confirmReschedule() {
+    if (!rescheduleTarget) return;
+    if (!rsDate || !rsTime) {
+      setError('Date and time are required to reschedule.');
+      return;
+    }
+    setRsBusy(true);
+    setError(null);
+    try {
+      await rescheduleAppointment(rescheduleTarget.id, {
+        appointmentDate: rsDate,
+        startTime: rsTime.length === 5 ? `${rsTime}:00` : rsTime,
+        durationMinutes: rsDuration,
+        providerName: rsProvider.trim() || undefined,
+        reason: rsReason.trim() || undefined,
+      });
+      setRescheduleTarget(null);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Reschedule failed');
+    } finally {
+      setRsBusy(false);
     }
   }
 
@@ -255,7 +338,9 @@ export function AppointmentsPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Appointments</h1>
-          <p className="page-sub">Today · {scheduledCount} scheduled · List or calendar view</p>
+          <p className="page-sub">
+            {formatChip(date)} · {scheduledCount} shown · List or calendar
+          </p>
         </div>
         <button type="button" className="btn-primary" onClick={() => navigate('/appointments/new')}>
           <Icon name="cal" size={15} />
@@ -340,17 +425,22 @@ export function AppointmentsPage() {
                         {statusLabel(a.status)}
                       </span>
                     </td>
-                    <td>
+                    <td className="actions">
                       {(a.status === 'Scheduled' || a.status === 'Waiting') && (
                         <button type="button" className="action-link" onClick={() => void setStatus(a.id, 'CheckedIn')}>
                           Check in
+                        </button>
+                      )}
+                      {CAN_RESCHEDULE.has(a.status) && (
+                        <button type="button" className="action-link" onClick={() => openReschedule(a)}>
+                          Reschedule
                         </button>
                       )}
                       <button type="button" className="action-link" onClick={() => navigate(`/patients/${a.patientId}/chart`)}>
                         Chart
                       </button>
                       {a.status !== 'Cancelled' && a.status !== 'Completed' && (
-                        <button type="button" className="action-link muted" onClick={() => void setStatus(a.id, 'Cancelled')}>
+                        <button type="button" className="action-link muted" onClick={() => openCancel(a)}>
                           Cancel
                         </button>
                       )}
@@ -408,7 +498,7 @@ export function AppointmentsPage() {
               })}
             </div>
             <div className="upcoming-box">
-              <div className="upcoming-title">Today's queue</div>
+              <div className="upcoming-title">Today&apos;s queue</div>
               {loading ? (
                 <div className="empty" style={{ padding: 8 }}>
                   Loading...
@@ -538,6 +628,112 @@ export function AppointmentsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelTarget && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <div className="modal-title">Cancel appointment</div>
+            <div className="modal-sub">
+              {cancelTarget.patientName} · {formatTime(cancelTarget.startTime)} · {cancelTarget.appointmentType}
+            </div>
+            <label className="modal-label" htmlFor="appt-cancel-reason">
+              Reason <span className="req">*</span>
+            </label>
+            <textarea
+              id="appt-cancel-reason"
+              className="modal-textarea"
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="e.g. Patient requested, provider unavailable…"
+              autoFocus
+            />
+            <div className="modal-actions">
+              <button type="button" className="modal-btn ghost" disabled={cancelBusy} onClick={() => setCancelTarget(null)}>
+                Keep appointment
+              </button>
+              <button
+                type="button"
+                className="modal-btn danger"
+                disabled={cancelBusy || !cancelReason.trim()}
+                onClick={() => void confirmCancel()}
+              >
+                {cancelBusy ? 'Cancelling…' : 'Confirm cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rescheduleTarget && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal-card modal-wide">
+            <div className="modal-title">Reschedule appointment</div>
+            <div className="modal-sub">
+              {rescheduleTarget.patientName} · currently {rescheduleTarget.appointmentDate} {formatTime(rescheduleTarget.startTime)}
+            </div>
+            <div className="modal-grid">
+              <div>
+                <label className="modal-label" htmlFor="rs-date">
+                  New date <span className="req">*</span>
+                </label>
+                <input id="rs-date" className="modal-input" type="date" value={rsDate} onChange={(e) => setRsDate(e.target.value)} />
+              </div>
+              <div>
+                <label className="modal-label" htmlFor="rs-time">
+                  New time <span className="req">*</span>
+                </label>
+                <input id="rs-time" className="modal-input" type="time" value={rsTime} onChange={(e) => setRsTime(e.target.value)} />
+              </div>
+              <div>
+                <label className="modal-label" htmlFor="rs-dur">
+                  Duration (min)
+                </label>
+                <input
+                  id="rs-dur"
+                  className="modal-input"
+                  type="number"
+                  min={15}
+                  max={240}
+                  step={15}
+                  value={rsDuration}
+                  onChange={(e) => setRsDuration(Number(e.target.value) || 30)}
+                />
+              </div>
+              <div>
+                <label className="modal-label" htmlFor="rs-prov">
+                  Provider
+                </label>
+                <input id="rs-prov" className="modal-input" value={rsProvider} onChange={(e) => setRsProvider(e.target.value)} />
+              </div>
+            </div>
+            <label className="modal-label" htmlFor="rs-reason">
+              Note (optional)
+            </label>
+            <textarea
+              id="rs-reason"
+              className="modal-textarea"
+              rows={2}
+              value={rsReason}
+              onChange={(e) => setRsReason(e.target.value)}
+              placeholder="Why the slot changed…"
+            />
+            <div className="modal-actions">
+              <button type="button" className="modal-btn ghost" disabled={rsBusy} onClick={() => setRescheduleTarget(null)}>
+                Close
+              </button>
+              <button
+                type="button"
+                className="modal-btn primary"
+                disabled={rsBusy || !rsDate || !rsTime}
+                onClick={() => void confirmReschedule()}
+              >
+                {rsBusy ? 'Saving…' : 'Save new slot'}
+              </button>
             </div>
           </div>
         </div>
