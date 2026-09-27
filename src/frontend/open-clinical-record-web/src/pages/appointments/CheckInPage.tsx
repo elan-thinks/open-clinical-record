@@ -269,6 +269,16 @@ export function CheckInPage() {
                           Arrive / Wait
                         </button>
                       )}
+                      {(a.status === 'CheckedIn' || a.status === 'InProgress') && (
+                        <button
+                          type="button"
+                          className="btn-sm ghost"
+                          disabled={busyId === a.id}
+                          onClick={() => void setStatus(a.id, 'Completed', 'Manually marked complete')}
+                        >
+                          Complete
+                        </button>
+                      )}
                       {!isTerminal && (
                         <button
                           type="button"
