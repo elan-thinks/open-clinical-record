@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from './api';
 import { getToken } from './authStorage';
 
 export type ApiErrorCode =
@@ -96,13 +97,13 @@ async function parseError(res: Response): Promise<never> {
 
 export async function listAppointments(date?: string): Promise<Appointment[]> {
   const q = date ? `?date=${encodeURIComponent(date)}` : '';
-  const res = await fetch(`/api/appointments${q}`, { headers: authHeaders() });
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments${q}`, { headers: authHeaders() });
   if (!res.ok) await parseError(res);
   return (await res.json()) as Appointment[];
 }
 
 export async function createAppointment(payload: CreateAppointmentPayload): Promise<Appointment> {
-  const res = await fetch('/api/appointments', {
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -116,7 +117,7 @@ export async function updateAppointmentStatus(
   status: string,
   reason?: string,
 ): Promise<Appointment> {
-  const res = await fetch(`/api/appointments/${id}/status`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments/${id}/status`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify({ status, reason: reason ?? '' }),
@@ -134,7 +135,7 @@ export interface ReschedulePayload {
 }
 
 export async function rescheduleAppointment(id: string, payload: ReschedulePayload): Promise<Appointment> {
-  const res = await fetch(`/api/appointments/${id}/reschedule`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/appointments/${id}/reschedule`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -144,7 +145,7 @@ export async function rescheduleAppointment(id: string, payload: ReschedulePaylo
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const res = await fetch('/api/dashboard/stats', { headers: authHeaders() });
+  const res = await fetch(`${getApiBaseUrl()}/api/dashboard/stats`, { headers: authHeaders() });
   if (!res.ok) await parseError(res);
   return (await res.json()) as DashboardStats;
 }
