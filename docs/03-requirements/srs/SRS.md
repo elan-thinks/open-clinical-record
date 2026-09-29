@@ -13,7 +13,7 @@
 | **2.0** | **2026-09-27** | Four roles; longitudinal visits; appointment state machine; audit; NFRs linked to implementation |
 
 **Related documents:**  
-`docs/00-project/project-scope.md` · `docs/03-requirements/clinical-domain-rules.md` · `docs/03-requirements/traceability-matrix.md` · `docs/03-requirements/non-functional-requirements.md` · `docs/05-engineering/access-control-report.md` · `docs/clinical-visit-model.md` · `docs/08-finalization/technical-documentation.md`
+`docs/00-project/project-scope.md` · `docs/03-requirements/clinical-domain-rules.md` · `docs/03-requirements/traceability-matrix.md` · `docs/03-requirements/non-functional-requirements.md` · `docs/06-engineering/access-control-report.md` · `docs/clinical-visit-model.md` · `docs/08-finalization/technical-documentation.md`
 
 ---
 
@@ -272,7 +272,7 @@ Schema authority: **EF Core migrations**. Reference SQL under `docs/05-data/` is
 
 ### A. Seed users (development only)
 
-See `docs/05-engineering/access-control-report.md`.
+See `docs/06-engineering/access-control-report.md`.
 
 ### B. Appointment transition table
 
