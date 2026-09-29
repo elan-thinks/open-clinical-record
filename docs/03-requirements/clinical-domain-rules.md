@@ -1,6 +1,6 @@
 # Clinical domain rules (MVP)
 
-**Status:** Current as of 2026-09-27  
+**Status:** Current as of 2026-09-29  
 **Application roles:** Admin, Doctor, Nurse, Receptionist  
 
 This document is the **live domain contract** for the internship MVP. Research and early discovery docs may lag; prefer this file and `docs/clinical-visit-model.md`.
@@ -103,7 +103,7 @@ Labels only — they do not change authorization.
 | **Doctor** | Chart review and clinical writes, mark/clear deceased |
 | **Admin** | Users/audit, full operational access per matrix, clear deceased |
 
-Detailed matrix: [access-control-report.md](../05-engineering/access-control-report.md).
+Detailed matrix: [access-control-report.md](../06-engineering/access-control-report.md).
 
 **Frontend** controls visibility; **backend** enforces permission.
 
