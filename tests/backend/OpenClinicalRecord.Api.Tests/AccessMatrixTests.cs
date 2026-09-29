@@ -8,7 +8,7 @@ namespace OpenClinicalRecord.Api.Tests;
 
 /// <summary>
 /// Complete role × action matrix for patients, appointments, and deceased flows.
-/// Expected outcomes are documented in docs/05-engineering/access-control-report.md.
+/// Expected outcomes are documented in docs/06-engineering/access-control-report.md.
 /// </summary>
 public class AccessMatrixTests : IClassFixture<OcrWebApplicationFactory>
 {
