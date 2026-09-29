@@ -1,20 +1,34 @@
-# Open Clinical Record — Project Scope
+# Project Scope
 
-**Status:** MVP baseline (Week 8)
+**Last updated:** 2026-09-27 — roles and implemented modules aligned with product.
 
-## Product
+> Keep the first version small enough to finish within the remaining internship period.
 
-Open Clinical Record (OCR) is an **outpatient** electronic medical record internship MVP with three modules only:
+## Product Intent
 
-1. **Patient Management** — registration, unique MRN, search, demographics, status (including deceased policy)
-2. **Patient Chart** — longitudinal allergies/history and **per-visit** documentation (vitals, diagnoses, notes)
-3. **Appointment Management** — booking, status transitions, check-in/queue, cancel with reason, reschedule
+Open Clinical Record (OCR) is an internship MVP for a **focused outpatient electronic medical record**. It supports day-to-day clinic work around patients, their charts, and appointments—not a full hospital information system.
 
-## Explicitly out of scope
+## In Scope (MVP)
 
-Pharmacy, laboratory, radiology, billing/insurance, patient portal, FHIR/HL7 exchange, multi-facility enterprise scheduling, AI clinical decision support.
+Exactly three business modules:
 
-## Application roles (exactly four)
+1. **Patient Management** — registration, unique MRN, search, demographics, status (Active / Inactive / Deceased).
+2. **Patient Chart** — longitudinal allergies and history; **per-visit** documentation (vitals, diagnoses, notes) with Draft → Final lifecycle.
+3. **Appointment Management** — booking, calendar/list views, status transitions, check-in/queue, cancel with reason, reschedule, event history.
+
+Cross-cutting: authentication (JWT), role-based authorization, validation, audit logging, dashboard stats, health endpoints.
+
+## Out of Scope
+
+- Pharmacy / dispensing
+- Laboratory and imaging order management
+- Billing and insurance
+- Patient portal and native mobile apps
+- FHIR / HL7 external exchange
+- Multi-facility enterprise scheduling
+- AI clinical decision support
+
+## Application Roles (exactly four)
 
 | Role | Claim | Primary responsibilities |
 |------|-------|--------------------------|
@@ -27,8 +41,8 @@ Detailed permissions: `docs/06-engineering/access-control-report.md`.
 
 ## Cross-Cutting Concerns
 
-Authentication (JWT), role-based authorization, validation, audit logging, and clear error handling support the three modules. The API is the security boundary; the UI only shapes experience.
+Authentication, authorization, validation, error handling, and basic audit logging support the three modules. The **API** is the security boundary; UI route guards are not security.
 
-## Success for the internship
+## Success Criteria
 
-A demonstrable system on GitHub `main` with coherent domain rules, automated backend tests, user guide, technical documentation, and SRS — not a hospital-wide information system.
+A working application on GitHub `main` with coherent domain rules, automated backend tests, user guide, technical documentation, and SRS—demonstrable end-to-end without expanding into deferred modules.
