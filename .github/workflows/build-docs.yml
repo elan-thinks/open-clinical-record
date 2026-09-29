@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/03-requirements/srs/srs.tex'
       - 'docs/04-architecture/architecture-overview.tex'
       - '.github/workflows/build-docs.yml'
   workflow_dispatch:
@@ -21,11 +20,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Compile SRS
-        uses: xu-cheng/latex-action@v4
-        with:
-          root_file: docs/03-requirements/srs/srs.tex
-          latexmk_use_xelatex: false
+      # SRS submission PDF is maintained under docs/08-finalization/deliverables/
+      # (OCR-SRS-v2.pdf). Do not compile deleted docs/03-requirements/srs/srs.tex.
 
       - name: Compile architecture overview
         uses: xu-cheng/latex-action@v4
@@ -36,5 +32,5 @@ jobs:
       - name: Commit generated documentation
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: 'docs: update generated documentation'
-          file_pattern: 'docs/03-requirements/srs/srs.pdf docs/04-architecture/architecture-overview.pdf'
+          commit_message: 'docs: update generated architecture overview'
+          file_pattern: 'docs/04-architecture/architecture-overview.pdf'
