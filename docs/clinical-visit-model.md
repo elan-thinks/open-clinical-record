@@ -1,49 +1,39 @@
-# Clinical model: Patient → Visit → Encounter
+# Clinical visit model (Patient → Visit)
 
-**Last updated:** 2026-09-27
+**Status:** Implemented on `main`
 
-When a visit is set to **Final**, the linked appointment (if any) is set to **Completed** so the patient leaves the active check-in queue.
+## Hierarchy
 
-Open Clinical Record follows an OpenMRS / FHIR-inspired longitudinal model.
+```text
+Patient
+  ├── Allergies, Medical history (longitudinal)
+  ├── Appointments (+ AppointmentEvents)
+  └── ClinicalVisits
+         ├── VitalSigns (0..1)
+         ├── Diagnoses
+         └── ClinicalNotes
+```
 
 ## Rules
 
-1. **A patient is registered once.** Returns never create a new patient record.
-2. **Each attendance is a new Visit.** Prior visits are never overwritten.
-3. **Encounter content hangs off the Visit** (vitals, diagnoses, notes, plan).
+| Rule | Meaning |
+|------|--------|
+| Appointment ≠ visit | Scheduling is not documentation |
+| Check-in creates Draft visit | When applicable |
+| Draft is editable | Clinical staff may update |
+| Final is immutable | Further care requires a **new** visit |
+| History is never overwritten | Multiple visits accumulate |
+| Finalize → appointment Completed | Linked appointment leaves the active queue |
 
-```
-PATIENT (registered once)
- └── VISIT #1  (facility attendance / check-in)
- │     └── Encounter content
- │          ├── vitals
- │          ├── diagnoses
- │          ├── notes
- │          └── plan / instructions
- └── VISIT #2
- │     └── Encounter content …
- └── VISIT #N
-```
-
-## Entities
-
-| Concept | Implementation |
-|--------|----------------|
-| Patient | `Patient` |
-| Visit | `ClinicalVisit` |
-| Encounter content | `VitalSigns`, `Diagnosis`, `ClinicalNote` on the same visit |
-| Appointment → Visit | Optional `ClinicalVisit.AppointmentId`; created on **CheckedIn** |
-| Episode of care (optional) | `ClinicalVisit.EpisodeLabel` string (full Episode entity deferred) |
-
-## Visit statuses
+## Visit status
 
 | Status | Meaning |
-|--------|---------|
-| Draft | Editable |
+|--------|--------|
+| Draft | Editable; default for new visits |
 | Final | Immutable; new content requires a new visit |
 | Cancelled | Voided |
 
 ## Related
 
 - Domain rules: `docs/03-requirements/clinical-domain-rules.md`
-- Access matrix: `docs/05-engineering/access-control-report.md`
+- Access matrix: `docs/06-engineering/access-control-report.md`
