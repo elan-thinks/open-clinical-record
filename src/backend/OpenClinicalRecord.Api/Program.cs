@@ -13,14 +13,23 @@ builder.Services.AddApplicationJwtAuth(builder.Configuration);
 builder.Services.AddApplicationServices();
 
 const string CorsPolicyName = "LocalDevCors";
+var defaultOrigins = new[]
+{
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+};
+var extraOrigins = (Environment.GetEnvironmentVariable("CORS_ORIGINS") ?? string.Empty)
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var corsOrigins = defaultOrigins.Concat(extraOrigins).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicyName, policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173")
+            .WithOrigins(corsOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

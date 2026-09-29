@@ -1,0 +1,64 @@
+# Open Clinical Record — local stack for Docker Desktop
+# Usage:
+#   docker compose up --build
+# Then open http://localhost:8080  (API on http://localhost:5000)
+# Seed users (password Dev@12345): admin|doctor|nurse|desk @clinic.local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ocr-postgres
+    environment:
+      POSTGRES_USER: ocr
+      POSTGRES_PASSWORD: ocr_dev_password
+      POSTGRES_DB: open_clinical_record
+    ports:
+      - "5432:5432"
+    volumes:
+      - ocr_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ocr -d open_clinical_record"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  api:
+    build:
+      context: ./src/backend/OpenClinicalRecord.Api
+      dockerfile: Dockerfile
+    container_name: ocr-api
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=open_clinical_record;Username=ocr;Password=ocr_dev_password
+      Jwt__Issuer: OpenClinicalRecord
+      Jwt__Audience: OpenClinicalRecord
+      Jwt__Key: DEV_ONLY_OpenClinicalRecord_Jwt_Signing_Key_32chars!
+      Jwt__ExpirationMinutes: "480"
+      OCR_JWT_KEY: DEV_ONLY_OpenClinicalRecord_Jwt_Signing_Key_32chars!
+      OCR_SEED_DEMO_DATA: "true"
+      OCR_SEED_PASSWORD: Dev@12345
+      # Comma-separated extra browser origins (Vite + nginx UI)
+      CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./src/frontend/open-clinical-record-web
+      dockerfile: Dockerfile
+      args:
+        # Browser calls the host-mapped API port
+        VITE_API_BASE_URL: http://localhost:5000
+    container_name: ocr-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  ocr_pgdata:
