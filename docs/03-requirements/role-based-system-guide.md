@@ -2,11 +2,11 @@
 
 **Product:** Open Clinical Record (OCR)  
 **Document:** Role-Based System Guide  
-**Status:** Current product/UX guide (aligned 2026-09-27)  
+**Status:** Current product/UX guide (aligned 2026-09-29)  
 **Scope:** Patient Management, Patient Chart, Appointment Management  
 **Roles covered:** Clinician / Doctor, Nurse / Clinical Staff, Receptionist / Front Desk, System Administrator
 
-> This guide defines how the product should behave and what each role should see and do after login. **Four application roles** are implemented (including System Administrator). API enforcement matrix: `docs/05-engineering/access-control-report.md`. Domain statuses: `docs/03-requirements/clinical-domain-rules.md`.
+> This guide defines how the product should behave and what each role should see and do after login. **Four application roles** are implemented (including System Administrator). API enforcement matrix: `docs/06-engineering/access-control-report.md`. Domain statuses: `docs/03-requirements/clinical-domain-rules.md`.
 
 ---
 
@@ -104,7 +104,7 @@ Admin is **not** automatically a clinician author for chart content (clinical wr
 
 ## 7. Permission matrix (product baseline)
 
-Live API enforcement: **`docs/05-engineering/access-control-report.md`**.
+Live API enforcement: **`docs/06-engineering/access-control-report.md`**.
 
 | Capability | Doctor | Nurse | Receptionist | Admin |
 |---|:---:|:---:|:---:|:---:|
