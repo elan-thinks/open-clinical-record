@@ -187,9 +187,11 @@ public sealed partial class ClinicalChartService
         }
         catch (DbUpdateException ex)
         {
+            // Never surface DB/constraint details to clients (P1 hardening).
+            _logger.LogError(ex, "Failed to save consultation for visit {VisitId} patient {PatientId}", visitId, patientId);
             return ServiceResult<VisitDto>.Fail(
-                "Could not save consultation: " + (ex.InnerException?.Message ?? ex.Message),
-                ServiceErrorKind.Validation);
+                "Could not save consultation.",
+                ServiceErrorKind.Internal);
         }
 
         var loaded = await _db.ClinicalVisits.AsNoTracking()
