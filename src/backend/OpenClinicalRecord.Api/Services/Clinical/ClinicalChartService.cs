@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OpenClinicalRecord.Api.Data;
 using OpenClinicalRecord.Api.DTOs.Clinical;
 using OpenClinicalRecord.Api.Models.Entities;
@@ -19,8 +20,13 @@ public interface IClinicalChartService
 public sealed partial class ClinicalChartService : IClinicalChartService
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<ClinicalChartService> _logger;
 
-    public ClinicalChartService(AppDbContext db) => _db = db;
+    public ClinicalChartService(AppDbContext db, ILogger<ClinicalChartService> logger)
+    {
+        _db = db;
+        _logger = logger;
+    }
 
     public async Task<ServiceResult<PatientChartDto>> GetChartAsync(Guid patientId, CancellationToken ct)
     {
