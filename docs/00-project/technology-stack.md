@@ -1,18 +1,21 @@
 # Open Clinical Record — Technology Stack
 
-**Status:** Approved project direction
+**Status:** Approved project direction (versions aligned to live manifests, 2026-09-29)
 
 **Date:** September 2026
 
 ## Selected Stack
 
-| Layer | Technology | Purpose |
+| Layer | Technology | Notes |
 |---|---|---|
-| Frontend | React | Web user interface |
-| Backend | .NET / ASP.NET Core | API and application services |
+| Frontend | **React 19** + **React Router 7** + **TypeScript ~6** + **Vite 8** | From `src/frontend/open-clinical-record-web/package.json` |
+| Backend | **ASP.NET Core 8** / .NET | API and application services |
 | API | RESTful HTTP API | Frontend/backend communication |
-| Database | PostgreSQL | Primary relational data store |
-| ORM / Data Access | Entity Framework Core + Npgsql | PostgreSQL persistence from ASP.NET Core |
+| Database | **PostgreSQL** | Primary relational data store |
+| ORM / Data Access | **Entity Framework Core 8** + **Npgsql** | PostgreSQL persistence |
+| Auth | JWT Bearer + ASP.NET Core Identity | Role claims |
+| Tests | xUnit + WebApplicationFactory | Backend API tests (EF InMemory) |
+| CI | GitHub Actions | `dotnet test` + frontend build |
 | Source Control | Git + GitHub | Version control and collaboration |
 
 ## Database Standard
@@ -51,7 +54,7 @@ PostgreSQL
 
 ## Consistency Rule
 
-When another project document refers to the technology stack or database, it should identify PostgreSQL consistently. If an older document says the database is “to be selected,” that statement is obsolete and should be updated when that document is next revised.
+When another project document refers to the technology stack or database, it should identify PostgreSQL consistently. Frontend library versions must match `package.json`, not older handbooks that said React 18.
 
 ## MVP Boundary
 

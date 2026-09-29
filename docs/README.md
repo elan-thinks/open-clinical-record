@@ -1,6 +1,6 @@
 # Open Clinical Record — Documentation
 
-**Aligned:** 2026-09-27 (Week 8 finalization)
+**Aligned:** 2026-09-29 (Week 8 final hardening)
 
 ## Start here (submission)
 
@@ -32,9 +32,9 @@
 | [04-architecture/project-structure.md](04-architecture/project-structure.md) | Repo layout |
 | [04-architecture/architecture-overview.pdf](04-architecture/architecture-overview.pdf) | Architecture overview |
 | [04-architecture/adr/](04-architecture/adr/) | Architecture decisions |
-| [05-engineering/access-control-report.md](05-engineering/access-control-report.md) | RBAC matrix + seed users |
-| [05-engineering/coding-standards.md](05-engineering/coding-standards.md) | Coding standards |
-| [05-engineering/week7-testing-refactoring.md](05-engineering/week7-testing-refactoring.md) | Week 7 close-out |
+| [06-engineering/access-control-report.md](06-engineering/access-control-report.md) | RBAC matrix + seed users |
+| [06-engineering/coding-standards.md](06-engineering/coding-standards.md) | Coding standards |
+| [06-engineering/week7-testing-refactoring.md](06-engineering/week7-testing-refactoring.md) | Week 7 close-out |
 | [05-data/](05-data/) | DB notes + reference SQL |
 
 ## Finalization & testing
@@ -60,3 +60,5 @@
 **Appointments:** Scheduled → Waiting → CheckedIn → InProgress → Completed (also Cancelled, NoShow)  
 **Visits:** Draft → Final (immutable); finalizing completes the linked appointment  
 **Clinical writes:** Doctor + Nurse only  
+**Mark deceased:** Admin, Doctor, Receptionist · **Clear deceased:** Admin, Doctor  
+**Frontend stack (from package.json):** React 19 · React Router 7 · TypeScript 6 · Vite 8  

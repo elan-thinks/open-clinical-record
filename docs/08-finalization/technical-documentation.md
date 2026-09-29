@@ -1,6 +1,6 @@
 # Open Clinical Record — Technical Documentation
 
-**Version:** Week 8 (2026-09-27)  
+**Version:** Week 8 (2026-09-29)  
 **Repository:** `elan-thinks/open-clinical-record`  
 **Branch:** `main`
 
@@ -14,7 +14,7 @@ OCR is an **outpatient EMR internship MVP** covering:
 2. Patient chart (longitudinal visits)  
 3. Appointment management (including check-in)
 
-**Out of scope:** pharmacy, laboratory, radiology, billing, FHIR exchange, multi-facility enterprise scheduling.
+**Out of scope:** pharmacy, laboratory, radiology, billing, FHIR exchange, multi-facility enterprise scheduling, AI clinical decision support.
 
 ---
 
@@ -40,15 +40,17 @@ Details: `docs/04-architecture/project-structure.md`, `docs/clinical-visit-model
 
 ## 3. Technology stack
 
+Versions are taken from the live project manifests (`package.json` / `.csproj`), not historical notes.
+
 | Layer | Choice |
 |-------|--------|
-| Frontend | React 18, TypeScript, Vite |
+| Frontend | **React 19**, **React Router 7**, **TypeScript ~6**, **Vite 8** |
 | Backend | ASP.NET Core 8 |
 | ORM | Entity Framework Core 8 |
-| Database | PostgreSQL |
-| Auth | JWT Bearer |
-| Tests | xUnit + `WebApplicationFactory` |
-| CI | GitHub Actions (dotnet test + frontend build) |
+| Database | PostgreSQL (Npgsql) |
+| Auth | JWT Bearer + ASP.NET Core Identity |
+| Tests | xUnit + `WebApplicationFactory` (EF InMemory provider) |
+| CI | GitHub Actions (`dotnet test` + frontend `tsc`/Vite build) |
 
 ---
 
@@ -93,7 +95,9 @@ Appointment transitions and rules: `docs/03-requirements/clinical-domain-rules.m
 | Clear deceased | Admin, Doctor |
 | Secrets | Connection string / JWT key via configuration & environment |
 
-Matrix: `docs/05-engineering/access-control-report.md`.
+Matrix: `docs/06-engineering/access-control-report.md`.
+
+Persistence failures (e.g. clinical save) return a **generic client message** and HTTP **500**; database exception details stay in server logs only.
 
 ---
 
@@ -109,12 +113,14 @@ Matrix: `docs/05-engineering/access-control-report.md`.
 | Audit | `GET /api/audit` (Admin) |
 | Health | `GET /api/health`, `/api/health/ready` |
 
+Frontend API clients resolve the backend via `VITE_API_BASE_URL` (default `http://localhost:5000`).
+
 ---
 
 ## 8. Database
 
 - **Authoritative schema:** EF Core migrations under  
-  `src/backend/OpenClinicalRecord.Api/Migrations/`  
+  `src/backend/OpenClinicalRecord.Api/Data/Migrations/`  
 - **Reference SQL:** `docs/05-data/ocr-complete-database.sql` (may lag; do not prefer over migrations)  
 - Apply migrations on deploy: `dotnet ef database update` (or migrate on startup if configured)
 
@@ -147,16 +153,21 @@ dotnet test
 
 Coverage includes access matrix, appointment workflows, clinical documentation (including InMemory-safe finalize), longitudinal visits.
 
-CI runs backend tests and frontend `tsc` + production build on push to `main`.
+CI runs backend tests and frontend typecheck + production build on push to `main`.
+
+**Honest limits:** automated tests use EF Core **InMemory**, not a live PostgreSQL instance. Manual E2E against PostgreSQL remains part of final verification.
 
 ---
 
 ## 11. Known limitations
 
-- Reference SQL dump is not guaranteed byte-identical to latest migrations.  
+- Reference SQL dump is not guaranteed identical to the latest migrations.  
+- MRN generation and appointment conflict checks are **not concurrency-hardened** (unique constraints prevent silent duplicates).  
+- No formal clinical **amendment** workflow after Final (new visit required).  
 - Reports are basic aggregates, not a full BI suite.  
 - No multi-tenant / multi-facility support.  
-- Training passwords must not be used in production.
+- Training passwords must not be used in production.  
+- Frontend automated UI tests are limited relative to backend API tests.
 
 ---
 
@@ -165,6 +176,10 @@ CI runs backend tests and frontend `tsc` + production build on push to `main`.
 | Doc | Role |
 |-----|------|
 | `docs/README.md` | Documentation index |
-| `docs/03-requirements/srs/srs.pdf` | Formal SRS |
+| `docs/08-finalization/deliverables/OCR-SRS-v2.pdf` | Formal SRS (submission PDF) |
+| `docs/03-requirements/srs/SRS.md` | Editable SRS source |
 | `docs/08-finalization/user-guide.md` | End-user manual |
+| `docs/08-finalization/deliverables/OCR-User-Manual.pdf` | User manual PDF |
+| `docs/08-finalization/deliverables/OCR-Technical-Documentation.pdf` | This document as PDF |
 | `docs/09-testing/e2e-clinical-flow-checklist.md` | Manual E2E |
+| `docs/06-engineering/access-control-report.md` | Live permission matrix |
