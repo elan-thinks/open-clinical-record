@@ -27,6 +27,19 @@ The project was deliberately kept smaller than a full hospital EMR. Existing pro
 
 The original internship objective was to experience a complete software development lifecycle through the design and development of a simplified EMR application. The planned lifecycle included requirements gathering, analysis, design, implementation, testing, documentation, and presentation, with mentor guidance and exposure to existing EMR systems.
 
+## Reporting Timeline
+
+| Report week | Original plan | Task |
+|---|---|---|
+| Week 1 | Week 1 — Task 1 | Project Initiation, Requirement Analysis & Design |
+| Week 2 | Week 1 — Task 2 | Project Foundation |
+| Week 3 | Week 2 — Task 1 | Patient Management Module |
+| Week 4 | Week 2 — Task 2 | Medical Records Module |
+| Week 5 | Week 3 — Task 1 | Appointment & Consultation Module |
+| Week 6 | Week 3 — Task 2 | Additional Features & Enhancements |
+| Week 7 | Week 4 — Task 1 | Testing, Bug Fixing & Refactoring |
+| Week 8 | Week 4 — Task 2 | Finalization & Presentation |
+
 ## Industrial Context
 
 The internship combined individual project work with exposure to an active development organization. Project work was carried out primarily through the OCR repository and development environment, while regular Wednesday in-person sessions provided exposure to organizational communication, project management, team coordination, and developer work.
