@@ -9,6 +9,12 @@ This document records the internship context and the industrial experience that 
 **Infinity Advanced Technology Solutions PLC**  
 Addis Ababa, Ethiopia
 
+## Internship Period
+
+**01 September 2026 – 30 September 2026**
+
+The first formal interaction with the organization was an interview with HR representative **Ms. Mahilet**. This interview marked the beginning of the intern's organizational engagement before the technical project work proceeded.
+
 ## Internship Project
 
 **Open Clinical Record (OCR)** — a focused outpatient Electronic Medical Record (EMR) internship project.
