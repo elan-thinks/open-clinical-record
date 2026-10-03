@@ -2,6 +2,24 @@
 
 This directory is the production workspace for the final Industrial Practice Report for the Open Clinical Record (OCR) internship project.
 
+## Final PDF
+
+**Industrial Internship Report (PDF):**
+
+- [`Open-Clinical-Record-Industrial-Internship-Report.md`](./Open-Clinical-Record-Industrial-Internship-Report.md) — summary pointer
+- `Open-Clinical-Record-Industrial-Internship-Report.pdf` — full report (~119 pages)
+
+Add the PDF to this folder on `main` if it is not already present:
+
+```bash
+# from a clean clone of open-clinical-record
+mkdir -p docs/report
+cp /path/to/Open-Clinical-Record-Industrial-Internship-Report.pdf docs/report/
+git add docs/report/Open-Clinical-Record-Industrial-Internship-Report.pdf
+git commit -m "docs(report): add Industrial Internship Report PDF"
+git push origin main
+```
+
 ## Working principles
 
 1. Evidence before prose.
@@ -26,6 +44,4 @@ This directory is the production workspace for the final Industrial Practice Rep
 
 ## Status
 
-**Phase 0 — workspace initialized.**
-
-The detailed internship information supplied by the student will be converted into an evidence-backed internship record before final chapter drafting begins.
+**Final PDF packaged for submission.** Screenshot placeholders still need synthetic captures before university binding.
