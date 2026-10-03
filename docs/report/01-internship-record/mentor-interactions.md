@@ -4,9 +4,13 @@
 
 This document records mentor guidance that materially affected the direction and feasibility of the OCR internship project.
 
+## Reporting Timeline and Scope Review
+
+For consistency, the original four-week plan is mapped to eight report weeks, one task per week: Week 1 = Week 1/Task 1 through Week 8 = Week 4/Task 2.
+
 ## Scope Review
 
-The initial project plan included a broad set of EMR functions. During the internship, the mentor reviewed the scope against the available one-month period and advised reducing it.
+The initial project plan included a broad set of EMR functions. During the internship, the mentor reviewed the scope against the available project period and advised reducing it.
 
 The mentor's guidance was:
 
